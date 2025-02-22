@@ -1,0 +1,439 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { useReactToPrint } from 'react-to-print';
+import "./App.css";
+
+const ClinicSystem = () => {
+  // State management
+  const [step, setStep] = useState(1);
+  const [mobile, setMobile] = useState('');
+  const [patient, setPatient] = useState(null);
+  const [symptoms, setSymptoms] = useState([]);
+  const [allSymptoms, setAllSymptoms] = useState([]);
+  const [allMeds, setAllMeds] = useState([]);
+  const [newPatient, setNewPatient] = useState({
+    name: '',
+    age: '',
+    gender: 'Male',
+    weight: '',
+    height: ''
+  });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [retryCount, setRetryCount] = useState(0);
+  const printRef = useRef();
+
+  // Data fetching
+  useEffect(() => {
+    if (retryCount >= 3) return;
+
+    const fetchInitialData = async () => {
+      try {
+        setError('');
+        const [symptomsRes, medsRes] = await Promise.all([
+          fetch('/api/symptoms'),
+          fetch('/api/medicines')
+        ]);
+
+        if (!symptomsRes.ok || !medsRes.ok) {
+          throw new Error('Failed to load initial data');
+        }
+
+        const [symptomsData, medsData] = await Promise.all([
+          symptomsRes.json(),
+          medsRes.json()
+        ]);
+
+        setAllSymptoms(Array.isArray(symptomsData) ? symptomsData : []);
+        setAllMeds(Array.isArray(medsData) ? medsData : []);
+      } catch (error) {
+        console.error('Data fetch error:', error);
+        setError(error.message);
+        setTimeout(() => setRetryCount(prev => prev + 1), 2000);
+      }
+    };
+
+    fetchInitialData();
+  }, [retryCount]);
+
+  // Patient search
+  const handleSearch = async () => {
+    try {
+        setLoading(true);
+        setError(''); // Clear previous errors
+        setPatient(null); // Reset previous patient data
+
+        const response = await fetch(`http://localhost:4500/api/patients/search?mobile=${encodeURIComponent(mobile)}`);
+
+        if (!response.ok) throw new Error('Patient search failed');
+
+        const data = await response.json();
+        
+        if (!data.exists) {
+            setStep(3);
+            return;
+        }
+
+        setPatient(data.data);
+        setStep(2);
+    } catch (err) {
+        setError(err.message);
+    } finally {
+        setLoading(false);
+    }
+};
+
+  
+  // Create new patient
+  const createPatient = async () => {
+    try {
+      setLoading(true);
+      const response = await fetch('/api/patients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          ...newPatient, 
+          mobile: mobile.replace(/[^\d+]/g, '') 
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Patient creation failed');
+      }
+
+      const patientData = await response.json();
+      setPatient(patientData);
+      setStep(4);
+      setError('');
+    } catch (error) {
+      setError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Symptom management
+  const addSymptom = async (symptomName) => {
+    try {
+      setLoading(true);
+      const consultationRes = await fetch('/api/consultations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patient_id: patient.id })
+      });
+
+      if (!consultationRes.ok) throw new Error('Consultation creation failed');
+      const consultation = await consultationRes.json();
+
+      let symptom = allSymptoms.find(s => s.name === symptomName);
+      if (!symptom) {
+        const symptomRes = await fetch('/api/symptoms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name: symptomName, is_custom: true })
+        });
+        if (!symptomRes.ok) throw new Error('Symptom creation failed');
+        symptom = await symptomRes.json();
+        setAllSymptoms(prev => [...prev, symptom]);
+      }
+
+      const linkRes = await fetch('/api/symptoms/consultations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          consultation_id: consultation.id,
+          symptom_id: symptom.id
+        })
+      });
+      if (!linkRes.ok) throw new Error('Failed to link symptom');
+
+      setSymptoms(prev => [...prev, symptom.name]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Prescription printing
+  const handlePrint = useReactToPrint({
+    content: () => printRef.current,
+  });
+
+  // Main component render
+  return (
+    <div className="container mx-auto p-6">
+      {error && <div className="bg-red-100 p-3 mb-4 rounded">{error}</div>}
+
+      {/* Step 1: Patient Search */}
+      {step === 1 && (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold mb-4">Patient Search</h2>
+          <div className="flex gap-4">
+            <input
+              type="tel"
+              placeholder="Enter Mobile Number"
+              className="flex-1 p-2 border rounded"
+              value={mobile}
+              onChange={(e) => setMobile(e.target.value)}
+            />
+            <button
+              className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
+              onClick={handleSearch}
+              disabled={loading}
+            >
+              {loading ? 'Searching...' : 'Search'}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Step 2: Existing Patient */}
+      {step === 2 && patient && (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold mb-4">Patient Details</h2>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <p><span className="font-semibold">Name:</span> {patient.name}</p>
+            <p><span className="font-semibold">Age:</span> {patient.age}</p>
+            <p><span className="font-semibold">Gender:</span> {patient.gender}</p>
+            <p><span className="font-semibold">Mobile:</span> {patient.mobile}</p>
+          </div>
+          <button
+            className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
+            onClick={() => setStep(4)}
+          >
+            Continue to Symptoms
+          </button>
+        </div>
+      )}
+
+      {/* Step 3: New Patient Form */}
+      {step === 3 && (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold mb-4">New Patient Registration</h2>
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="text"
+              placeholder="Full Name"
+              className="p-2 border rounded"
+              value={newPatient.name}
+              onChange={(e) => setNewPatient({...newPatient, name: e.target.value})}
+            />
+            <input
+              type="number"
+              placeholder="Age"
+              className="p-2 border rounded"
+              value={newPatient.age}
+              onChange={(e) => setNewPatient({...newPatient, age: e.target.value})}
+            />
+            <select
+              className="p-2 border rounded"
+              value={newPatient.gender}
+              onChange={(e) => setNewPatient({...newPatient, gender: e.target.value})}
+            >
+              <option>Male</option>
+              <option>Female</option>
+            </select>
+            <input
+              type="number"
+              placeholder="Weight (kg)"
+              className="p-2 border rounded"
+              value={newPatient.weight}
+              onChange={(e) => setNewPatient({...newPatient, weight: e.target.value})}
+            />
+            <input
+              type="number"
+              placeholder="Height (cm)"
+              className="p-2 border rounded"
+              value={newPatient.height}
+              onChange={(e) => setNewPatient({...newPatient, height: e.target.value})}
+            />
+          </div>
+          <button
+            className="mt-4 bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
+            onClick={createPatient}
+          >
+            Save Patient
+          </button>
+        </div>
+      )}
+
+      {/* Step 4: Symptoms Entry */}
+      {step === 4 && (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold mb-4">Symptoms Entry</h2>
+          <div className="flex gap-4 mb-4">
+            <select
+              className="flex-1 p-2 border rounded"
+              onChange={(e) => addSymptom(e.target.value)}
+            >
+              <option value="">Select Symptom</option>
+              {allSymptoms.map(symptom => (
+                <option key={symptom.id} value={symptom.name}>
+                  {symptom.name}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Add Custom Symptom"
+              className="flex-1 p-2 border rounded"
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  addSymptom(e.target.value);
+                  e.target.value = '';
+                }
+              }}
+            />
+          </div>
+          <div className="flex flex-wrap gap-2 mb-6">
+            {symptoms.map((symptom, index) => (
+              <div key={index} className="bg-gray-100 px-3 py-1 rounded-full">
+                {symptom}
+                <button 
+                  className="ml-2 text-red-500"
+                  onClick={() => setSymptoms(symptoms.filter((_, i) => i !== index))}
+                >
+                  ×
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
+            onClick={() => setStep(5)}
+          >
+            Continue to Prescription
+          </button>
+        </div>
+      )}
+
+      {/* Step 5: Prescription Form */}
+      {step === 5 && (
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold mb-4">Prescription Entry</h2>
+          <div className="mb-6">
+            <input
+              type="text"
+              placeholder="Search Medicine"
+              className="w-full p-2 border rounded mb-2"
+              onChange={(e) => {
+                const med = allMeds.find(m => m.brand_name === e.target.value);
+                setCurrentMed({
+                  ...currentMed,
+                  medicine_id: med?.id || ''
+                });
+              }}
+            />
+            <div className="grid grid-cols-2 gap-4 mb-4">
+              <input
+                placeholder="Dosage"
+                className="p-2 border rounded"
+                value={currentMed.dosage}
+                onChange={(e) => setCurrentMed({...currentMed, dosage: e.target.value})}
+              />
+              <input
+                placeholder="Frequency (English)"
+                className="p-2 border rounded"
+                value={currentMed.frequency_en}
+                onChange={(e) => setCurrentMed({...currentMed, frequency_en: e.target.value})}
+              />
+              <input
+                placeholder="ہدایات (اردو)"
+                className="p-2 border rounded urdu-font"
+                dir="rtl"
+                value={currentMed.frequency_urdu}
+                onChange={(e) => setCurrentMed({...currentMed, frequency_urdu: e.target.value})}
+              />
+            </div>
+            <button
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              onClick={addMedicine}
+            >
+              Add Medicine
+            </button>
+          </div>
+
+          <div className="mb-6">
+            <h3 className="text-xl font-semibold mb-3">Added Medicines</h3>
+            {medsList.map((med, index) => (
+              <div key={index} className="bg-gray-50 p-3 rounded mb-2">
+                <p className="font-medium">
+                  {allMeds.find(m => m.id === med.medicine_id)?.brand_name}
+                </p>
+                <p>Dosage: {med.dosage}</p>
+                <p>Frequency: {med.frequency_en}</p>
+                <p className="urdu-font" dir="rtl">{med.frequency_urdu}</p>
+              </div>
+            ))}
+          </div>
+
+          <PrintablePrescription 
+            ref={printRef}
+            patient={patient} 
+            medicines={medsList}
+            allMeds={allMeds}
+          />
+          
+          <button
+            className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
+            onClick={handlePrint}
+          >
+            Print Prescription
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+// Printable Prescription Component
+const PrintablePrescription = React.forwardRef(({ patient = {}, medicines = [], allMeds = [] }, ref) => {
+  return (
+    <div ref={ref} className="p-6 print-visible" style={{ display: 'none' }}>
+      <div className="text-center mb-6">
+        <h1 className="text-2xl font-bold">Specialist Clinics, Lab and Imaging Services</h1>
+        <p>G.T Road, Gujar Khan. Ph: 051-3513287</p>
+      </div>
+
+      <div className="mb-6">
+        <h2 className="text-xl font-bold">Patient Details</h2>
+        <p>Name: {patient?.name || 'N/A'}</p>
+        <p>MR#: {patient?.id || 'N/A'}</p>
+        <p>Age/Gender: {patient?.age || 'N/A'} {patient?.gender || ''}</p>
+        <p>Date: {new Date().toLocaleDateString()}</p>
+      </div>
+
+      <table className="w-full mb-6">
+        <thead>
+          <tr>
+            <th className="text-left">Medicine</th>
+            <th className="text-left">Dosage</th>
+            <th className="text-left">Instructions (English)</th>
+            <th className="text-right urdu-font">ہدایات (اردو)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {medicines.map((med, index) => {
+            const medicine = allMeds.find(m => m.id === med.medicine_id);
+            return (
+              <tr key={index}>
+                <td>{medicine?.brand_name || 'Unknown Medicine'}</td>
+                <td>{med.dosage}</td>
+                <td>{med.instructions_en}</td>
+                <td className="urdu-font" dir="rtl">{med.instructions_urdu}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+
+      <div className="text-right mt-8">
+        <p className="font-bold">Dr. Omer Aziz Mirza</p>
+        <p>Consultant Cardiologist</p>
+      </div>
+    </div>
+  );
+});
+
+export default ClinicSystem;
