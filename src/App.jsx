@@ -208,7 +208,7 @@ const PatientSearch = () => {
               <td class="bold">Date:</td>
               <td>${new Date().toLocaleDateString()}</td>
               <td class="bold">Consultant:</td>
-              <td>Dr. Omer Aziz Mirza</td>
+              <td>Dr. Adul Rauf</td>
             </tr>
           </table>
   
