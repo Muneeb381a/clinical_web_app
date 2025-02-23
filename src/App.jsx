@@ -9,6 +9,7 @@ import {
   AiOutlinePrinter,
   AiOutlineDownload,
   AiOutlineCloseCircle,
+  AiOutlineCheckCircle,
 } from "react-icons/ai";
 
 // Schema for searching patients by mobile
@@ -63,6 +64,7 @@ const PatientSearch = () => {
   const [consultationData, setConsultationData] = useState(null);
   const [selectedTests, setSelectedTests] = useState([]);
   const [customTest, setCustomTest] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [vitalSigns, setVitalSigns] = useState({
     temperature: "",
@@ -72,7 +74,6 @@ const PatientSearch = () => {
     oxygenSaturation: "",
     weight: "",
   });
-  
 
   const [formData, setFormData] = useState({
     name: "",
@@ -110,56 +111,73 @@ const PatientSearch = () => {
       alert("No consultation data to print");
       return;
     }
-
+  
     const printWindow = window.open("", "_blank");
     printWindow.document.write(`
       <html>
         <head>
-          <title>Consultation Print - ${
-            patient?.name || "Unknown Patient"
-          }</title>
+          <title>Consultation Print - ${patient?.name || "Unknown Patient"}</title>
           <style>
             body { 
-              font-family: Arial, sans-serif; 
-              padding: 20px; 
-              position: relative;
-              min-height: 100vh;
+              font-family: 'Arial', sans-serif; 
+              padding: 15px 25px;
+              line-height: 1.4;
             }
-            h2 { 
-              color: #1e3a8a; 
-              border-bottom: 2px solid #eee; 
-              padding-bottom: 10px 
-            }
-            .section { margin-bottom: 25px }
-            table { 
-              width: 100%; 
-              border-collapse: collapse; 
-              margin-top: 10px 
-            }
-            td, th { 
-              border: 1px solid #ddd; 
-              padding: 8px; 
-              text-align: left 
-            }
-            .header { 
-              text-align: center; 
+            .header {
+              text-align: center;
+              border-bottom: 2px solid #333;
+              padding-bottom: 10px;
               margin-bottom: 20px;
-              border-bottom: 2px solid #1e3a8a;
-              padding-bottom: 15px;
+            }
+            .clinic-info {
+              font-size: 14px;
+              margin: 5px 0;
+            }
+            .doctor-credentials {
+              font-size: 12px;
+              margin: 10px 0;
+            }
+            .patient-info {
+              margin: 15px 0;
+              width: 100%;
+            }
+            .patient-info td {
+              padding: 5px 10px;
+            }
+            .vital-signs {
+              margin: 15px 0;
+              width: 100%;
+              border-collapse: collapse;
+            }
+            .vital-signs td, .vital-signs th {
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: left;
+            }
+            .prescription-table {
+              width: 100%;
+              margin: 20px 0;
+              border-collapse: collapse;
+            }
+            .prescription-table td, .prescription-table th {
+              border: 1px solid #ddd;
+              padding: 8px;
+              text-align: center;
             }
             .footer {
-              position: absolute;
-              bottom: 20px;
-              width: 100%;
-              text-align: center;
-              font-size: 0.9em;
-              color: #666;
+              margin-top: 30px;
+              border-top: 2px solid #333;
               padding-top: 15px;
-              border-top: 2px solid #1e3a8a;
+              font-size: 12px;
             }
-            .doctor-info {
-              margin: 10px 0;
-              line-height: 1.4;
+            .bold {
+              font-weight: bold;
+            }
+            .text-center {
+              text-align: center;
+            }
+            .mb-15 {
+              margin-bottom: 15px;
             }
           </style>
         </head>
@@ -168,70 +186,86 @@ const PatientSearch = () => {
             <h1>AYYUB LABS & CLINICS</h1>
             <p>Mega Hospital Second Floor Mall Road Saddar Rawalpindi Cantt.</p>
             <p>Ph: 0334-5616185</p>
-          </div>
-  
-          <!-- Patient Content Sections (Same as Before) -->
-          <h2>Patient Information</h2>
-          <table>
-            <tr><th>Name</th><td>${patient?.name || "-"}</td></tr>
-            <tr><th>Age</th><td>${patient?.age || "-"}</td></tr>
-            <tr><th>Gender</th><td>${patient?.gender || "-"}</td></tr>
-          </table>
-  
-          <h2>Vital Signs</h2>
-          <table>
-            ${Object.entries(vitalSigns)
-              .map(
-                ([key, value]) => `
-                <tr>
-                  <th>${key}</th>
-                  <td>${value || "-"}</td>
-                </tr>
-              `
-              )
-              .join("")}
-          </table>
-  
-          <h2>Tests</h2>
-          <ul>
-            ${selectedTests.map((test) => `<li>${test}</li>`).join("")}
-          </ul>
-  
-          <h2>Prescriptions</h2>
-          <table>
-            <thead>
-              <tr>
-                <th>Medicine</th>
-                <th>Frequency</th>
-                <th>Dosage</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${selectedMedicines
-                .map(
-                  (med) => `
-                <tr>
-                  <td>${
-                    medicines.find((m) => m.value === med.medicine_id)?.label ||
-                    "-"
-                  }</td>
-                  <td>${med.frequency_en || "-"}</td>
-                  <td>${med.dosage || "-"}</td>
-                </tr>
-              `
-                )
-                .join("")}
-            </tbody>
-          </table>
-  
-          <div class="footer">
-            <div class="doctor-info">
-              <strong>Dr. Abdul Rauf</strong><br>
+            <div class="doctor-credentials">
               BABAS.NCI MSCE (UK), DCH London SEC Neurology (UK)<br>
               Member: Pakistan Society of Neurology, International Headache Society,<br>
               International Stroke Society, Pakistan Stroke Society
             </div>
-            <p>E-mail: rauf.khan5@gmail.com | Date: 2022/224 | Prescription #: 177#</p>
+          </div>
+  
+          <table class="patient-info">
+            <tr>
+              <td class="bold">Name:</td>
+              <td>${patient?.name || "-"}</td>
+            </tr>
+            <tr>
+              <td class="bold">Phone:</td>
+              <td>${patient?.mobile || "-"}</td>
+              <td class="bold">Age/Gender:</td>
+              <td>${patient?.age || "-"} ${patient?.gender || ""}</td>
+            </tr>
+            <tr>
+              <td class="bold">Date:</td>
+              <td>${new Date().toLocaleDateString()}</td>
+              <td class="bold">Consultant:</td>
+              <td>Dr. Omer Aziz Mirza</td>
+            </tr>
+          </table>
+  
+          <table class="vital-signs">
+            <tr>
+              <th>Pulse heart rate</th>
+              <td>${vitalSigns?.pulse || "-"} bpm</td>
+              <th>Weight</th>
+              <td>${vitalSigns?.weight || "-"} kg</td>
+            </tr>
+            <tr>
+              <th>Blood pressure</th>
+              <td>${vitalSigns?.bloodPressure || "-"} mmHg</td>
+              <th>Height</th>
+              <td>${vitalSigns?.height || "-"} cm</td>
+            </tr>
+            <tr>
+              <th>Oxygen Saturation</th>
+              <td>${vitalSigns?.oxygenSaturation || "-"}%</td>
+              <th>Body Mass Index</th>
+              <td>${vitalSigns?.bmi || "-"}</td>
+            </tr>
+          </table>
+  
+          <div class="mb-15">
+            <h3>Prescriptions</h3>
+            <table class="prescription-table">
+              <thead>
+                <tr>
+                  <th>Medicine</th>
+                  <th>Dosage</th>
+                  <th>Frequency</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${selectedMedicines.map(med => `
+                  <tr>
+                    <td>${medicines.find(m => m.value === med.medicine_id)?.label || "-"}</td>
+                    <td>${med.dosage || "-"}</td>
+                    <td>${med.frequency_en || "-"}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+  
+          <div class="footer">
+            <div class="text-center">
+              <strong>Recommended Follow-up Appointment Date:</strong> 
+              ${new Date().toLocaleDateString()}
+            </div>
+            <div class="doctor-info">
+              <strong>Dr. Abdul Rauf</strong><br>
+              BABAS.NCI MSCE (UK), DCH London SEC Neurology (UK)<br>
+              Member: Pakistan Society of Neurology, International Headache Society,
+              International Stroke Society, Pakistan Stroke Society
+            </div>
           </div>
         </body>
       </html>
@@ -375,6 +409,7 @@ const PatientSearch = () => {
     }
 
     try {
+      setIsSubmitting(true);
       // Step 1: Create a consultation entry
       const consultationRes = await axios.post(
         "https://patient-management-backend-nine.vercel.app/api/consultations",
@@ -437,6 +472,8 @@ const PatientSearch = () => {
         "Error submitting consultation",
         error.response?.data || error.message
       );
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -472,260 +509,431 @@ const PatientSearch = () => {
       <div className="mx-auto max-w-2xl rounded-2xl border border-white/30 bg-white/95 backdrop-blur-sm p-8 shadow-2xl shadow-gray-100/30">
         {/* Enhanced Header Section */}
         <div className="mb-6 text-center border-b border-gray-200 pb-6 space-y-4">
-      <div className="flex items-center justify-center gap-3">
-        <div className="bg-blue-600 p-2 rounded-xl shadow-sm">
-          <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
-          </svg>
-        </div>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
-          Ayyub Labs & Clinic
-          <span className="block text-sm font-normal text-gray-600 mt-1">Neurology & Stroke Center</span>
-        </h1>
-      </div>
+          <div className="flex items-center justify-center gap-3">
+            <div className="bg-blue-600 p-2 rounded-xl shadow-sm">
+              <svg
+                className="w-8 h-8 text-white"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+                ></path>
+              </svg>
+            </div>
+            <h1 className="text-3xl font-bold text-gray-900 tracking-tight">
+              Ayyub Labs & Clinic
+              <span className="block text-sm font-normal text-gray-600 mt-1">
+                Neurology & Stroke Center
+              </span>
+            </h1>
+          </div>
 
-      <div className="mt-4 space-y-3">
-        <div className="flex items-center justify-center gap-3 text-sm">
-          <p className="text-gray-700 font-medium px-4 py-2 bg-gray-100 rounded-lg flex items-center gap-2">
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"></path>
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"></path>
-            </svg>
-            Mega Hospital, 2nd Floor, Mall Road, Rawalpindi Cantt
-          </p>
-        </div>
-        
-        <div className="flex items-center justify-center gap-4 text-sm">
-          <a href="tel:0334-5616185" className="text-gray-700 font-medium bg-gray-100 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-200 transition-colors">
-            <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path>
-            </svg>
-            <span className="text-blue-700">0334-5616185</span>
-          </a>
-          
-          <a href="mailto:rauf.khan5@gmail.com" className="text-gray-700 font-medium bg-gray-100 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-200 transition-colors">
-            <svg className="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-            </svg>
-            <span className="text-purple-700">rauf.khan5@gmail.com</span>
-          </a>
-        </div>
-      </div>
+          <div className="mt-4 space-y-3">
+            <div className="flex items-center justify-center gap-3 text-sm">
+              <p className="text-gray-700 font-medium px-4 py-2 bg-gray-100 rounded-lg flex items-center gap-2">
+                <svg
+                  className="w-5 h-5 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                  ></path>
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                  ></path>
+                </svg>
+                Mega Hospital, 2nd Floor, Mall Road, Rawalpindi Cantt
+              </p>
+            </div>
 
-      <div className="mt-6 bg-gray-900 p-4 rounded-xl text-white shadow-lg">
-        <p className="text-sm font-semibold flex items-center justify-center gap-2">
-          <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          Dr. Abdul Rauf, MD (Neurology)
-        </p>
-        <p className="text-xs text-gray-300 mt-2 text-center">
-          MBBS, FCPS (Pak), MRCP (UK) | Member: International Stroke Society, Pakistan Neurology Council
-        </p>
-      </div>
-    </div>
+            <div className="flex items-center justify-center gap-4 text-sm">
+              <a
+                href="tel:0334-5616185"
+                className="text-gray-700 font-medium bg-gray-100 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-200 transition-colors"
+              >
+                <svg
+                  className="w-5 h-5 text-blue-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                  ></path>
+                </svg>
+                <span className="text-blue-700">0334-5616185</span>
+              </a>
 
-    <h2 className="mb-6 border-b border-gray-200 pb-4 text-2xl font-bold text-gray-900">
-      <span className="bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
-        Patient Consultation Portal
-      </span>
-    </h2>
+              <a
+                href="mailto:rauf.khan5@gmail.com"
+                className="text-gray-700 font-medium bg-gray-100 px-4 py-2 rounded-lg flex items-center gap-2 hover:bg-gray-200 transition-colors"
+              >
+                <svg
+                  className="w-5 h-5 text-purple-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  ></path>
+                </svg>
+                <span className="text-purple-700">rauf.khan5@gmail.com</span>
+              </a>
+            </div>
+          </div>
+
+          <div className="mt-6 bg-gray-900 p-4 rounded-xl text-white shadow-lg">
+            <p className="text-sm font-semibold flex items-center justify-center gap-2">
+              <svg
+                className="w-5 h-5 text-blue-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                ></path>
+              </svg>
+              Dr. Abdul Rauf, MD (Neurology)
+            </p>
+            <p className="text-xs text-gray-300 mt-2 text-center">
+              MBBS, FCPS (Pak), MRCP (UK) | Member: International Stroke
+              Society, Pakistan Neurology Council
+            </p>
+          </div>
+        </div>
+
+        <h2 className="mb-6 border-b border-gray-200 pb-4 text-2xl font-bold text-gray-900">
+          <span className="bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
+            Patient Consultation Portal
+          </span>
+        </h2>
         {/* Enhanced Search Section */}
         <div className="mb-8 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-      <div className="flex items-center gap-3 mb-4">
-        <div className="bg-blue-700 p-2.5 rounded-lg text-white shadow-sm">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-          </svg>
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold text-gray-800">Patient Lookup</h3>
-          <p className="text-sm text-gray-600">Search existing patient records by mobile number</p>
-        </div>
-      </div>
-      
-      <form onSubmit={handleSearchSubmit(onSearch)} className="space-y-4">
-        <div className="space-y-2">
-          <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-            Mobile Number
-            <span className="text-red-500">*</span>
-          </label>
-          <div className="flex gap-3">
-            <input
-              {...registerSearch("mobile")}
-              placeholder="0300 1234567"
-              className="w-full rounded-xl border-2 border-gray-200 bg-white p-3.5 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-            />
-            <button
-              type="submit"
-              disabled={isSearching}
-              className="self-stretch px-8 bg-blue-700 text-white font-semibold rounded-xl shadow-md hover:bg-blue-800 transition-colors flex items-center justify-center"
-            >
-              {isSearching ? (
-                <div className="flex items-center gap-2">
-                  <span className="animate-spin">🌀</span>
-                  Searching...
-                </div>
-              ) : 'Find Patient'}
-            </button>
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-blue-700 p-2.5 rounded-lg text-white shadow-sm">
+              <svg
+                className="w-6 h-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth="2"
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                ></path>
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-800">
+                Patient Lookup
+              </h3>
+              <p className="text-sm text-gray-600">
+                Search existing patient records by mobile number
+              </p>
+            </div>
           </div>
+
+          <form onSubmit={handleSearchSubmit(onSearch)} className="space-y-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                Mobile Number
+                <span className="text-red-500">*</span>
+              </label>
+              <div className="flex gap-3">
+                <input
+                  {...registerSearch("mobile")}
+                  placeholder="0300 1234567"
+                  className="w-full rounded-xl border-2 border-gray-200 bg-white p-3.5 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                />
+                <button
+                  type="submit"
+                  disabled={isSearching}
+                  className="self-stretch px-8 bg-blue-700 text-white font-semibold rounded-xl shadow-md hover:bg-blue-800 transition-colors flex items-center justify-center"
+                >
+                  {isSearching ? (
+                    <div className="flex items-center gap-2">
+                      <span className="animate-spin">🌀</span>
+                      Searching...
+                    </div>
+                  ) : (
+                    "Find Patient"
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {searchErrors.mobile && (
+              <div className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-2.5 rounded-lg">
+                <svg
+                  className="w-5 h-5 flex-shrink-0"
+                  fill="currentColor"
+                  viewBox="0 0 20 20"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                    clipRule="evenodd"
+                  ></path>
+                </svg>
+                <span className="text-sm">{searchErrors.mobile.message}</span>
+              </div>
+            )}
+          </form>
         </div>
-        
-        {searchErrors.mobile && (
-          <div className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-2.5 rounded-lg">
-            <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd"></path>
-            </svg>
-            <span className="text-sm">{searchErrors.mobile.message}</span>
-          </div>
-        )}
-      </form>
-    </div>
 
         {patient ? (
           <div className="space-y-8" id="consultation-content">
             {/* Enhanced Patient Details */}
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-      <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
-        <div className="bg-green-700 p-2.5 rounded-lg text-white shadow-sm">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-          </svg>
-        </div>
-        <div>
-          <h3 className="text-lg font-semibold text-gray-800">Patient Demographics</h3>
-          <p className="text-sm text-gray-600">Core patient information and medical history</p>
-        </div>
-      </div>
-      
-      <div className="grid grid-cols-2 gap-4">
-        {[
-          { label: "Full Name", value: patient.name, icon: "user" },
-          { label: "Age", value: patient.age, icon: "calendar" },
-          { label: "Gender", value: patient.gender, icon: "gender" },
-          { label: "Weight", value: `${patient.weight} kg`, icon: "weight" },
-          { label: "Height", value: `${patient.height} cm`, icon: "height" },
-          { label: "Last Visit", value: patient.lastVisit || "N/A", icon: "clock" },
-        ].map((field) => (
-          <div key={field.label} className="space-y-2">
-            <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-              <svg className="w-4 h-4 text-gray-500">{/* Icon path */}</svg>
-              {field.label}
-            </label>
-            <div className="rounded-lg bg-gray-50 p-3 font-medium text-gray-800 border border-gray-200">
-              {field.value || "-"}
+              <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
+                <div className="bg-green-700 p-2.5 rounded-lg text-white shadow-sm">
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                    ></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Patient Demographics
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Core patient information and medical history
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  { label: "Full Name", value: patient.name, icon: "user" },
+                  { label: "Age", value: patient.age, icon: "calendar" },
+                  { label: "Gender", value: patient.gender, icon: "gender" },
+                  {
+                    label: "Weight",
+                    value: `${patient.weight} kg`,
+                    icon: "weight",
+                  },
+                  {
+                    label: "Height",
+                    value: `${patient.height} cm`,
+                    icon: "height",
+                  },
+                  {
+                    label: "Last Visit",
+                    value: patient.lastVisit || "N/A",
+                    icon: "clock",
+                  },
+                ].map((field) => (
+                  <div key={field.label} className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <svg className="w-4 h-4 text-gray-500">
+                        {/* Icon path */}
+                      </svg>
+                      {field.label}
+                    </label>
+                    <div className="rounded-lg bg-gray-50 p-3 font-medium text-gray-800 border border-gray-200">
+                      {field.value || "-"}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
-    </div>
 
             {/* Enhanced Action Buttons */}
             <div className="flex gap-4">
-          <button
-            onClick={handlePrint}
-            className="flex-1 flex items-center gap-3 justify-center rounded-xl bg-gray-100 hover:bg-gray-200 px-6 py-3.5 text-gray-700 transition-all group"
-          >
-            <div className="bg-blue-700 p-2 rounded-lg text-white">
-              <AiOutlinePrinter className="h-5 w-5" />
+              <button
+                onClick={handlePrint}
+                className="flex-1 flex items-center gap-3 justify-center rounded-xl bg-gray-100 hover:bg-gray-200 px-6 py-3.5 text-gray-700 transition-all group"
+              >
+                <div className="bg-blue-700 p-2 rounded-lg text-white">
+                  <AiOutlinePrinter className="h-5 w-5" />
+                </div>
+                <span className="font-medium">Generate Print Copy</span>
+              </button>
+              <button
+                onClick={generatePDF}
+                disabled={isGeneratingPDF}
+                className="flex-1 flex items-center gap-3 justify-center rounded-xl bg-gray-100 hover:bg-gray-200 px-6 py-3.5 text-gray-700 transition-all group"
+              >
+                <div className="bg-purple-700 p-2 rounded-lg text-white">
+                  <AiOutlineDownload className="h-5 w-5" />
+                </div>
+                <span className="font-medium">
+                  {isGeneratingPDF
+                    ? "Preparing PDF..."
+                    : "Download Patient Report"}
+                </span>
+              </button>
             </div>
-            <span className="font-medium">Generate Print Copy</span>
-          </button>
-          <button
-            onClick={generatePDF}
-            disabled={isGeneratingPDF}
-            className="flex-1 flex items-center gap-3 justify-center rounded-xl bg-gray-100 hover:bg-gray-200 px-6 py-3.5 text-gray-700 transition-all group"
-          >
-            <div className="bg-purple-700 p-2 rounded-lg text-white">
-              <AiOutlineDownload className="h-5 w-5" />
-            </div>
-            <span className="font-medium">
-              {isGeneratingPDF ? 'Preparing PDF...' : 'Download Patient Report'}
-            </span>
-          </button>
-        </div>
 
             {/* Enhanced Vital Signs */}
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
-            <div className="bg-red-700 p-2.5 rounded-lg text-white shadow-sm">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800">Clinical Measurements</h3>
-              <p className="text-sm text-gray-600">Record patient's vital parameters</p>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            {[
-              { label: "Temperature (°C)", key: "temperature", icon: "thermometer" },
-              { label: "Blood Pressure (mmHg)", key: "bloodPressure", icon: "heart-pulse" },
-              { label: "Heart Rate (bpm)", key: "heartRate", icon: "heart" },
-              { label: "Respiratory Rate", key: "respiratoryRate", icon: "lungs" },
-              { label: "Oxygen Saturation (%)", key: "oxygenSaturation", icon: "oxygen" },
-              { label: "Weight (kg)", key: "weight", icon: "weight" },
-            ].map((field) => (
-              <div key={field.key} className="space-y-2">
-                <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                  <svg className="w-4 h-4 text-gray-500">{/* Icon */}</svg>
-                  {field.label}
-                </label>
-                <input
-                  type="number"
-                  value={vitalSigns[field.key]}
-                  onChange={(e) => setVitalSigns({...vitalSigns, [field.key]: e.target.value})}
-                  className="w-full rounded-lg border-2 border-gray-200 bg-white p-3 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                  placeholder="--"
-                />
+              <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
+                <div className="bg-red-700 p-2.5 rounded-lg text-white shadow-sm">
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                    ></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Clinical Measurements
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Record patient's vital parameters
+                  </p>
+                </div>
               </div>
-            ))}
-          </div>
-        </div>
+              <div className="grid grid-cols-2 gap-4">
+                {[
+                  {
+                    label: "Temperature (°C)",
+                    key: "temperature",
+                    icon: "thermometer",
+                  },
+                  {
+                    label: "Blood Pressure (mmHg)",
+                    key: "bloodPressure",
+                    icon: "heart-pulse",
+                  },
+                  {
+                    label: "Heart Rate (bpm)",
+                    key: "heartRate",
+                    icon: "heart",
+                  },
+                  {
+                    label: "Respiratory Rate",
+                    key: "respiratoryRate",
+                    icon: "lungs",
+                  },
+                  {
+                    label: "Oxygen Saturation (%)",
+                    key: "oxygenSaturation",
+                    icon: "oxygen",
+                  },
+                  { label: "Weight (kg)", key: "weight", icon: "weight" },
+                ].map((field) => (
+                  <div key={field.key} className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                      <svg className="w-4 h-4 text-gray-500">{/* Icon */}</svg>
+                      {field.label}
+                    </label>
+                    <input
+                      type="number"
+                      value={vitalSigns[field.key]}
+                      onChange={(e) =>
+                        setVitalSigns({
+                          ...vitalSigns,
+                          [field.key]: e.target.value,
+                        })
+                      }
+                      className="w-full rounded-lg border-2 border-gray-200 bg-white p-3 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                      placeholder="--"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
 
             {/* Symptoms Section */}
-             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
-            <div className="bg-orange-700 p-2.5 rounded-lg text-white shadow-sm">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-              </svg>
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
+                <div className="bg-orange-700 p-2.5 rounded-lg text-white shadow-sm">
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    ></path>
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Symptom Analysis
+                  </h3>
+                  <p className="text-sm text-gray-600">
+                    Select observed symptoms and complaints
+                  </p>
+                </div>
+              </div>
+              <Select
+                isMulti
+                options={symptoms}
+                className="react-select-container"
+                classNamePrefix="react-select"
+                onChange={setSelectedSymptoms}
+                placeholder="Select or type symptoms..."
+                styles={{
+                  control: (base) => ({
+                    ...base,
+                    border: "2px solid #e5e7eb",
+                    borderRadius: "0.75rem",
+                    padding: "8px 12px",
+                    boxShadow: "none",
+                    "&:hover": { borderColor: "#3b82f6" },
+                  }),
+                  multiValue: (base) => ({
+                    ...base,
+                    backgroundColor: "#eff6ff",
+                    borderRadius: "6px",
+                  }),
+                  multiValueLabel: (base) => ({
+                    ...base,
+                    color: "#1d4ed8",
+                    fontWeight: "500",
+                  }),
+                }}
+              />
             </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800">Symptom Analysis</h3>
-              <p className="text-sm text-gray-600">Select observed symptoms and complaints</p>
-            </div>
-          </div>
-          <Select
-            isMulti
-            options={symptoms}
-            className="react-select-container"
-            classNamePrefix="react-select"
-            onChange={setSelectedSymptoms}
-            placeholder="Select or type symptoms..."
-            styles={{
-              control: (base) => ({
-                ...base,
-                border: "2px solid #e5e7eb",
-                borderRadius: "0.75rem",
-                padding: "8px 12px",
-                boxShadow: "none",
-                "&:hover": { borderColor: "#3b82f6" },
-              }),
-              multiValue: (base) => ({
-                ...base,
-                backgroundColor: "#eff6ff",
-                borderRadius: "6px",
-              }),
-              multiValueLabel: (base) => ({
-                ...base,
-                color: "#1d4ed8",
-                fontWeight: "500",
-              }),
-            }}
-          />
-        </div>
 
             {/* test section */}
             <div className="space-y-4">
@@ -793,41 +1001,144 @@ const PatientSearch = () => {
                       { value: "Gait", label: "Gait Assessment" },
                       { value: "Power", label: "Muscle Power Assessment" },
                       { value: "C/ROM", label: "Cervical Range of Motion" },
-                      { value: "Phallen's", label: "Phalen's Test for Carpal Tunnel Syndrome" },
-                      { value: "Rev Phallen's", label: "Reverse Phalen's Test" },
-                      { value: "Roos Test", label: "Roos Test for Thoracic Outlet Syndrome" },
+                      {
+                        value: "Phallen's",
+                        label: "Phalen's Test for Carpal Tunnel Syndrome",
+                      },
+                      {
+                        value: "Rev Phallen's",
+                        label: "Reverse Phalen's Test",
+                      },
+                      {
+                        value: "Roos Test",
+                        label: "Roos Test for Thoracic Outlet Syndrome",
+                      },
                       { value: "Sensory", label: "Sensory Examination" },
-                      { value: "Cerebellum", label: "Cerebellar Function Assessment" },
-                      { value: "Fundi", label: "Fundoscopic (Eye) Examination" },
-                      { value: "HMF", label: "Higher Mental Functions Assessment" },
+                      {
+                        value: "Cerebellum",
+                        label: "Cerebellar Function Assessment",
+                      },
+                      {
+                        value: "Fundi",
+                        label: "Fundoscopic (Eye) Examination",
+                      },
+                      {
+                        value: "HMF",
+                        label: "Higher Mental Functions Assessment",
+                      },
                       { value: "MMSE", label: "Mini-Mental State Examination" },
-                      { value: "Gower's Sign", label: "Gower's Sign Test for Muscle Weakness" },
-                      { value: "Bradykinesia", label: "Bradykinesia (Slowness of Movement)" },
-                      { value: "Dyskinesia", label: "Dyskinesia (Involuntary Movements)" },
-                      { value: "Epley's Maneuver", label: "Epley's Maneuver for Vertigo" },
-                      { value: "Fall Assessment", label: "Fall Risk Assessment" },
-                      { value: "Speech", label: "Speech and Language Examination" },
-                      { value: "Romberg Test", label: "Romberg Test for Balance and Coordination" },
-                      { value: "Finger-Nose Test", label: "Finger-Nose Test for Coordination" },
-                      { value: "Heel-to-Shin Test", label: "Heel-to-Shin Test for Coordination" },
-                      { value: "Babinski Sign", label: "Babinski Sign (Plantar Reflex)" },
-                      { value: "Clonus", label: "Clonus Test for Neuromuscular Hyperactivity" },
-                      { value: "Hoffman’s Sign", label: "Hoffman’s Sign (Cervical Myelopathy)" },
-                      { value: "Pronator Drift", label: "Pronator Drift Test for Upper Motor Neuron Lesion" },
-                      { value: "Lhermitte’s Sign", label: "Lhermitte’s Sign (Spinal Cord Dysfunction)" },
-                      { value: "Tinel’s Sign", label: "Tinel’s Sign for Nerve Compression" },
-                      { value: "Froment’s Sign", label: "Froment’s Sign for Ulnar Nerve Dysfunction" },
-                      { value: "Two-Point Discrimination", label: "Two-Point Discrimination Test for Sensory Function" },
-                      { value: "Spurling’s Test", label: "Spurling’s Test for Cervical Radiculopathy" },
-                      { value: "Schober’s Test", label: "Schober’s Test for Lumbar Spine Flexibility" },
-                      { value: "Trendelenburg Test", label: "Trendelenburg Test for Hip Stability" },
-                      { value: "Dix-Hallpike Test", label: "Dix-Hallpike Test for Benign Paroxysmal Positional Vertigo (BPPV)" },
-                      { value: "Sharpened Romberg Test", label: "Sharpened Romberg Test for Postural Stability" },
-                      { value: "Weber Test", label: "Weber Test for Hearing Loss" },
-                      { value: "Rinne Test", label: "Rinne Test for Hearing Loss" },
-                      { value: "Snellen Test", label: "Snellen Test for Visual Acuity" },
-                      { value: "Visual Field Test", label: "Visual Field Test for Peripheral Vision" },
-                      { value: "Glasgow Coma Scale", label: "Glasgow Coma Scale (GCS) for Consciousness Level" },
+                      {
+                        value: "Gower's Sign",
+                        label: "Gower's Sign Test for Muscle Weakness",
+                      },
+                      {
+                        value: "Bradykinesia",
+                        label: "Bradykinesia (Slowness of Movement)",
+                      },
+                      {
+                        value: "Dyskinesia",
+                        label: "Dyskinesia (Involuntary Movements)",
+                      },
+                      {
+                        value: "Epley's Maneuver",
+                        label: "Epley's Maneuver for Vertigo",
+                      },
+                      {
+                        value: "Fall Assessment",
+                        label: "Fall Risk Assessment",
+                      },
+                      {
+                        value: "Speech",
+                        label: "Speech and Language Examination",
+                      },
+                      {
+                        value: "Romberg Test",
+                        label: "Romberg Test for Balance and Coordination",
+                      },
+                      {
+                        value: "Finger-Nose Test",
+                        label: "Finger-Nose Test for Coordination",
+                      },
+                      {
+                        value: "Heel-to-Shin Test",
+                        label: "Heel-to-Shin Test for Coordination",
+                      },
+                      {
+                        value: "Babinski Sign",
+                        label: "Babinski Sign (Plantar Reflex)",
+                      },
+                      {
+                        value: "Clonus",
+                        label: "Clonus Test for Neuromuscular Hyperactivity",
+                      },
+                      {
+                        value: "Hoffman’s Sign",
+                        label: "Hoffman’s Sign (Cervical Myelopathy)",
+                      },
+                      {
+                        value: "Pronator Drift",
+                        label:
+                          "Pronator Drift Test for Upper Motor Neuron Lesion",
+                      },
+                      {
+                        value: "Lhermitte’s Sign",
+                        label: "Lhermitte’s Sign (Spinal Cord Dysfunction)",
+                      },
+                      {
+                        value: "Tinel’s Sign",
+                        label: "Tinel’s Sign for Nerve Compression",
+                      },
+                      {
+                        value: "Froment’s Sign",
+                        label: "Froment’s Sign for Ulnar Nerve Dysfunction",
+                      },
+                      {
+                        value: "Two-Point Discrimination",
+                        label:
+                          "Two-Point Discrimination Test for Sensory Function",
+                      },
+                      {
+                        value: "Spurling’s Test",
+                        label: "Spurling’s Test for Cervical Radiculopathy",
+                      },
+                      {
+                        value: "Schober’s Test",
+                        label: "Schober’s Test for Lumbar Spine Flexibility",
+                      },
+                      {
+                        value: "Trendelenburg Test",
+                        label: "Trendelenburg Test for Hip Stability",
+                      },
+                      {
+                        value: "Dix-Hallpike Test",
+                        label:
+                          "Dix-Hallpike Test for Benign Paroxysmal Positional Vertigo (BPPV)",
+                      },
+                      {
+                        value: "Sharpened Romberg Test",
+                        label: "Sharpened Romberg Test for Postural Stability",
+                      },
+                      {
+                        value: "Weber Test",
+                        label: "Weber Test for Hearing Loss",
+                      },
+                      {
+                        value: "Rinne Test",
+                        label: "Rinne Test for Hearing Loss",
+                      },
+                      {
+                        value: "Snellen Test",
+                        label: "Snellen Test for Visual Acuity",
+                      },
+                      {
+                        value: "Visual Field Test",
+                        label: "Visual Field Test for Peripheral Vision",
+                      },
+                      {
+                        value: "Glasgow Coma Scale",
+                        label:
+                          "Glasgow Coma Scale (GCS) for Consciousness Level",
+                      },
                       { value: "CBC", label: "Complete Blood Count (CBC)" },
                       { value: "CRP", label: "C-Reactive Protein (CRP)" },
                       { value: "CPK", label: "Creatine Phosphokinase (CPK)" },
@@ -838,36 +1149,80 @@ const PatientSearch = () => {
                       { value: "RFTs", label: "Renal Function Tests (RFTs)" },
                       { value: "Lipid profile", label: "Lipid Profile" },
                       { value: "2D Echo", label: "2D Echocardiography" },
-                      { value: "Carotid Doppler", label: "Carotid Doppler Ultrasound" },
+                      {
+                        value: "Carotid Doppler",
+                        label: "Carotid Doppler Ultrasound",
+                      },
                       { value: "CT Brain Plain", label: "CT Brain (Plain)" },
-                      { value: "CE CT Brain", label: "Contrast-Enhanced CT Brain" },
-                      { value: "CT head and neck", label: "CT Scan of Head and Neck" },
+                      {
+                        value: "CE CT Brain",
+                        label: "Contrast-Enhanced CT Brain",
+                      },
+                      {
+                        value: "CT head and neck",
+                        label: "CT Scan of Head and Neck",
+                      },
                       { value: "CTA", label: "CT Angiography (CTA)" },
                       { value: "MRI L/Spine", label: "MRI Lumbar Spine" },
                       { value: "MRI C/Spine", label: "MRI Cervical Spine" },
                       { value: "MRI D/Spine", label: "MRI Dorsal Spine" },
                       { value: "MRI whole spine", label: "MRI Whole Spine" },
                       { value: "MRI Brain Plain", label: "MRI Brain (Plain)" },
-                      { value: "MRI Brain with orbits", label: "MRI Brain with Orbits" },
-                      { value: "CE MRI Brain", label: "Contrast-Enhanced MRI Brain" },
-                      { value: "MRI brain stroke protocol", label: "MRI Brain (Stroke Protocol)" },
-                      { value: "MRI brain epilepsy protocol", label: "MRI Brain (Epilepsy Protocol)" },
-                      { value: "MRA", label: "Magnetic Resonance Angiography (MRA)" },
-                      { value: "MRV", label: "Magnetic Resonance Venography (MRV)" },
-                      { value: "ESR", label: "Erythrocyte Sedimentation Rate (ESR)" },
-                      { value: "ANA", label: "Antinuclear Antibody (ANA) Test" },
-                      { value: "Anti CCP", label: "Anti-Cyclic Citrullinated Peptide (Anti-CCP) Test" },
-                      { value: "RA Factor", label: "Rheumatoid Factor (RA Factor)" },
+                      {
+                        value: "MRI Brain with orbits",
+                        label: "MRI Brain with Orbits",
+                      },
+                      {
+                        value: "CE MRI Brain",
+                        label: "Contrast-Enhanced MRI Brain",
+                      },
+                      {
+                        value: "MRI brain stroke protocol",
+                        label: "MRI Brain (Stroke Protocol)",
+                      },
+                      {
+                        value: "MRI brain epilepsy protocol",
+                        label: "MRI Brain (Epilepsy Protocol)",
+                      },
+                      {
+                        value: "MRA",
+                        label: "Magnetic Resonance Angiography (MRA)",
+                      },
+                      {
+                        value: "MRV",
+                        label: "Magnetic Resonance Venography (MRV)",
+                      },
+                      {
+                        value: "ESR",
+                        label: "Erythrocyte Sedimentation Rate (ESR)",
+                      },
+                      {
+                        value: "ANA",
+                        label: "Antinuclear Antibody (ANA) Test",
+                      },
+                      {
+                        value: "Anti CCP",
+                        label:
+                          "Anti-Cyclic Citrullinated Peptide (Anti-CCP) Test",
+                      },
+                      {
+                        value: "RA Factor",
+                        label: "Rheumatoid Factor (RA Factor)",
+                      },
                       { value: "HLAb27", label: "HLA-B27 Test" },
                       { value: "Hba1c", label: "Hemoglobin A1c (HbA1c) Test" },
                       { value: "BSR", label: "Blood Sugar Random (BSR) Test" },
-                      { value: "ACHR", label: "Acetylcholine Receptor Antibody (ACHR) Test" },
+                      {
+                        value: "ACHR",
+                        label: "Acetylcholine Receptor Antibody (ACHR) Test",
+                      },
                       { value: "EEG", label: "Electroencephalogram (EEG)" },
-                      { value: "Sleep Deprived EEG", label: "Sleep-Deprived EEG" },
-                      { value: "Vit D3 level", label: "Vitamin D3 Level" }
+                      {
+                        value: "Sleep Deprived EEG",
+                        label: "Sleep-Deprived EEG",
+                      },
+                      { value: "Vit D3 level", label: "Vitamin D3 Level" },
                     ]}
-                    
-                    
                     value={selectedTests.map((test) => ({
                       value: test,
                       label: test,
@@ -944,24 +1299,47 @@ const PatientSearch = () => {
             </div>
 
             {/* Enhanced Medicines Section */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-3 mb-5">
-                <div className="bg-purple-600 p-2 rounded-lg text-white">
-                  💊
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg">
+              <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-200">
+                <div className="bg-purple-700 p-3 rounded-xl text-white shadow-sm">
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
+                    ></path>
+                  </svg>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Prescription Management
-                </h3>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    Medication Management
+                  </h3>
+                  <p className="text-sm text-gray-600 mt-1">
+                    Prescribe medications and dosage instructions
+                  </p>
+                </div>
               </div>
-              <div className="space-y-4">
+
+              <div className="space-y-6">
                 {selectedMedicines.map((med, index) => (
-                  <div key={index} className="flex items-center gap-3">
-                    <div className="flex-1 grid grid-cols-3 gap-3">
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium text-gray-600">
-                          Medicine
-                        </label>
-                        <Select
+                  <div
+                    key={index}
+                    className="group relative p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                  >
+                    <div className="flex items-start gap-4">
+                      <div className="flex-1 grid grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                            <span className="text-purple-700">•</span>
+                            Medication
+                          </label>
+                          <Select
                           options={medicines}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -972,12 +1350,14 @@ const PatientSearch = () => {
                           }}
                           styles={customSelectStyles}
                         />
-                      </div>
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium text-gray-600">
-                          Frequency
-                        </label>
-                        <Select
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                            <span className="text-purple-700">•</span>
+                            Frequency
+                          </label>
+                          <Select
                           options={predefinedInstructions}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -988,43 +1368,49 @@ const PatientSearch = () => {
                           }}
                           styles={customSelectStyles}
                         />
+                        </div>
+
+                        <div className="space-y-2">
+                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                            <span className="text-purple-700">•</span>
+                            Dosage
+                          </label>
+                          <input
+                            type="text"
+                            value={med.dosage}
+                            onChange={(e) => {
+                              const updated = [...selectedMedicines];
+                              updated[index].dosage = e.target.value;
+                              setSelectedMedicines(updated);
+                            }}
+                            className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
+                            placeholder="e.g., 500mg"
+                          />
+                        </div>
                       </div>
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium text-gray-600">
-                          Dosage
-                        </label>
-                        <input
-                          type="text"
-                          value={med.dosage}
-                          onChange={(e) => {
-                            const updated = [...selectedMedicines];
-                            updated[index].dosage = e.target.value;
-                            setSelectedMedicines(updated);
-                          }}
-                          className="w-full rounded-lg border-2 border-gray-100 px-4 py-2.5 focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all"
-                        />
-                      </div>
+
+                      <button
+                        onClick={() => {
+                          const updated = [...selectedMedicines];
+                          updated.splice(index, 1);
+                          setSelectedMedicines(updated);
+                        }}
+                        className="text-gray-400 hover:text-red-600 transition-colors p-2 -mt-2"
+                      >
+                        <AiOutlineCloseCircle className="w-5 h-5" />
+                      </button>
                     </div>
-                    <button
-                      onClick={() => {
-                        const updated = [...selectedMedicines];
-                        updated.splice(index, 1);
-                        setSelectedMedicines(updated);
-                      }}
-                      className="text-red-500 hover:text-red-700 mt-4"
-                    >
-                      <AiOutlineCloseCircle className="w-5 h-5" />
-                    </button>
                   </div>
                 ))}
+
                 <button
                   onClick={() =>
                     setSelectedMedicines([...selectedMedicines, {}])
                   }
-                  className="w-full mt-4 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-200 text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 p-4 transition-all"
+                  className="w-full mt-4 flex items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-300 text-gray-600 hover:border-purple-500 hover:bg-purple-50 hover:text-purple-700 transition-all duration-200 p-5"
                 >
-                  <AiOutlinePlus className="w-5 h-5" />
-                  Add New Medication
+                  <AiOutlinePlus className="w-6 h-6" />
+                  <span className="font-medium">Add New Medication</span>
                 </button>
               </div>
             </div>
@@ -1032,10 +1418,34 @@ const PatientSearch = () => {
             {/* Enhanced Final Button */}
             <button
               onClick={submitConsultation}
-              className="w-full py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.01]"
+              disabled={isSubmitting}
+              className="w-full py-5 bg-gradient-to-r from-green-700 to-teal-700 text-white font-semibold rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-0.5 hover:scale-[1.005] active:scale-[0.98] group relative overflow-hidden isolate"
             >
-              <span className="inline-block mr-2">✅</span>
-              Finalize & Save Consultation
+              {/* Hover overlay */}
+              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
+
+              {/* Main content */}
+              <div className="relative flex items-center justify-center gap-3">
+                <AiOutlineCheckCircle className="w-7 h-7 text-white/90 group-hover:text-white transition-colors duration-200" />
+                <span className="text-lg tracking-wide font-medium">
+                  Finalize Consultation
+                </span>
+
+                {/* Loading overlay */}
+                {isSubmitting && (
+                  <div className="absolute inset-0 bg-green-950/90 backdrop-blur-sm flex items-center justify-center rounded-xl">
+                    {/* Modern spinner */}
+                    <div className="animate-spin size-8 border-4 border-white/20 border-t-white rounded-full" />
+                  </div>
+                )}
+
+                {/* Progress bar */}
+                {isSubmitting && (
+                  <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-green-900/30 overflow-hidden">
+                    <div className="h-full bg-white/90 animate-progress origin-left" />
+                  </div>
+                )}
+              </div>
             </button>
           </div>
         ) : (
