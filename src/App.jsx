@@ -16,8 +16,6 @@ const searchSchema = z.object({
   mobile: z.string().min(10, "Enter a valid mobile number"),
 });
 
-
-
 // Schema for adding a new patient
 const patientSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -30,16 +28,23 @@ const patientSchema = z.object({
 
 const Loader = () => (
   <div className="flex justify-center items-center p-4">
-    <svg 
-      className="animate-spin h-8 w-8 text-blue-600" 
-      xmlns="http://www.w3.org/2000/svg" 
-      fill="none" 
+    <svg
+      className="animate-spin h-8 w-8 text-blue-600"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
       viewBox="0 0 24 24"
     >
-      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-      <path 
-        className="opacity-75" 
-        fill="currentColor" 
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      ></circle>
+      <path
+        className="opacity-75"
+        fill="currentColor"
         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
       ></path>
     </svg>
@@ -67,6 +72,13 @@ const PatientSearch = () => {
     oxygenSaturation: "",
     weight: "",
     height: "",
+  });
+
+  const [formData, setFormData] = useState({
+    name: "",
+    age: "",
+    gender: "Male",
+    mobile: "",
   });
 
   const predefinedInstructions = [
@@ -380,6 +392,10 @@ const PatientSearch = () => {
     }
   };
 
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
   // Add a new patient
   const addPatient = async (data) => {
     try {
@@ -387,8 +403,6 @@ const PatientSearch = () => {
         name: data.name,
         age: data.age,
         gender: data.gender,
-        weight: data.weight,
-        height: data.height,
         mobile: data.mobile,
       };
 
@@ -874,17 +888,6 @@ const PatientSearch = () => {
                 {[
                   { name: "name", placeholder: "Full Name" },
                   { name: "age", placeholder: "Age", type: "number" },
-                  { name: "gender", placeholder: "Gender" },
-                  {
-                    name: "weight",
-                    placeholder: "Weight (kg)",
-                    type: "number",
-                  },
-                  {
-                    name: "height",
-                    placeholder: "Height (cm)",
-                    type: "number",
-                  },
                   { name: "mobile", placeholder: "Mobile Number" },
                 ].map((field) => (
                   <input
@@ -895,6 +898,18 @@ const PatientSearch = () => {
                     className="rounded-lg border-2 border-gray-100 p-3 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all duration-200"
                   />
                 ))}
+
+                {/* Gender Dropdown */}
+                <select
+                  {...registerPatient("gender")}
+                  className="rounded-lg border-2 border-gray-100 p-3 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all duration-200"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Others">Others</option>
+                </select>
+
                 <button
                   type="submit"
                   className="col-span-2 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-200/40 hover:shadow-blue-300/40 transition-all duration-200 transform hover:scale-[1.01]"
@@ -902,6 +917,7 @@ const PatientSearch = () => {
                   📥 Register Patient
                 </button>
               </form>
+
               <div className="mt-4 space-y-2">
                 {Object.values(patientErrors).map((error, index) => (
                   <p key={index} className="text-sm text-red-500">
@@ -909,7 +925,6 @@ const PatientSearch = () => {
                   </p>
                 ))}
               </div>
-              
             </div>
           )
         )}
