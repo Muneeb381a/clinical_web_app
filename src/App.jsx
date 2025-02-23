@@ -71,8 +71,8 @@ const PatientSearch = () => {
     respiratoryRate: "",
     oxygenSaturation: "",
     weight: "",
-    height: "",
   });
+  
 
   const [formData, setFormData] = useState({
     name: "",
@@ -119,21 +119,58 @@ const PatientSearch = () => {
             patient?.name || "Unknown Patient"
           }</title>
           <style>
-            body { font-family: Arial, sans-serif; padding: 20px }
-            h2 { color: #1e3a8a; border-bottom: 2px solid #eee; padding-bottom: 10px }
+            body { 
+              font-family: Arial, sans-serif; 
+              padding: 20px; 
+              position: relative;
+              min-height: 100vh;
+            }
+            h2 { 
+              color: #1e3a8a; 
+              border-bottom: 2px solid #eee; 
+              padding-bottom: 10px 
+            }
             .section { margin-bottom: 25px }
-            table { width: 100%; border-collapse: collapse; margin-top: 10px }
-            td, th { border: 1px solid #ddd; padding: 8px; text-align: left }
-            .header { text-align: center; margin-bottom: 20px }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              margin-top: 10px 
+            }
+            td, th { 
+              border: 1px solid #ddd; 
+              padding: 8px; 
+              text-align: left 
+            }
+            .header { 
+              text-align: center; 
+              margin-bottom: 20px;
+              border-bottom: 2px solid #1e3a8a;
+              padding-bottom: 15px;
+            }
+            .footer {
+              position: absolute;
+              bottom: 20px;
+              width: 100%;
+              text-align: center;
+              font-size: 0.9em;
+              color: #666;
+              padding-top: 15px;
+              border-top: 2px solid #1e3a8a;
+            }
+            .doctor-info {
+              margin: 10px 0;
+              line-height: 1.4;
+            }
           </style>
         </head>
         <body>
           <div class="header">
-            <h1>AYYUB LABS & CLINIC</h1>
+            <h1>AYYUB LABS & CLINICS</h1>
             <p>Mega Hospital Second Floor Mall Road Saddar Rawalpindi Cantt.</p>
             <p>Ph: 0334-5616185</p>
           </div>
   
+          <!-- Patient Content Sections (Same as Before) -->
           <h2>Patient Information</h2>
           <table>
             <tr><th>Name</th><td>${patient?.name || "-"}</td></tr>
@@ -186,6 +223,16 @@ const PatientSearch = () => {
                 .join("")}
             </tbody>
           </table>
+  
+          <div class="footer">
+            <div class="doctor-info">
+              <strong>Dr. Abdul Rauf</strong><br>
+              BABAS.NCI MSCE (UK), DCH London SEC Neurology (UK)<br>
+              Member: Pakistan Society of Neurology, International Headache Society,<br>
+              International Stroke Society, Pakistan Stroke Society
+            </div>
+            <p>E-mail: rauf.khan5@gmail.com | Date: 2022/224 | Prescription #: 177#</p>
+          </div>
         </body>
       </html>
     `);
@@ -356,20 +403,21 @@ const PatientSearch = () => {
 
       const vitalsData = {
         consultation_id: consultationId,
-        temperature: vitalSigns.temperature || 0.0,
-        blood_pressure: vitalSigns.bloodPressure || "N/A", // Convert to match DB
-        pulse_rate: vitalSigns.heartRate || 0, // Rename to match DB
-        respiratory_rate: vitalSigns.respiratoryRate || 0, // Rename
-        oxygen_saturation: vitalSigns.oxygenSaturation || 0,
-        weight: vitalSigns.weight || 0,
-        height: vitalSigns.height || 0,
+        temperature: vitalSigns?.temperature ?? 0.0,
+        blood_pressure: vitalSigns?.bloodPressure?.match(/^\d{2,3}\/\d{2,3}$/)
+          ? vitalSigns.bloodPressure
+          : "120/80",
+        pulse_rate: vitalSigns?.heartRate ?? 0,
+        respiratory_rate: vitalSigns?.respiratoryRate ?? 0,
+        oxygen_saturation: vitalSigns?.oxygenSaturation ?? 0,
       };
 
-      console.log("Sending vitals data:", vitalsData);
+      console.log("Sending vitals data:", JSON.stringify(vitalsData, null, 2));
 
       await axios.post(
         "https://patient-management-backend-nine.vercel.app/api/vitals",
-        vitalsData
+        vitalsData,
+        { headers: { "Content-Type": "application/json" } }
       );
 
       // Step 5: Submit tests
@@ -422,86 +470,66 @@ const PatientSearch = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-blue-50 to-purple-100 p-8 relative overflow-hidden isolate before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.8),_transparent)] before:opacity-60 before:-z-10">
       <div className="mx-auto max-w-2xl rounded-2xl border border-white/20 bg-white/95 backdrop-blur-sm p-8 shadow-2xl shadow-blue-100/30">
-        {/* Header Section */}
-        <div className="mb-6 text-center border-b border-blue-100 pb-6">
-          <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+        {/* Enhanced Header Section */}
+        <div className="mb-6 text-center border-b border-blue-100 pb-6 space-y-4">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent tracking-tight">
             Ayyub Labs & Clinic
           </h1>
-          <div className="mt-3 space-y-1.5">
-            <p className="text-sm text-gray-600 font-medium">
-              <span className="inline-block bg-blue-100/50 rounded-lg px-4 py-1.5">
-                📍 Mega Hosputal Second Floor Mall Road Saddar Rawalpindi Cantt
-              </span>
+          <div className="mt-3 space-y-2">
+            <p className="text-sm text-gray-700 font-medium px-4 py-2 bg-blue-50/50 rounded-xl inline-flex items-center gap-2">
+              <span className="text-blue-600">🏥</span>
+              Mega Hospital Second Floor Mall Road Saddar Rawalpindi Cantt
             </p>
-            <p className="text-sm text-gray-600 font-medium">
-              📞 Ph: <span className="text-blue-600">0334-5616185</span>,
-            </p>
-            <p className="text-sm text-gray-600 font-medium">
-              📧 <span className="text-purple-600">rauf.khan5@gmail.com</span>
-            </p>
+            <div className="flex items-center justify-center gap-4 text-sm">
+              <p className="text-gray-700 font-medium bg-blue-50/50 px-4 py-1.5 rounded-lg">
+                📞 <span className="text-blue-700">0334-5616185</span>
+              </p>
+              <p className="text-gray-700 font-medium bg-purple-50/50 px-4 py-1.5 rounded-lg">
+                📧 <span className="text-purple-700">rauf.khan5@gmail.com</span>
+              </p>
+            </div>
           </div>
-          <div className="mt-4 bg-blue-50/50 p-3 rounded-xl inline-block px-6">
-            <p className="text-sm font-semibold text-blue-800">
-              👨⚕️ Dr. Abdul Rauf
-            </p>
-            <p className="text-xs text-blue-600/90">
+          <div className="mt-4 bg-gradient-to-r from-blue-600 to-purple-600 p-3 rounded-xl text-white">
+            <p className="text-sm font-semibold">👨⚕️ Dr. Abdul Rauf</p>
+            <p className="text-xs opacity-90 mt-1">
               M.B.B.S, FCPS (Pak), MRCP (UK) | Neurologist
             </p>
           </div>
         </div>
 
-        <h2 className="mb-6 border-b border-blue-100 pb-4 text-3xl font-extrabold text-gray-900 bg-gradient-to-r from-gray-900 to-blue-900 bg-clip-text">
-          👨⚕️ Patient Consultation
+        <h2 className="mb-6 border-b border-blue-100 pb-4 text-2xl font-bold text-gray-900 bg-gradient-to-r from-gray-800 to-blue-800 bg-clip-text text-transparent">
+          Patient Consultation Record
         </h2>
 
-        {/* Search Section */}
-        <div className="mb-8 bg-blue-50/30 p-6 rounded-2xl">
-          <h3 className="mb-4 text-lg font-bold text-gray-800 flex items-center gap-2">
-            <span className="bg-blue-600 text-white p-2 rounded-lg">🔍</span>
-            Search Patient
-          </h3>
+        {/* Enhanced Search Section */}
+        <div className="mb-8 bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-blue-600 p-2 rounded-lg text-white">🔍</div>
+            <h3 className="text-lg font-semibold text-gray-800">
+              Patient Search
+            </h3>
+          </div>
           <form onSubmit={handleSearchSubmit(onSearch)} className="flex gap-3">
-            <input
-              {...registerSearch("mobile")}
-              placeholder="Enter Mobile Number"
-              className="flex-grow rounded-xl border-2 border-white bg-white/90 p-3.5 shadow-lg shadow-blue-100/30 focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all duration-200"
-            />
+            <div className="flex-1 space-y-1">
+              <label className="text-sm font-medium text-gray-700">
+                Mobile Number
+              </label>
+              <input
+                {...registerSearch("mobile")}
+                placeholder="Enter 11-digit mobile number"
+                className="w-full rounded-xl border-2 border-gray-100 bg-white p-3.5 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all"
+              />
+            </div>
             <button
               type="submit"
               disabled={isSearching}
-              className="px-8 py-3.5 bg-gradient-to-br from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg shadow-blue-200/40 hover:shadow-blue-300/40 transition-all duration-200 transform hover:scale-[1.02]"
+              className="self-end px-8 py-3.5 bg-gradient-to-br from-blue-600 to-purple-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-shadow"
             >
-              {isSearching ? (
-                <div className="flex items-center">
-                  <svg
-                    className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  Searching...
-                </div>
-              ) : (
-                "Search"
-              )}
+              {isSearching ? "Searching..." : "Search"}
             </button>
           </form>
           {searchErrors.mobile && (
-            <p className="mt-2 text-sm text-red-500">
+            <p className="mt-2 text-sm text-red-600 flex items-center gap-2">
               ⚠️ {searchErrors.mobile.message}
             </p>
           )}
@@ -509,27 +537,28 @@ const PatientSearch = () => {
 
         {patient ? (
           <div className="space-y-8" id="consultation-content">
-            {/* Patient Details */}
+            {/* Enhanced Patient Details */}
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-              <h3 className="mb-5 text-lg font-bold text-gray-800 flex items-center gap-2">
-                <span className="bg-green-600 text-white p-2 rounded-lg">
-                  📋
-                </span>
-                Patient Information
-              </h3>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="bg-green-600 p-2 rounded-lg text-white">📋</div>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Patient Information
+                </h3>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { label: "Name", value: patient.name },
+                  { label: "Full Name", value: patient.name },
                   { label: "Age", value: patient.age },
                   { label: "Gender", value: patient.gender },
-                  { label: "Weight", value: patient.weight },
-                  { label: "Height", value: patient.height },
+                  { label: "Weight (kg)", value: patient.weight },
+                  { label: "Height (cm)", value: patient.height },
+                  { label: "Last Visit", value: patient.lastVisit || "N/A" },
                 ].map((field) => (
                   <div key={field.label} className="space-y-1">
-                    <label className="text-sm font-medium text-gray-500">
+                    <label className="text-sm font-medium text-gray-600">
                       {field.label}
                     </label>
-                    <div className="rounded-lg bg-gray-50/70 p-3 font-medium text-gray-800 border border-gray-100">
+                    <div className="rounded-lg bg-gray-50 p-3 font-medium text-gray-800 border border-gray-100">
                       {field.value || "-"}
                     </div>
                   </div>
@@ -537,91 +566,93 @@ const PatientSearch = () => {
               </div>
             </div>
 
-            {/* Action Buttons */}
+            {/* Enhanced Action Buttons */}
             <div className="flex gap-4">
               <button
                 onClick={handlePrint}
-                className="flex-1 flex items-center gap-2 rounded-xl bg-gray-100 hover:bg-gray-200 px-6 py-3.5 text-gray-700 transition-all"
+                className="flex-1 flex items-center gap-2 justify-center rounded-xl bg-gray-100 hover:bg-gray-200 px-6 py-3.5 text-gray-700 transition-all"
               >
                 <AiOutlinePrinter className="h-5 w-5" />
-                Print
+                Print Report
               </button>
               <button
                 onClick={generatePDF}
                 disabled={isGeneratingPDF}
-                className="flex-1 flex items-center gap-2 rounded-xl bg-blue-100 hover:bg-blue-200 px-6 py-3.5 text-blue-700 transition-all disabled:opacity-50"
+                className="flex-1 flex items-center gap-2 justify-center rounded-xl bg-blue-100 hover:bg-blue-200 px-6 py-3.5 text-blue-700 transition-all"
               >
-                {isGeneratingPDF ? (
-                  <>
-                    <svg
-                      className="animate-spin h-5 w-5"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    Generating...
-                  </>
-                ) : (
-                  <>
-                    <AiOutlineDownload className="h-5 w-5" />
-                    Download PDF
-                  </>
-                )}
+                <AiOutlineDownload className="h-5 w-5" />
+                {isGeneratingPDF ? "Generating PDF..." : "Download PDF"}
               </button>
             </div>
 
-            {/* Vital Signs */}
+            {/* Enhanced Vital Signs */}
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-              <h3 className="mb-4 text-lg font-bold text-gray-800 flex items-center gap-2">
-                <span className="bg-red-600 text-white p-2 rounded-lg">🌡️</span>
-                Vital Signs
-              </h3>
+              <div className="flex items-center gap-3 mb-5">
+                <div className="bg-red-600 p-2 rounded-lg text-white">🌡️</div>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Vital Signs
+                </h3>
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 {[
-                  { placeholder: "Temperature (°C)", key: "temperature" },
                   {
-                    placeholder: "Blood Pressure (mmHg)",
+                    label: "Temperature (°C)",
+                    key: "temperature",
+                    type: "number",
+                    placeholder: "36.5",
+                  },
+                  {
+                    label: "Blood Pressure (mmHg)",
                     key: "bloodPressure",
+                    type: "text",
+                    placeholder: "120/80",
                   },
-                  { placeholder: "Heart Rate (bpm)", key: "heartRate" },
                   {
-                    placeholder: "Respiratory Rate (breaths/min)",
+                    label: "Heart Rate (bpm)",
+                    key: "heartRate",
+                    type: "number",
+                    placeholder: "72",
+                  },
+                  {
+                    label: "Respiratory Rate",
                     key: "respiratoryRate",
+                    type: "number",
+                    placeholder: "16",
                   },
                   {
-                    placeholder: "Oxygen Saturation (%)",
+                    label: "Oxygen Saturation (%)",
                     key: "oxygenSaturation",
+                    type: "number",
+                    placeholder: "98",
                   },
-                  { placeholder: "Weight (kg)", key: "weight" },
-                  { placeholder: "Height (cm)", key: "height" },
+                  {
+                    label: "Weight (kg)",
+                    key: "weight",
+                    type: "number",
+                    placeholder: "70",
+                  },
                 ].map((field) => (
-                  <input
-                    key={field.key}
-                    type="text"
-                    placeholder={field.placeholder}
-                    value={vitalSigns[field.key]}
-                    onChange={(e) =>
-                      setVitalSigns({
-                        ...vitalSigns,
-                        [field.key]: e.target.value,
-                      })
-                    }
-                    className="rounded-lg border-2 border-gray-100 bg-white p-3 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all duration-200"
-                  />
+                  <div key={field.key} className="space-y-1">
+                    <label className="text-sm font-medium text-gray-600">
+                      {field.label}
+                    </label>
+                    <input
+                      type={field.type}
+                      placeholder={field.placeholder}
+                      value={vitalSigns[field.key]}
+                      onChange={(e) =>
+                        setVitalSigns({
+                          ...vitalSigns,
+                          [field.key]:
+                            field.type === "number"
+                              ? parseFloat(e.target.value) || 0
+                              : e.target.value,
+                        })
+                      }
+                      className="w-full rounded-lg border-2 border-gray-100 bg-white p-3 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all"
+                    />
+                  </div>
                 ))}
               </div>
             </div>
@@ -791,53 +822,68 @@ const PatientSearch = () => {
                 </p>
               </div>
             </div>
-            {/* Medicines Section */}
+
+            {/* Enhanced Medicines Section */}
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-              <h3 className="mb-5 text-lg font-bold text-gray-800 flex items-center gap-2">
-                <span className="bg-purple-600 text-white p-2 rounded-lg">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="bg-purple-600 p-2 rounded-lg text-white">
                   💊
-                </span>
-                Prescription Management
-              </h3>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Prescription Management
+                </h3>
+              </div>
               <div className="space-y-4">
                 {selectedMedicines.map((med, index) => (
                   <div key={index} className="flex items-center gap-3">
                     <div className="flex-1 grid grid-cols-3 gap-3">
-                      <Select
-                        options={medicines}
-                        className="react-select-container"
-                        classNamePrefix="react-select"
-                        onChange={(e) => {
-                          const updated = [...selectedMedicines];
-                          updated[index].medicine_id = e.value;
-                          setSelectedMedicines(updated);
-                        }}
-                        placeholder="Medicine"
-                        styles={customSelectStyles}
-                      />
-                      <Select
-                        options={predefinedInstructions}
-                        className="react-select-container"
-                        classNamePrefix="react-select"
-                        onChange={(e) => {
-                          const updated = [...selectedMedicines];
-                          updated[index].frequency_en = e.value;
-                          setSelectedMedicines(updated);
-                        }}
-                        placeholder="Frequency"
-                        styles={customSelectStyles}
-                      />
-                      <input
-                        type="text"
-                        placeholder="Dosage"
-                        value={med.dosage}
-                        onChange={(e) => {
-                          const updated = [...selectedMedicines];
-                          updated[index].dosage = e.target.value;
-                          setSelectedMedicines(updated);
-                        }}
-                        className="rounded-lg border-2 border-gray-100 px-4 py-2.5 focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all duration-200"
-                      />
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-600">
+                          Medicine
+                        </label>
+                        <Select
+                          options={medicines}
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                          onChange={(e) => {
+                            const updated = [...selectedMedicines];
+                            updated[index].medicine_id = e.value;
+                            setSelectedMedicines(updated);
+                          }}
+                          styles={customSelectStyles}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-600">
+                          Frequency
+                        </label>
+                        <Select
+                          options={predefinedInstructions}
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                          onChange={(e) => {
+                            const updated = [...selectedMedicines];
+                            updated[index].frequency_en = e.value;
+                            setSelectedMedicines(updated);
+                          }}
+                          styles={customSelectStyles}
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-600">
+                          Dosage
+                        </label>
+                        <input
+                          type="text"
+                          value={med.dosage}
+                          onChange={(e) => {
+                            const updated = [...selectedMedicines];
+                            updated[index].dosage = e.target.value;
+                            setSelectedMedicines(updated);
+                          }}
+                          className="w-full rounded-lg border-2 border-gray-100 px-4 py-2.5 focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all"
+                        />
+                      </div>
                     </div>
                     <button
                       onClick={() => {
@@ -845,7 +891,7 @@ const PatientSearch = () => {
                         updated.splice(index, 1);
                         setSelectedMedicines(updated);
                       }}
-                      className="text-red-500 hover:text-red-700 transition-colors"
+                      className="text-red-500 hover:text-red-700 mt-4"
                     >
                       <AiOutlineCloseCircle className="w-5 h-5" />
                     </button>
@@ -855,70 +901,79 @@ const PatientSearch = () => {
                   onClick={() =>
                     setSelectedMedicines([...selectedMedicines, {}])
                   }
-                  className="w-full mt-4 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-200 text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 p-4 transition-all duration-200"
+                  className="w-full mt-4 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-200 text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 p-4 transition-all"
                 >
                   <AiOutlinePlus className="w-5 h-5" />
-                  Add Medicine
+                  Add New Medication
                 </button>
               </div>
             </div>
 
+            {/* Enhanced Final Button */}
             <button
               onClick={submitConsultation}
-              className="w-full py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white font-bold rounded-2xl shadow-lg shadow-green-200/40 hover:shadow-green-300/40 transition-all duration-200 transform hover:scale-[1.01]"
+              className="w-full py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.01]"
             >
-              ✅ Finalize Consultation
+              <span className="inline-block mr-2">✅</span>
+              Finalize & Save Consultation
             </button>
           </div>
         ) : (
           showAddPatient && (
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-              <h3 className="text-lg font-bold text-gray-800 mb-6 flex items-center gap-2">
-                <span className="bg-blue-600 text-white p-2 rounded-lg">
-                  📝
-                </span>
-                Register New Patient
-              </h3>
+              <div className="flex items-center gap-3 mb-6">
+                <div className="bg-blue-600 p-2 rounded-lg text-white">📝</div>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  New Patient Registration
+                </h3>
+              </div>
               <form
                 onSubmit={handlePatientSubmit(addPatient)}
                 className="grid grid-cols-2 gap-4"
               >
                 {[
-                  { name: "name", placeholder: "Full Name" },
-                  { name: "age", placeholder: "Age", type: "number" },
-                  { name: "mobile", placeholder: "Mobile Number" },
+                  { name: "name", label: "Full Name" },
+                  { name: "age", label: "Age", type: "number" },
+                  { name: "mobile", label: "Mobile Number" },
                 ].map((field) => (
-                  <input
-                    key={field.name}
-                    {...registerPatient(field.name)}
-                    placeholder={field.placeholder}
-                    type={field.type || "text"}
-                    className="rounded-lg border-2 border-gray-100 p-3 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all duration-200"
-                  />
+                  <div key={field.name} className="space-y-1">
+                    <label className="text-sm font-medium text-gray-600">
+                      {field.label}
+                    </label>
+                    <input
+                      {...registerPatient(field.name)}
+                      type={field.type || "text"}
+                      className="w-full rounded-lg border-2 border-gray-100 p-3 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all"
+                    />
+                  </div>
                 ))}
-
-                {/* Gender Dropdown */}
-                <select
-                  {...registerPatient("gender")}
-                  className="rounded-lg border-2 border-gray-100 p-3 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all duration-200"
-                >
-                  <option value="">Select Gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Others">Others</option>
-                </select>
-
+                <div className="space-y-1">
+                  <label className="text-sm font-medium text-gray-600">
+                    Gender
+                  </label>
+                  <select
+                    {...registerPatient("gender")}
+                    className="w-full rounded-lg border-2 border-gray-100 p-3 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all"
+                  >
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Others">Others</option>
+                  </select>
+                </div>
                 <button
                   type="submit"
-                  className="col-span-2 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-200/40 hover:shadow-blue-300/40 transition-all duration-200 transform hover:scale-[1.01]"
+                  className="col-span-2 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all"
                 >
-                  📥 Register Patient
+                  📥 Register New Patient
                 </button>
               </form>
-
               <div className="mt-4 space-y-2">
                 {Object.values(patientErrors).map((error, index) => (
-                  <p key={index} className="text-sm text-red-500">
+                  <p
+                    key={index}
+                    className="text-sm text-red-600 flex items-center gap-2"
+                  >
                     ⚠️ {error.message}
                   </p>
                 ))}

@@ -26,6 +26,31 @@ const patientSchema = z.object({
   mobile: z.string().min(10, "Enter a valid mobile number"),
 });
 
+const Loader = () => (
+  <div className="flex justify-center items-center p-4">
+    <svg
+      className="animate-spin h-8 w-8 text-blue-600"
+      xmlns="http://www.w3.org/2000/svg"
+      fill="none"
+      viewBox="0 0 24 24"
+    >
+      <circle
+        className="opacity-25"
+        cx="12"
+        cy="12"
+        r="10"
+        stroke="currentColor"
+        strokeWidth="4"
+      ></circle>
+      <path
+        className="opacity-75"
+        fill="currentColor"
+        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+      ></path>
+    </svg>
+  </div>
+);
+
 const PatientSearch = () => {
   const [patient, setPatient] = useState(null);
   const [showAddPatient, setShowAddPatient] = useState(false);
@@ -47,6 +72,13 @@ const PatientSearch = () => {
     oxygenSaturation: "",
     weight: "",
     height: "",
+  });
+
+  const [formData, setFormData] = useState({
+    name: "",
+    age: "",
+    gender: "Male",
+    mobile: "",
   });
 
   const predefinedInstructions = [
@@ -78,12 +110,14 @@ const PatientSearch = () => {
       alert("No consultation data to print");
       return;
     }
-  
+
     const printWindow = window.open("", "_blank");
     printWindow.document.write(`
       <html>
         <head>
-          <title>Consultation Print - ${patient?.name || "Unknown Patient"}</title>
+          <title>Consultation Print - ${
+            patient?.name || "Unknown Patient"
+          }</title>
           <style>
             body { font-family: Arial, sans-serif; padding: 20px }
             h2 { color: #1e3a8a; border-bottom: 2px solid #eee; padding-bottom: 10px }
@@ -95,9 +129,9 @@ const PatientSearch = () => {
         </head>
         <body>
           <div class="header">
-            <h1>Specialist Clinics, Lab & Imaging Services</h1>
-            <p>G.T Road, Gujar Khan</p>
-            <p>Ph: 051-3513287, 0315-3513287, 0322-3513287</p>
+            <h1>AYYUB LABS & CLINIC</h1>
+            <p>Mega Hospital Second Floor Mall Road Saddar Rawalpindi Cantt.</p>
+            <p>Ph: 0334-5616185</p>
           </div>
   
           <h2>Patient Information</h2>
@@ -110,17 +144,20 @@ const PatientSearch = () => {
           <h2>Vital Signs</h2>
           <table>
             ${Object.entries(vitalSigns)
-              .map(([key, value]) => `
+              .map(
+                ([key, value]) => `
                 <tr>
                   <th>${key}</th>
                   <td>${value || "-"}</td>
                 </tr>
-              `).join('')}
+              `
+              )
+              .join("")}
           </table>
   
           <h2>Tests</h2>
           <ul>
-            ${selectedTests.map(test => `<li>${test}</li>`).join('')}
+            ${selectedTests.map((test) => `<li>${test}</li>`).join("")}
           </ul>
   
           <h2>Prescriptions</h2>
@@ -133,13 +170,20 @@ const PatientSearch = () => {
               </tr>
             </thead>
             <tbody>
-              ${selectedMedicines.map(med => `
+              ${selectedMedicines
+                .map(
+                  (med) => `
                 <tr>
-                  <td>${medicines.find(m => m.value === med.medicine_id)?.label || "-"}</td>
+                  <td>${
+                    medicines.find((m) => m.value === med.medicine_id)?.label ||
+                    "-"
+                  }</td>
                   <td>${med.frequency_en || "-"}</td>
                   <td>${med.dosage || "-"}</td>
                 </tr>
-              `).join('')}
+              `
+                )
+                .join("")}
             </tbody>
           </table>
         </body>
@@ -230,7 +274,7 @@ const PatientSearch = () => {
         setMedicines(
           res.data.map((m) => ({
             value: m.id,
-            label: `${m.form} ${m.brand_name} (${m.strength}) / ${m.urdu_form} ${m.urdu_name} (${m.urdu_strength})`,
+            label: `${m.form} ${m.brand_name} (${m.strength}))`,
           }))
         );
       });
@@ -287,7 +331,7 @@ const PatientSearch = () => {
       // Step 1: Create a consultation entry
       const consultationRes = await axios.post(
         "https://patient-management-backend-nine.vercel.app/api/consultations",
-        { patient_id: patient.id, doctor_name: "Dr. Omer" }
+        { patient_id: patient.id, doctor_name: "Dr. Abdul Rauf" }
       );
 
       const consultationId = consultationRes.data.id;
@@ -331,14 +375,14 @@ const PatientSearch = () => {
       // Step 5: Submit tests
       console.log("Submitting tests:", selectedTests);
 
-        await axios.post(
-            "https://patient-management-backend-nine.vercel.app/api/tests",
-            {
-                consultation_id: consultationId,
-                test_name: selectedTests, // Assuming selectedTests is a single test
-                test_notes: "Optional test notes", 
-            }
-        );
+      await axios.post(
+        "https://patient-management-backend-nine.vercel.app/api/tests",
+        {
+          consultation_id: consultationId,
+          test_name: selectedTests, // Assuming selectedTests is a single test
+          test_notes: "Optional test notes",
+        }
+      );
       alert("Consultation saved successfully.");
     } catch (error) {
       console.error(
@@ -348,6 +392,10 @@ const PatientSearch = () => {
     }
   };
 
+  const handleChange = (e) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
   // Add a new patient
   const addPatient = async (data) => {
     try {
@@ -355,8 +403,6 @@ const PatientSearch = () => {
         name: data.name,
         age: data.age,
         gender: data.gender,
-        weight: data.weight,
-        height: data.height,
         mobile: data.mobile,
       };
 
@@ -379,29 +425,27 @@ const PatientSearch = () => {
         {/* Header Section */}
         <div className="mb-6 text-center border-b border-blue-100 pb-6">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Specialist Clinics, Lab & Imaging Services
+            Ayyub Labs & Clinic
           </h1>
           <div className="mt-3 space-y-1.5">
             <p className="text-sm text-gray-600 font-medium">
               <span className="inline-block bg-blue-100/50 rounded-lg px-4 py-1.5">
-                📍 G.T Road, Gujar Khan
+                📍 Mega Hosputal Second Floor Mall Road Saddar Rawalpindi Cantt
               </span>
             </p>
             <p className="text-sm text-gray-600 font-medium">
-              📞 Ph: <span className="text-blue-600">051-3513287</span>,
-              <span className="text-purple-600"> 0315-3513287</span>,
-              <span className="text-blue-600"> 0322-3513287</span>
+              📞 Ph: <span className="text-blue-600">0334-5616185</span>,
             </p>
             <p className="text-sm text-gray-600 font-medium">
-              📧 <span className="text-purple-600">omerclinic@outlook.com</span>
+              📧 <span className="text-purple-600">rauf.khan5@gmail.com</span>
             </p>
           </div>
           <div className="mt-4 bg-blue-50/50 p-3 rounded-xl inline-block px-6">
             <p className="text-sm font-semibold text-blue-800">
-              👨⚕️ Dr. Omer Aziz Mirza
+              👨⚕️ Dr. Abdul Rauf
             </p>
             <p className="text-xs text-blue-600/90">
-              MBS, FCPS (Pak), MKCPS (GLASG) | Consultant Cardiologist
+              M.B.B.S, FCPS (Pak), MRCP (UK) | Neurologist
             </p>
           </div>
         </div>
@@ -633,7 +677,7 @@ const PatientSearch = () => {
                     placeholder="Add custom test..."
                     value={customTest}
                     onChange={(e) => setCustomTest(e.target.value)}
-                    className="flex-1 rounded-lg border-2 border-gray-100 p-2.5 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50"
+                    className="flex-1 rounded-lg border-2 border-gray-100 p-2.5 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all duration-200"
                   />
                   <button
                     type="button"
@@ -643,7 +687,7 @@ const PatientSearch = () => {
                         setCustomTest("");
                       }
                     }}
-                    className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
                   >
                     Add
                   </button>
@@ -656,56 +700,94 @@ const PatientSearch = () => {
                   Select Standard Tests
                 </label>
                 <div className="relative">
-                  <select
-                    multiple
-                    className="w-full h-48 rounded-lg border-2 border-gray-100 bg-white p-2 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all duration-200 appearance-none scrollbar-thin scrollbar-thumb-blue-100 scrollbar-track-gray-50"
-                    value={selectedTests}
-                    onChange={(e) =>
+                  <Select
+                    isMulti
+                    options={[
+                      { value: "CBC", label: "Complete Blood Count (CBC)" },
+                      { value: "LFT", label: "Liver Function Test (LFT)" },
+                      { value: "RFT", label: "Renal Function Test (RFT)" },
+                      { value: "HbA1c", label: "Hemoglobin A1c (HbA1c)" },
+                      { value: "Lipid Profile", label: "Lipid Profile" },
+                      { value: "Thyroid Panel", label: "Thyroid Panel" },
+                      {
+                        value: "Urine Routine",
+                        label: "Urine Routine Examination",
+                      },
+                      { value: "ECG", label: "Electrocardiogram (ECG)" },
+                      { value: "X-Ray Chest", label: "Chest X-Ray" },
+                      { value: "MRI Brain", label: "Brain MRI" },
+                    ]}
+                    value={selectedTests.map((test) => ({
+                      value: test,
+                      label: test,
+                    }))}
+                    onChange={(selectedOptions) =>
                       setSelectedTests(
-                        [...e.target.selectedOptions].map((opt) => opt.value)
+                        selectedOptions.map((option) => option.value)
                       )
                     }
-                  >
-                    {[
-                      "CBC",
-                      "Liver Function Test (LFT)",
-                      "Renal Function Test (RFT)",
-                      "HbA1c",
-                      "Lipid Profile",
-                      "Thyroid Panel",
-                      "Urine Routine",
-                      "ECG",
-                      "X-Ray Chest",
-                      "MRI Brain",
-                    ].map((test) => (
-                      <option
-                        key={test}
-                        value={test}
-                        className="p-2 hover:bg-blue-50 rounded-md transition-colors cursor-pointer"
-                      >
-                        {test}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
-                    <svg
-                      className="w-5 h-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
-                      />
-                    </svg>
-                  </div>
+                    className="react-select-container"
+                    classNamePrefix="react-select"
+                    placeholder="Search or select tests..."
+                    styles={{
+                      control: (base) => ({
+                        ...base,
+                        border: "2px solid #f3f4f6",
+                        borderRadius: "0.75rem",
+                        padding: "0.5rem",
+                        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                        "&:hover": { borderColor: "#93c5fd" },
+                      }),
+                      multiValue: (base) => ({
+                        ...base,
+                        backgroundColor: "#bfdbfe",
+                        borderRadius: "9999px",
+                        padding: "0 8px",
+                      }),
+                      multiValueLabel: (base) => ({
+                        ...base,
+                        color: "#1e40af",
+                        fontWeight: "500",
+                      }),
+                      menu: (base) => ({
+                        ...base,
+                        borderRadius: "0.75rem",
+                        border: "2px solid #f3f4f6",
+                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                      }),
+                      option: (base, state) => ({
+                        ...base,
+                        backgroundColor: state.isSelected ? "#3b82f6" : "white",
+                        color: state.isSelected ? "white" : "#1f2937",
+                        "&:hover": {
+                          backgroundColor: "#60a5fa",
+                          color: "white",
+                        },
+                      }),
+                    }}
+                    components={{
+                      DropdownIndicator: () => (
+                        <div className="pr-3">
+                          <svg
+                            className="w-5 h-5 text-gray-400"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M19 9l-7 7-7-7"
+                            />
+                          </svg>
+                        </div>
+                      ),
+                    }}
+                  />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">
-                  {selectedTests.length} tests selected • Use Ctrl/Cmd to select
-                  multiple
+                  {selectedTests.length} tests selected • Start typing to search
                 </p>
               </div>
             </div>
@@ -804,17 +886,6 @@ const PatientSearch = () => {
                 {[
                   { name: "name", placeholder: "Full Name" },
                   { name: "age", placeholder: "Age", type: "number" },
-                  { name: "gender", placeholder: "Gender" },
-                  {
-                    name: "weight",
-                    placeholder: "Weight (kg)",
-                    type: "number",
-                  },
-                  {
-                    name: "height",
-                    placeholder: "Height (cm)",
-                    type: "number",
-                  },
                   { name: "mobile", placeholder: "Mobile Number" },
                 ].map((field) => (
                   <input
@@ -825,6 +896,18 @@ const PatientSearch = () => {
                     className="rounded-lg border-2 border-gray-100 p-3 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all duration-200"
                   />
                 ))}
+
+                {/* Gender Dropdown */}
+                <select
+                  {...registerPatient("gender")}
+                  className="rounded-lg border-2 border-gray-100 p-3 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all duration-200"
+                >
+                  <option value="">Select Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Others">Others</option>
+                </select>
+
                 <button
                   type="submit"
                   className="col-span-2 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-2xl shadow-lg shadow-blue-200/40 hover:shadow-blue-300/40 transition-all duration-200 transform hover:scale-[1.01]"
@@ -832,6 +915,7 @@ const PatientSearch = () => {
                   📥 Register Patient
                 </button>
               </form>
+
               <div className="mt-4 space-y-2">
                 {Object.values(patientErrors).map((error, index) => (
                   <p key={index} className="text-sm text-red-500">
