@@ -129,9 +129,9 @@ const PatientSearch = () => {
         </head>
         <body>
           <div class="header">
-            <h1>Specialist Clinics, Lab & Imaging Services</h1>
-            <p>G.T Road, Gujar Khan</p>
-            <p>Ph: 051-3513287, 0315-3513287, 0322-3513287</p>
+            <h1>AYYUB LABS & CLINIC</h1>
+            <p>Mega Hospital Second Floor Mall Road Saddar Rawalpindi Cantt.</p>
+            <p>Ph: 0334-5616185</p>
           </div>
   
           <h2>Patient Information</h2>
@@ -331,7 +331,7 @@ const PatientSearch = () => {
       // Step 1: Create a consultation entry
       const consultationRes = await axios.post(
         "https://patient-management-backend-nine.vercel.app/api/consultations",
-        { patient_id: patient.id, doctor_name: "Dr. Omer" }
+        { patient_id: patient.id, doctor_name: "Dr. Abdul Rauf" }
       );
 
       const consultationId = consultationRes.data.id;
@@ -425,29 +425,27 @@ const PatientSearch = () => {
         {/* Header Section */}
         <div className="mb-6 text-center border-b border-blue-100 pb-6">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-            Specialist Clinics, Lab & Imaging Services
+            Ayyub Labs & Clinic
           </h1>
           <div className="mt-3 space-y-1.5">
             <p className="text-sm text-gray-600 font-medium">
               <span className="inline-block bg-blue-100/50 rounded-lg px-4 py-1.5">
-                📍 G.T Road, Gujar Khan
+                📍 Mega Hosputal Second Floor Mall Road Saddar Rawalpindi Cantt
               </span>
             </p>
             <p className="text-sm text-gray-600 font-medium">
-              📞 Ph: <span className="text-blue-600">051-3513287</span>,
-              <span className="text-purple-600"> 0315-3513287</span>,
-              <span className="text-blue-600"> 0322-3513287</span>
+              📞 Ph: <span className="text-blue-600">0334-5616185</span>,
             </p>
             <p className="text-sm text-gray-600 font-medium">
-              📧 <span className="text-purple-600">omerclinic@outlook.com</span>
+              📧 <span className="text-purple-600">rauf.khan5@gmail.com</span>
             </p>
           </div>
           <div className="mt-4 bg-blue-50/50 p-3 rounded-xl inline-block px-6">
             <p className="text-sm font-semibold text-blue-800">
-              👨⚕️ Dr. Omer Aziz Mirza
+              👨⚕️ Dr. Abdul Rauf
             </p>
             <p className="text-xs text-blue-600/90">
-              MBS, FCPS (Pak), MKCPS (GLASG) | Consultant Cardiologist
+              M.B.B.S, FCPS (Pak), MRCP (UK) | Neurologist
             </p>
           </div>
         </div>
