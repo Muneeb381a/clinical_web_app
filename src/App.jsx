@@ -277,6 +277,7 @@ const PatientSearch = () => {
                 <th>Dosage</th>
                 <th>Duration</th>
                 <th>Instructions</th>
+                <th>How to take</th>
               </tr>
             </thead>
             <tbody>
@@ -292,6 +293,7 @@ const PatientSearch = () => {
                       <td>${med.dosage || "-"}</td>
                       <td>${med.duration_urdu || "-"}</td>
                       <td>${med.instructions_urdu || "-"}</td>
+                      <td>${med.how_to_take_urdu || "-"}</td>
                     </tr>
                   `;
                 })
