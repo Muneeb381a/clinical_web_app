@@ -3,13 +3,15 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const patientSchema = z.object({
   name: z.string().min(1, "Name is required"),
   age: z.coerce.number().positive("Enter a valid age"),
   gender: z.enum(["Male", "Female", "Others"]),
   mobile: z.string().min(10, "Enter a valid mobile number").max(15),
-  checkupDate: z.string().min(1, "Checkup date is required"), // Added validation
+  checkupDate: z.string().min(1, "Checkup date is required"),
 });
 
 const AddPatientForm = ({ searchedMobile, onSuccess }) => {
@@ -24,38 +26,47 @@ const AddPatientForm = ({ searchedMobile, onSuccess }) => {
 
   const [loading, setLoading] = useState(false);
 
-  // ✅ Ensure the searched mobile number is set when the patient is not found
   useEffect(() => {
     if (searchedMobile) {
       setValue("mobile", searchedMobile);
     }
   }, [searchedMobile, setValue]);
 
-  // 📌 Submit new patient
   const addPatient = async (data) => {
+    setLoading(true);
     try {
       const res = await axios.post("https://patient-management-backend-nine.vercel.app/api/patients", {
         name: data.name,
         age: Number(data.age),
         gender: data.gender,
         mobile: data.mobile,
-        weight: data.weight,
-        height: data.height,
-        checkup_date: data.checkup_date || new Date(),
+        checkup_date: data.checkupDate, // Fixed field name mismatch
       });
-  
+
+      toast.success("Patient registered successfully! 🎉", {
+        position: "top-right",
+        autoClose: 3000,
+      });
+
+      if (onSuccess) onSuccess();
       console.log("Patient Registered:", res.data);
     } catch (error) {
+      const errorMessage = error.response?.data?.message || "Failed to register patient";
+      toast.error(`Error: ${errorMessage}`, {
+        position: "top-right",
+        autoClose: 4000,
+      });
       console.error("Error adding patient", error.response?.data || error.message);
+    } finally {
+      setLoading(false);
     }
   };
-  
 
   return (
     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+      <ToastContainer />
       <h3 className="text-lg font-semibold text-gray-800">New Patient Registration</h3>
       <form onSubmit={handleSubmit(addPatient)} className="grid grid-cols-2 gap-4 mt-4">
-        {/* Input Fields */}
         {[
           { name: "name", label: "Full Name" },
           { name: "age", label: "Age", type: "number" },
@@ -74,7 +85,6 @@ const AddPatientForm = ({ searchedMobile, onSuccess }) => {
             />
           </div>
         ))}
-        {/* Gender Selection */}
         <div className="space-y-1">
           <label className="text-sm font-medium text-gray-600">Gender</label>
           <select
@@ -86,15 +96,14 @@ const AddPatientForm = ({ searchedMobile, onSuccess }) => {
             <option value="Others">Others</option>
           </select>
         </div>
-        {/* Submit Button */}
         <button
           type="submit"
           className="col-span-2 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all"
+          disabled={loading}
         >
           {loading ? "Registering..." : "📥 Register New Patient"}
         </button>
       </form>
-      {/* Error Messages */}
       <div className="mt-4 space-y-2">
         {Object.values(errors).map((error, index) => (
           <p key={index} className="text-sm text-red-600 flex items-center gap-2">

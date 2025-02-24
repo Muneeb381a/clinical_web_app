@@ -932,3 +932,90 @@ const PatientSearch = () => {
 };
 
 export default PatientSearch;
+
+
+
+// const submitConsultation = async () => {
+//   if (!patient) {
+//     alert("Please search for a patient first.");
+//     return;
+//   }
+
+//   try {
+//     // Step 1: Create a consultation entry
+//     const consultationRes = await axios.post(
+//       "https://patient-management-backend-nine.vercel.app/api/consultations",
+//       { patient_id: patient.id, doctor_name: "Dr. Abdul Rauf" }
+//     );
+
+//     const consultationId = consultationRes.data.id;
+
+//     // Step 2: Submit symptoms
+//     await axios.post(
+//       `https://patient-management-backend-nine.vercel.app/api/consultations/${consultationRes.data.id}/symptoms`,
+//       {
+//         patient_id: patient.id,
+//         symptom_ids: selectedSymptoms.map((s) => s.value),
+//       }
+//     );
+
+//     // Step 3: Submit medicines
+//     await axios.post(
+//       "https://patient-management-backend-nine.vercel.app/api/prescriptions",
+//       {
+//         consultation_id: consultationId,
+//         medicines: selectedMedicines.map((med) => ({
+//           medicine_id: med.medicine_id,
+//           dosage: med.dosage,
+//           frequency_en: med.frequency_en,
+//           frequency_urdu: med.frequency_urdu,
+//           duration_en: med.duration_en,
+//           duration_urdu: med.duration_urdu,
+//           instructions_en: med.instructions_en,
+//           instructions_urdu: med.instructions_urdu,
+//           how_to_take_en: med.how_to_take_en,
+//           how_to_take_urdu: med.how_to_take_urdu,
+//         })),
+//       },
+//       {
+//         headers: { "Content-Type": "application/json" },
+//       }
+//     );
+
+//     const vitalsData = {
+//       consultation_id: consultationId,
+//       temperature: vitalSigns?.temperature ?? 0.0,
+//       blood_pressure: vitalSigns?.bloodPressure?.match(/^\d{2,3}\/\d{2,3}$/)
+//         ? vitalSigns.bloodPressure
+//         : "120/80",
+//       pulse_rate: vitalSigns?.heartRate ?? 0,
+//       respiratory_rate: vitalSigns?.respiratoryRate ?? 0,
+//       oxygen_saturation: vitalSigns?.oxygenSaturation ?? 0,
+//     };
+
+//     console.log("Sending vitals data:", JSON.stringify(vitalsData, null, 2));
+
+//     await axios.post("https://patient-management-backend-nine.vercel.app/api/vitals", vitalsData, {
+//       headers: { "Content-Type": "application/json" },
+//     });
+
+//     // Step 5: Submit tests
+//     console.log("Submitting tests:", selectedTests);
+
+//     await axios.post("https://patient-management-backend-nine.vercel.app/api/tests", {
+//       consultation_id: consultationId,
+//       test_name: selectedTests, // Assuming selectedTests is a single test
+//       test_notes: "Optional test notes",
+//     });
+//     toast.success("Consultation added successfully! 🎉", {
+//       position: "top-right",
+//       autoClose: 3000,
+//     });
+//     alert("Consultation saved successfully.");
+//   } catch (error) {
+//     console.error(
+//       "Error submitting consultation",
+//       error.response?.data || error.message
+//     );
+//   }
+// };

@@ -4,6 +4,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import axios from "axios";
 import Select from "react-select";
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import { toast } from 'react-toastify';
 
 import {
   AiOutlinePlus,
@@ -541,6 +544,10 @@ const PatientSearch = () => {
         consultation_id: consultationId,
         test_name: selectedTests, // Assuming selectedTests is a single test
         test_notes: "Optional test notes",
+      });
+      toast.success("Consultation added successfully! 🎉", {
+        position: "top-right",
+        autoClose: 3000,
       });
       alert("Consultation saved successfully.");
     } catch (error) {
@@ -1372,6 +1379,7 @@ const PatientSearch = () => {
           )
         )}
       </div>
+      <ToastContainer />
     </div>
   );
 };
