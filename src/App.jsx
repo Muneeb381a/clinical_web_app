@@ -4,53 +4,19 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import axios from "axios";
 import Select from "react-select";
+
 import {
   AiOutlinePlus,
   AiOutlinePrinter,
   AiOutlineDownload,
   AiOutlineCloseCircle,
-  AiOutlineCheckCircle,
 } from "react-icons/ai";
+import AddPatientForm from "./pages/AddPatientForm";
 
 // Schema for searching patients by mobile
 const searchSchema = z.object({
   mobile: z.string().min(10, "Enter a valid mobile number"),
 });
-
-// Schema for adding a new patient
-const patientSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  age: z.coerce.number().positive("Enter a valid age"),
-  gender: z.string().min(1, "Gender is required"),
-  weight: z.coerce.number().positive("Enter a valid weight"),
-  height: z.coerce.number().positive("Enter a valid height"),
-  mobile: z.string().min(10, "Enter a valid mobile number"),
-});
-
-const Loader = () => (
-  <div className="flex justify-center items-center p-4">
-    <svg
-      className="animate-spin h-8 w-8 text-blue-600"
-      xmlns="http://www.w3.org/2000/svg"
-      fill="none"
-      viewBox="0 0 24 24"
-    >
-      <circle
-        className="opacity-25"
-        cx="12"
-        cy="12"
-        r="10"
-        stroke="currentColor"
-        strokeWidth="4"
-      ></circle>
-      <path
-        className="opacity-75"
-        fill="currentColor"
-        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-      ></path>
-    </svg>
-  </div>
-);
 
 const PatientSearch = () => {
   const [patient, setPatient] = useState(null);
@@ -64,7 +30,13 @@ const PatientSearch = () => {
   const [consultationData, setConsultationData] = useState(null);
   const [selectedTests, setSelectedTests] = useState([]);
   const [customTest, setCustomTest] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const [patients, setPatients] = useState([]);
+  const [searchedMobile, setSearchedMobile] = useState("");
+
+  const handleNewPatient = (newPatient) => {
+    setPatients([...patients, newPatient]); // Update patient list
+  };
 
   const [vitalSigns, setVitalSigns] = useState({
     temperature: "",
@@ -75,19 +47,6 @@ const PatientSearch = () => {
     weight: "",
   });
 
-  const [formData, setFormData] = useState({
-    name: "",
-    age: "",
-    gender: "Male",
-    mobile: "",
-  });
-
-  const predefinedInstructions = [
-    { value: "1-0-1", label: "1-0-1 (Morning & Night)" },
-    { value: "1-1-1", label: "1-1-1 (Morning, Afternoon & Night)" },
-    { value: "0-0-1", label: "0-0-1 (Night Only)" },
-    { value: "1-0-0", label: "1-0-0 (Morning Only)" },
-  ];
   const customSelectStyles = {
     control: (base) => ({
       ...base,
@@ -111,160 +70,245 @@ const PatientSearch = () => {
       alert("No consultation data to print");
       return;
     }
-  
+
     const printWindow = window.open("", "_blank");
     printWindow.document.write(`
       <html>
         <head>
-          <title>Consultation Print - ${patient?.name || "Unknown Patient"}</title>
+          <title>Consultation Print - ${
+            patient?.name || "Unknown Patient"
+          }</title>
           <style>
-            body { 
-              font-family: 'Arial', sans-serif; 
-              padding: 15px 25px;
+            :root {
+              --primary: #1a365d;
+              --secondary: #2b6cb0;
+              --border-color: #e2e8f0;
+              --text-muted: #718096;
+            }
+
+            body {
+              font-family: 'Inter', sans-serif;
+              padding: 25px 35px 100px;
+              color: #2d3748;
+              font-size: 13.5px;
               line-height: 1.4;
             }
+
             .header {
               text-align: center;
-              border-bottom: 2px solid #333;
-              padding-bottom: 10px;
-              margin-bottom: 20px;
+              margin-bottom: 1.5rem;
+              padding-bottom: 1rem;
+              border-bottom: 2px solid var(--primary);
             }
-            .clinic-info {
-              font-size: 14px;
-              margin: 5px 0;
-            }
-            .doctor-credentials {
-              font-size: 12px;
-              margin: 10px 0;
-            }
+
             .patient-info {
-              margin: 15px 0;
-              width: 100%;
+              display: flex;
+              gap: 1.5rem;
+              flex-wrap: wrap;
+              margin: 1rem 0;
+              font-weight: 600;
+              color: var(--primary);
             }
-            .patient-info td {
-              padding: 5px 10px;
+
+            .patient-detail {
+              display: flex;
+              gap: 0.5rem;
+              align-items: center;
             }
-            .vital-signs {
-              margin: 15px 0;
+
+            .patient-detail span:first-child {
+              color: var(--text-muted);
+              font-weight: 500;
+            }
+
+            .section {
+              background: white;
+              border: 1px solid var(--border-color);
+              border-radius: 6px;
+              padding: 1rem;
+              margin: 0.75rem 0;
+              box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            }
+
+            .section-title {
+              font-size: 15px;
+              font-weight: 600;
+              color: var(--primary);
+              margin: 0 0 1rem 0;
+              border-bottom: 2px solid var(--border-color);
+              padding-bottom: 0.5rem;
+            }
+
+            .columns-container {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 1.5rem;
+              margin-bottom: 1.5rem;
+            }
+
+            .data-row {
+              display: flex;
+              justify-content: space-between;
+              padding: 0.5rem 0;
+            }
+
+            .data-label {
+              font-weight: 600;
+              color: var(--primary);
+              min-width: 120px;
+            }
+
+            .med-table {
               width: 100%;
               border-collapse: collapse;
+              margin-top: 0.5rem;
             }
-            .vital-signs td, .vital-signs th {
-              border: 1px solid #ddd;
-              padding: 8px;
+
+            .med-table th {
+              background: #f7fafc;
+              color: var(--primary);
+              font-weight: 600;
+              padding: 0.75rem;
               text-align: left;
+              border-bottom: 2px solid var(--border-color);
             }
-            .prescription-table {
-              width: 100%;
-              margin: 20px 0;
-              border-collapse: collapse;
+
+            .med-table td {
+              padding: 0.75rem;
+              border-bottom: 1px solid var(--border-color;
             }
-            .prescription-table td, .prescription-table th {
-              border: 1px solid #ddd;
-              padding: 8px;
-              text-align: center;
+
+            .med-name {
+              font-weight: 700;
+              color: var(--primary);
             }
+
+            .tests-list {
+              columns: 2;
+              margin: 0;
+              padding: 0;
+              list-style: none;
+            }
+
+            .tests-list li {
+              padding: 0.25rem 0;
+              break-inside: avoid;
+              font-weight: 500;
+            }
+
             .footer {
-              margin-top: 30px;
-              border-top: 2px solid #333;
-              padding-top: 15px;
+              position: fixed;
+              bottom: 0;
+              left: 0;
+              right: 0;
+              padding: 1rem 35px;
+              background: white;
+              border-top: 2px solid var(--border-color);
               font-size: 12px;
-            }
-            .bold {
-              font-weight: bold;
-            }
-            .text-center {
-              text-align: center;
-            }
-            .mb-15 {
-              margin-bottom: 15px;
+              color: var(--text-muted);
             }
           </style>
         </head>
         <body>
           <div class="header">
-            <h1>AYYUB LABS & CLINICS</h1>
-            <p>Mega Hospital Second Floor Mall Road Saddar Rawalpindi Cantt.</p>
-            <p>Ph: 0334-5616185</p>
-            <div class="doctor-credentials">
-              BABAS.NCI MSCE (UK), DCH London SEC Neurology (UK)<br>
-              Member: Pakistan Society of Neurology, International Headache Society,<br>
-              International Stroke Society, Pakistan Stroke Society
+            <h1 style="margin:0 0 4px 0; font-size:22px; color:var(--primary);">AYYUB LABS & CLINICS</h1>
+            <div style="color:var(--text-muted); font-size:13px;">
+              <div>Mega Hospital Second Floor Mall Road Saddar Rawalpindi Cantt.</div>
+              <div>Ph: 0334-5616185</div>
             </div>
           </div>
-  
-          <table class="patient-info">
-            <tr>
-              <td class="bold">Name:</td>
-              <td>${patient?.name || "-"}</td>
-            </tr>
-            <tr>
-              <td class="bold">Phone:</td>
-              <td>${patient?.mobile || "-"}</td>
-              <td class="bold">Age/Gender:</td>
-              <td>${patient?.age || "-"} ${patient?.gender || ""}</td>
-            </tr>
-            <tr>
-              <td class="bold">Date:</td>
-              <td>${new Date().toLocaleDateString()}</td>
-              <td class="bold">Consultant:</td>
-              <td>Dr. Adul Rauf</td>
-            </tr>
-          </table>
-  
-          <table class="vital-signs">
-            <tr>
-              <th>Pulse heart rate</th>
-              <td>${vitalSigns?.pulse || "-"} bpm</td>
-              <th>Weight</th>
-              <td>${vitalSigns?.weight || "-"} kg</td>
-            </tr>
-            <tr>
-              <th>Blood pressure</th>
-              <td>${vitalSigns?.bloodPressure || "-"} mmHg</td>
-              <th>Height</th>
-              <td>${vitalSigns?.height || "-"} cm</td>
-            </tr>
-            <tr>
-              <th>Oxygen Saturation</th>
-              <td>${vitalSigns?.oxygenSaturation || "-"}%</td>
-              <th>Body Mass Index</th>
-              <td>${vitalSigns?.bmi || "-"}</td>
-            </tr>
-          </table>
-  
-          <div class="mb-15">
-            <h3>Prescriptions</h3>
-            <table class="prescription-table">
-              <thead>
-                <tr>
-                  <th>Medicine</th>
-                  <th>Dosage</th>
-                  <th>Frequency</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${selectedMedicines.map(med => `
-                  <tr>
-                    <td>${medicines.find(m => m.value === med.medicine_id)?.label || "-"}</td>
-                    <td>${med.dosage || "-"}</td>
-                    <td>${med.frequency_en || "-"}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
+
+          <!-- Compact Patient Details -->
+          <div class="patient-info">
+            <div class="patient-detail">
+              <span>MR#:</span>
+              <span>${patient?.mr_no || "-"}</span>
+            </div>
+            <div class="patient-detail">
+              <span>Name:</span>
+              <span>${patient?.name || "-"}</span>
+            </div>
+            <div class="patient-detail">
+              <span>Age/Gender:</span>
+              <span>${patient?.age || "-"}/${patient?.gender || "-"}</span>
+            </div>
+            <div class="patient-detail">
+              <span>Date:</span>
+              <span>${patient?.checkup_date || "-"}</span>
+            </div>
           </div>
-  
+
+          <!-- Tests & Vitals Columns -->
+          <div class="columns-container">
+            <!-- Tests Column -->
+            <div class="section">
+              <h3 class="section-title">Recommended Tests</h3>
+              <ul class="tests-list">
+                ${selectedTests.map((test) => `<li>• ${test}</li>`).join("")}
+              </ul>
+            </div>
+
+            <!-- Vitals Column -->
+            <div class="section">
+              <h3 class="section-title">Vital Signs</h3>
+              <div class="patient-info vital-signs">
+                ${Object.entries(vitalSigns)
+                  .map(
+                    ([key, value]) => `
+                  <div class="patient-detail">
+                    <span>${key}:</span>
+                    <span>${value || "-"}</span>
+                  </div>
+                `
+                  )
+                  .join("")}
+              </div>
+            </div>
+          </div>
+
+          <!-- Medicines Section -->
+          <div class="section">
+          <h3 class="section-title">Medical Prescriptions</h3>
+          <table class="med-table">
+            <thead>
+              <tr>
+                <th>Medicine</th>
+                <th>Frequency</th>
+                <th>Dosage</th>
+                <th>Duration</th>
+                <th>Instructions</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${selectedMedicines
+                .map((med) => {
+                  const medicineData = medicines.find(
+                    (m) => m.value === med.medicine_id
+                  );
+                  return `
+                    <tr>
+                      <td class="med-name">${medicineData?.label || "-"}</td>
+                      <td>${med.frequency_urdu || "-"}</td>
+                      <td>${med.dosage || "-"}</td>
+                      <td>${med.duration_urdu || "-"}</td>
+                      <td>${med.instructions_urdu || "-"}</td>
+                    </tr>
+                  `;
+                })
+                .join("")}
+            </tbody>
+          </table>
+        </div>
+
           <div class="footer">
-            <div class="text-center">
-              <strong>Recommended Follow-up Appointment Date:</strong> 
-              ${new Date().toLocaleDateString()}
+            <div style="text-align:center; margin-bottom:4px;">
+              <strong>Dr. Abdul Rauf</strong> | 
+              BABAS.NCI MSCE (UK), DCH London SEC Neurology (UK)
             </div>
-            <div class="doctor-info">
-              <strong>Dr. Abdul Rauf</strong><br>
-              BABAS.NCI MSCE (UK), DCH London SEC Neurology (UK)<br>
-              Member: Pakistan Society of Neurology, International Headache Society,
-              International Stroke Society, Pakistan Stroke Society
+            <div style="text-align:center;">
+              E-mail: rauf.khan5@gmail.com | Date: ${new Date().toLocaleDateString()} | Prescription #: ${
+      patient?.mr_no || "N/A"
+    }
             </div>
           </div>
         </body>
@@ -343,23 +387,38 @@ const PatientSearch = () => {
 
   // Fetch symptoms and medicines on load
   useEffect(() => {
-    axios
-      .get("https://patient-management-backend-nine.vercel.app/api/symptoms")
-      .then((res) => {
-        setSymptoms(res.data.map((s) => ({ value: s.id, label: s.name })));
+    axios.get("https://patient-management-backend-nine.vercel.app/api/symptoms").then((res) => {
+      setSymptoms(res.data.map((s) => ({ value: s.id, label: s.name })));
+    });
+
+    axios.get("https://patient-management-backend-nine.vercel.app/api/medicines").then((res) => {
+      setMedicines(
+        res.data.map((m) => ({
+          value: m.id,
+          label: `${m.form} ${m.brand_name} (${m.strength}))`,
+        }))
+      );
+    });
+  }, []);
+
+  // handle create symptoms
+  const handleCreateSymptom = async (inputValue) => {
+    try {
+      const response = await axios.post("https://patient-management-backend-nine.vercel.app/api/symptoms", {
+        name: inputValue, // Sending new symptom name
       });
 
-    axios
-      .get("https://patient-management-backend-nine.vercel.app/api/medicines")
-      .then((res) => {
-        setMedicines(
-          res.data.map((m) => ({
-            value: m.id,
-            label: `${m.form} ${m.brand_name} (${m.strength}))`,
-          }))
-        );
-      });
-  }, []);
+      const newSymptom = {
+        value: response.data.id, // Assuming the API returns the new symptom's ID
+        label: response.data.name,
+      };
+
+      setSymptoms((prev) => [...prev, newSymptom]); // Add to options
+      setSelectedSymptoms((prev) => [...prev, newSymptom]); // Select it immediately
+    } catch (error) {
+      console.error("Error adding new symptom:", error);
+    }
+  };
 
   // Form for searching patients
   const {
@@ -368,34 +427,41 @@ const PatientSearch = () => {
     formState: { errors: searchErrors },
   } = useForm({ resolver: zodResolver(searchSchema) });
 
-  // Form for adding new patients
-  const {
-    register: registerPatient,
-    handleSubmit: handlePatientSubmit,
-    formState: { errors: patientErrors },
-  } = useForm({ resolver: zodResolver(patientSchema) });
-
   // Search for patient by mobile
   const onSearch = async (data) => {
+    if (!data.mobile.trim()) {
+      alert("Please enter a valid mobile number.");
+      return;
+    }
+
     const startTime = Date.now();
     setIsSearching(true);
+
     try {
       const res = await axios.get(
-        `https://patient-management-backend-nine.vercel.app/api/patients/search?mobile=${data.mobile}`
+        `https://patient-management-backend-nine.vercel.app/api/patients/search?mobile=${encodeURIComponent(
+          data.mobile
+        )}`
       );
+
       const elapsed = Date.now() - startTime;
       if (elapsed < 500) {
         await new Promise((resolve) => setTimeout(resolve, 500 - elapsed));
       }
-      if (res.data.exists) {
+
+      if (res.data?.exists) {
         setPatient(res.data.data);
         setShowAddPatient(false);
       } else {
         setPatient(null);
+        setSearchedMobile(data.mobile);
         setShowAddPatient(true);
       }
     } catch (error) {
       console.error("Error fetching patient", error);
+      setPatient(null);
+      setShowAddPatient(false);
+      alert("Failed to fetch patient. Please try again.");
     } finally {
       setIsSearching(false);
     }
@@ -409,7 +475,6 @@ const PatientSearch = () => {
     }
 
     try {
-      setIsSubmitting(true);
       // Step 1: Create a consultation entry
       const consultationRes = await axios.post(
         "https://patient-management-backend-nine.vercel.app/api/consultations",
@@ -432,7 +497,21 @@ const PatientSearch = () => {
         "https://patient-management-backend-nine.vercel.app/api/prescriptions",
         {
           consultation_id: consultationId,
-          medicines: selectedMedicines,
+          medicines: selectedMedicines.map((med) => ({
+            medicine_id: med.medicine_id,
+            dosage: med.dosage,
+            frequency_en: med.frequency_en,
+            frequency_urdu: med.frequency_urdu,
+            duration_en: med.duration_en,
+            duration_urdu: med.duration_urdu,
+            instructions_en: med.instructions_en,
+            instructions_urdu: med.instructions_urdu,
+            how_to_take_en: med.how_to_take_en,
+            how_to_take_urdu: med.how_to_take_urdu,
+          })),
+        },
+        {
+          headers: { "Content-Type": "application/json" },
         }
       );
 
@@ -449,61 +528,27 @@ const PatientSearch = () => {
 
       console.log("Sending vitals data:", JSON.stringify(vitalsData, null, 2));
 
-      await axios.post(
-        "https://patient-management-backend-nine.vercel.app/api/vitals",
-        vitalsData,
-        { headers: { "Content-Type": "application/json" } }
-      );
+      await axios.post("https://patient-management-backend-nine.vercel.app/api/vitals", vitalsData, {
+        headers: { "Content-Type": "application/json" },
+      });
 
       // Step 5: Submit tests
       console.log("Submitting tests:", selectedTests);
 
-      await axios.post(
-        "https://patient-management-backend-nine.vercel.app/api/tests",
-        {
-          consultation_id: consultationId,
-          test_name: selectedTests, // Assuming selectedTests is a single test
-          test_notes: "Optional test notes",
-        }
-      );
+      await axios.post("https://patient-management-backend-nine.vercel.app/api/tests", {
+        consultation_id: consultationId,
+        test_name: selectedTests, // Assuming selectedTests is a single test
+        test_notes: "Optional test notes",
+      });
       alert("Consultation saved successfully.");
     } catch (error) {
       console.error(
         "Error submitting consultation",
         error.response?.data || error.message
       );
-    } finally {
-      setIsSubmitting(false);
     }
   };
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  // Add a new patient
-  const addPatient = async (data) => {
-    try {
-      const formattedData = {
-        name: data.name,
-        age: data.age,
-        gender: data.gender,
-        mobile: data.mobile,
-      };
-
-      const res = await axios.post(
-        "https://patient-management-backend-nine.vercel.app/api/patients",
-        formattedData
-      );
-      setPatient(res.data);
-      setShowAddPatient(false);
-    } catch (error) {
-      console.error(
-        "Error adding patient",
-        error.response?.data || error.message
-      );
-    }
-  };
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-8 relative overflow-hidden isolate before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.9),_transparent)] before:opacity-50 before:-z-10">
       <div className="mx-auto max-w-2xl rounded-2xl border border-white/30 bg-white/95 backdrop-blur-sm p-8 shadow-2xl shadow-gray-100/30">
@@ -739,6 +784,7 @@ const PatientSearch = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 {[
+                  { label: "Mr-No", value: patient.mr_no, icon: "user" },
                   { label: "Full Name", value: patient.name, icon: "user" },
                   { label: "Age", value: patient.age, icon: "calendar" },
                   { label: "Gender", value: patient.gender, icon: "gender" },
@@ -754,7 +800,7 @@ const PatientSearch = () => {
                   },
                   {
                     label: "Last Visit",
-                    value: patient.lastVisit || "N/A",
+                    value: patient.checkup_date || "N/A",
                     icon: "clock",
                   },
                 ].map((field) => (
@@ -901,17 +947,20 @@ const PatientSearch = () => {
                     Symptom Analysis
                   </h3>
                   <p className="text-sm text-gray-600">
-                    Select observed symptoms and complaints
+                    Select observed symptoms or add new ones
                   </p>
                 </div>
               </div>
               <Select
                 isMulti
                 options={symptoms}
-                className="react-select-container"
-                classNamePrefix="react-select"
+                value={selectedSymptoms}
                 onChange={setSelectedSymptoms}
                 placeholder="Select or type symptoms..."
+                classNamePrefix="react-select"
+                onCreateOption={handleCreateSymptom} // Handles new symptoms
+                isClearable
+                formatCreateLabel={(inputValue) => `Add "${inputValue}"`} // Custom create label
                 styles={{
                   control: (base) => ({
                     ...base,
@@ -994,234 +1043,19 @@ const PatientSearch = () => {
                   <Select
                     isMulti
                     options={[
-                      { value: "O/E", label: "On Examination" },
-                      { value: "SLR", label: "Straight Leg Raise Test" },
-                      { value: "Tone", label: "Muscle Tone Assessment" },
-                      { value: "Reflexes", label: "Reflex Examination" },
-                      { value: "Gait", label: "Gait Assessment" },
-                      { value: "Power", label: "Muscle Power Assessment" },
-                      { value: "C/ROM", label: "Cervical Range of Motion" },
-                      {
-                        value: "Phallen's",
-                        label: "Phalen's Test for Carpal Tunnel Syndrome",
-                      },
-                      {
-                        value: "Rev Phallen's",
-                        label: "Reverse Phalen's Test",
-                      },
-                      {
-                        value: "Roos Test",
-                        label: "Roos Test for Thoracic Outlet Syndrome",
-                      },
-                      { value: "Sensory", label: "Sensory Examination" },
-                      {
-                        value: "Cerebellum",
-                        label: "Cerebellar Function Assessment",
-                      },
-                      {
-                        value: "Fundi",
-                        label: "Fundoscopic (Eye) Examination",
-                      },
-                      {
-                        value: "HMF",
-                        label: "Higher Mental Functions Assessment",
-                      },
-                      { value: "MMSE", label: "Mini-Mental State Examination" },
-                      {
-                        value: "Gower's Sign",
-                        label: "Gower's Sign Test for Muscle Weakness",
-                      },
-                      {
-                        value: "Bradykinesia",
-                        label: "Bradykinesia (Slowness of Movement)",
-                      },
-                      {
-                        value: "Dyskinesia",
-                        label: "Dyskinesia (Involuntary Movements)",
-                      },
-                      {
-                        value: "Epley's Maneuver",
-                        label: "Epley's Maneuver for Vertigo",
-                      },
-                      {
-                        value: "Fall Assessment",
-                        label: "Fall Risk Assessment",
-                      },
-                      {
-                        value: "Speech",
-                        label: "Speech and Language Examination",
-                      },
-                      {
-                        value: "Romberg Test",
-                        label: "Romberg Test for Balance and Coordination",
-                      },
-                      {
-                        value: "Finger-Nose Test",
-                        label: "Finger-Nose Test for Coordination",
-                      },
-                      {
-                        value: "Heel-to-Shin Test",
-                        label: "Heel-to-Shin Test for Coordination",
-                      },
-                      {
-                        value: "Babinski Sign",
-                        label: "Babinski Sign (Plantar Reflex)",
-                      },
-                      {
-                        value: "Clonus",
-                        label: "Clonus Test for Neuromuscular Hyperactivity",
-                      },
-                      {
-                        value: "Hoffman’s Sign",
-                        label: "Hoffman’s Sign (Cervical Myelopathy)",
-                      },
-                      {
-                        value: "Pronator Drift",
-                        label:
-                          "Pronator Drift Test for Upper Motor Neuron Lesion",
-                      },
-                      {
-                        value: "Lhermitte’s Sign",
-                        label: "Lhermitte’s Sign (Spinal Cord Dysfunction)",
-                      },
-                      {
-                        value: "Tinel’s Sign",
-                        label: "Tinel’s Sign for Nerve Compression",
-                      },
-                      {
-                        value: "Froment’s Sign",
-                        label: "Froment’s Sign for Ulnar Nerve Dysfunction",
-                      },
-                      {
-                        value: "Two-Point Discrimination",
-                        label:
-                          "Two-Point Discrimination Test for Sensory Function",
-                      },
-                      {
-                        value: "Spurling’s Test",
-                        label: "Spurling’s Test for Cervical Radiculopathy",
-                      },
-                      {
-                        value: "Schober’s Test",
-                        label: "Schober’s Test for Lumbar Spine Flexibility",
-                      },
-                      {
-                        value: "Trendelenburg Test",
-                        label: "Trendelenburg Test for Hip Stability",
-                      },
-                      {
-                        value: "Dix-Hallpike Test",
-                        label:
-                          "Dix-Hallpike Test for Benign Paroxysmal Positional Vertigo (BPPV)",
-                      },
-                      {
-                        value: "Sharpened Romberg Test",
-                        label: "Sharpened Romberg Test for Postural Stability",
-                      },
-                      {
-                        value: "Weber Test",
-                        label: "Weber Test for Hearing Loss",
-                      },
-                      {
-                        value: "Rinne Test",
-                        label: "Rinne Test for Hearing Loss",
-                      },
-                      {
-                        value: "Snellen Test",
-                        label: "Snellen Test for Visual Acuity",
-                      },
-                      {
-                        value: "Visual Field Test",
-                        label: "Visual Field Test for Peripheral Vision",
-                      },
-                      {
-                        value: "Glasgow Coma Scale",
-                        label:
-                          "Glasgow Coma Scale (GCS) for Consciousness Level",
-                      },
                       { value: "CBC", label: "Complete Blood Count (CBC)" },
-                      { value: "CRP", label: "C-Reactive Protein (CRP)" },
-                      { value: "CPK", label: "Creatine Phosphokinase (CPK)" },
-                      { value: "S. B12", label: "Serum Vitamin B12 Level" },
-                      { value: "S. Calcium", label: "Serum Calcium Level" },
-                      { value: "TFTs", label: "Thyroid Function Tests (TFTs)" },
-                      { value: "LFTs", label: "Liver Function Tests (LFTs)" },
-                      { value: "RFTs", label: "Renal Function Tests (RFTs)" },
-                      { value: "Lipid profile", label: "Lipid Profile" },
-                      { value: "2D Echo", label: "2D Echocardiography" },
+                      { value: "LFT", label: "Liver Function Test (LFT)" },
+                      { value: "RFT", label: "Renal Function Test (RFT)" },
+                      { value: "HbA1c", label: "Hemoglobin A1c (HbA1c)" },
+                      { value: "Lipid Profile", label: "Lipid Profile" },
+                      { value: "Thyroid Panel", label: "Thyroid Panel" },
                       {
-                        value: "Carotid Doppler",
-                        label: "Carotid Doppler Ultrasound",
+                        value: "Urine Routine",
+                        label: "Urine Routine Examination",
                       },
-                      { value: "CT Brain Plain", label: "CT Brain (Plain)" },
-                      {
-                        value: "CE CT Brain",
-                        label: "Contrast-Enhanced CT Brain",
-                      },
-                      {
-                        value: "CT head and neck",
-                        label: "CT Scan of Head and Neck",
-                      },
-                      { value: "CTA", label: "CT Angiography (CTA)" },
-                      { value: "MRI L/Spine", label: "MRI Lumbar Spine" },
-                      { value: "MRI C/Spine", label: "MRI Cervical Spine" },
-                      { value: "MRI D/Spine", label: "MRI Dorsal Spine" },
-                      { value: "MRI whole spine", label: "MRI Whole Spine" },
-                      { value: "MRI Brain Plain", label: "MRI Brain (Plain)" },
-                      {
-                        value: "MRI Brain with orbits",
-                        label: "MRI Brain with Orbits",
-                      },
-                      {
-                        value: "CE MRI Brain",
-                        label: "Contrast-Enhanced MRI Brain",
-                      },
-                      {
-                        value: "MRI brain stroke protocol",
-                        label: "MRI Brain (Stroke Protocol)",
-                      },
-                      {
-                        value: "MRI brain epilepsy protocol",
-                        label: "MRI Brain (Epilepsy Protocol)",
-                      },
-                      {
-                        value: "MRA",
-                        label: "Magnetic Resonance Angiography (MRA)",
-                      },
-                      {
-                        value: "MRV",
-                        label: "Magnetic Resonance Venography (MRV)",
-                      },
-                      {
-                        value: "ESR",
-                        label: "Erythrocyte Sedimentation Rate (ESR)",
-                      },
-                      {
-                        value: "ANA",
-                        label: "Antinuclear Antibody (ANA) Test",
-                      },
-                      {
-                        value: "Anti CCP",
-                        label:
-                          "Anti-Cyclic Citrullinated Peptide (Anti-CCP) Test",
-                      },
-                      {
-                        value: "RA Factor",
-                        label: "Rheumatoid Factor (RA Factor)",
-                      },
-                      { value: "HLAb27", label: "HLA-B27 Test" },
-                      { value: "Hba1c", label: "Hemoglobin A1c (HbA1c) Test" },
-                      { value: "BSR", label: "Blood Sugar Random (BSR) Test" },
-                      {
-                        value: "ACHR",
-                        label: "Acetylcholine Receptor Antibody (ACHR) Test",
-                      },
-                      { value: "EEG", label: "Electroencephalogram (EEG)" },
-                      {
-                        value: "Sleep Deprived EEG",
-                        label: "Sleep-Deprived EEG",
-                      },
-                      { value: "Vit D3 level", label: "Vitamin D3 Level" },
+                      { value: "ECG", label: "Electrocardiogram (ECG)" },
+                      { value: "X-Ray Chest", label: "Chest X-Ray" },
+                      { value: "MRI Brain", label: "Brain MRI" },
                     ]}
                     value={selectedTests.map((test) => ({
                       value: test,
@@ -1299,118 +1133,221 @@ const PatientSearch = () => {
             </div>
 
             {/* Enhanced Medicines Section */}
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-lg">
-              <div className="flex items-center gap-4 mb-6 pb-4 border-b border-gray-200">
-                <div className="bg-purple-700 p-3 rounded-xl text-white shadow-sm">
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"
-                    ></path>
-                  </svg>
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="bg-purple-600 p-2 rounded-lg text-white">
+                  💊
                 </div>
-                <div>
-                  <h3 className="text-xl font-semibold text-gray-900">
-                    Medication Management
-                  </h3>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Prescribe medications and dosage instructions
-                  </p>
-                </div>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Prescription Management
+                </h3>
               </div>
-
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {selectedMedicines.map((med, index) => (
-                  <div
-                    key={index}
-                    className="group relative p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="flex items-start gap-4">
-                      <div className="flex-1 grid grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                            <span className="text-purple-700">•</span>
-                            Medication
-                          </label>
-                          <Select
+                  <div key={index} className="flex items-center gap-3">
+                    <div className="flex-1 grid grid-cols-3 gap-3">
+                      {/* Medicine Selection */}
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-600">
+                          Medicine
+                        </label>
+                        <Select
                           options={medicines}
                           className="react-select-container"
                           classNamePrefix="react-select"
                           onChange={(e) => {
-                            const updated = [...selectedMedicines];
-                            updated[index].medicine_id = e.value;
-                            setSelectedMedicines(updated);
+                            setSelectedMedicines((prev) =>
+                              prev.map((item, i) =>
+                                i === index
+                                  ? { ...item, medicine_id: e.value }
+                                  : item
+                              )
+                            );
                           }}
                           styles={customSelectStyles}
                         />
-                        </div>
+                      </div>
 
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                            <span className="text-purple-700">•</span>
-                            Frequency
-                          </label>
-                          <Select
-                          options={predefinedInstructions}
+                      {/* Frequency (Morning, Night) */}
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-600">
+                          Frequency
+                        </label>
+                        <Select
+                          options={[
+                            { value: "morning", label: "صبح" },
+                            { value: "night", label: "رات" },
+                          ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
                           onChange={(e) => {
-                            const updated = [...selectedMedicines];
-                            updated[index].frequency_en = e.value;
-                            setSelectedMedicines(updated);
+                            setSelectedMedicines((prev) =>
+                              prev.map((item, i) =>
+                                i === index
+                                  ? {
+                                      ...item,
+                                      frequency_en: e.value,
+                                      frequency_urdu: e.label,
+                                    }
+                                  : item
+                              )
+                            );
                           }}
                           styles={customSelectStyles}
                         />
-                        </div>
-
-                        <div className="space-y-2">
-                          <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                            <span className="text-purple-700">•</span>
-                            Dosage
-                          </label>
-                          <input
-                            type="text"
-                            value={med.dosage}
-                            onChange={(e) => {
-                              const updated = [...selectedMedicines];
-                              updated[index].dosage = e.target.value;
-                              setSelectedMedicines(updated);
-                            }}
-                            className="w-full rounded-lg border-2 border-gray-200 bg-white px-4 py-2.5 focus:border-purple-500 focus:ring-2 focus:ring-purple-100 transition-all"
-                            placeholder="e.g., 500mg"
-                          />
-                        </div>
                       </div>
 
-                      <button
-                        onClick={() => {
-                          const updated = [...selectedMedicines];
-                          updated.splice(index, 1);
-                          setSelectedMedicines(updated);
-                        }}
-                        className="text-gray-400 hover:text-red-600 transition-colors p-2 -mt-2"
-                      >
-                        <AiOutlineCloseCircle className="w-5 h-5" />
-                      </button>
+                      {/* Dosage (1 pill, 2 pills) */}
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-600">
+                          Dosage
+                        </label>
+                        <Select
+                          options={[
+                            { value: "1", label: "1 گولی" },
+                            { value: "2", label: "2 گولیاں" },
+                          ]}
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                          onChange={(e) => {
+                            setSelectedMedicines((prev) =>
+                              prev.map((item, i) =>
+                                i === index
+                                  ? { ...item, dosage: e.value }
+                                  : item
+                              )
+                            );
+                          }}
+                          styles={customSelectStyles}
+                        />
+                      </div>
+
+                      {/* Duration (1 week, 2 weeks) */}
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-600">
+                          Duration
+                        </label>
+                        <Select
+                          options={[
+                            { value: "1_week", label: "1 ہفتہ" },
+                            { value: "2_weeks", label: "2 ہفتے" },
+                          ]}
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                          onChange={(e) => {
+                            setSelectedMedicines((prev) =>
+                              prev.map((item, i) =>
+                                i === index
+                                  ? {
+                                      ...item,
+                                      duration_en: e.value,
+                                      duration_urdu: e.label,
+                                    }
+                                  : item
+                              )
+                            );
+                          }}
+                          styles={customSelectStyles}
+                        />
+                      </div>
+
+                      {/* Instruction (After meal, Before meal) */}
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-600">
+                          Instruction
+                        </label>
+                        <Select
+                          options={[
+                            { value: "after_meal", label: "کھانے کے بعد" },
+                            { value: "before_meal", label: "کھانے سے پہلے" },
+                          ]}
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                          onChange={(e) => {
+                            setSelectedMedicines((prev) =>
+                              prev.map((item, i) =>
+                                i === index
+                                  ? {
+                                      ...item,
+                                      instructions_en: e.value,
+                                      instructions_urdu: e.label,
+                                    }
+                                  : item
+                              )
+                            );
+                          }}
+                          styles={customSelectStyles}
+                        />
+                      </div>
+
+                      {/* How to Take (By mouth, Injection) */}
+                      <div className="space-y-1">
+                        <label className="text-sm font-medium text-gray-600">
+                          How to Take
+                        </label>
+                        <Select
+                          options={[
+                            { value: "mouth", label: "From Mouth" },
+                            { value: "injection", label: "Injection" },
+                            { value: "topical", label: "Topical Application" },
+                          ]}
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                          onChange={(e) => {
+                            setSelectedMedicines((prev) =>
+                              prev.map((item, i) =>
+                                i === index
+                                  ? {
+                                      ...item,
+                                      how_to_take_en: e.value,
+                                      how_to_take_urdu: e.label,
+                                    }
+                                  : item
+                              )
+                            );
+                          }}
+                          styles={customSelectStyles}
+                        />
+                      </div>
                     </div>
+
+                    {/* Remove Medicine */}
+                    <button
+                      onClick={() => {
+                        setSelectedMedicines((prev) =>
+                          prev.filter((_, i) => i !== index)
+                        );
+                      }}
+                      className="text-red-500 hover:text-red-700 mt-4"
+                    >
+                      <AiOutlineCloseCircle className="w-5 h-5" />
+                    </button>
                   </div>
                 ))}
 
+                {/* Add New Medicine */}
                 <button
                   onClick={() =>
-                    setSelectedMedicines([...selectedMedicines, {}])
+                    setSelectedMedicines((prev) => [
+                      ...prev,
+                      {
+                        medicine_id: "",
+                        dosage: "",
+                        frequency_en: "",
+                        frequency_urdu: "",
+                        duration_en: "",
+                        duration_urdu: "",
+                        instructions_en: "",
+                        instructions_urdu: "",
+                        how_to_take_en: "",
+                        how_to_take_urdu: "",
+                      },
+                    ])
                   }
-                  className="w-full mt-4 flex items-center justify-center gap-3 rounded-xl border-2 border-dashed border-gray-300 text-gray-600 hover:border-purple-500 hover:bg-purple-50 hover:text-purple-700 transition-all duration-200 p-5"
+                  className="w-full mt-4 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-200 text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 p-4 transition-all"
                 >
-                  <AiOutlinePlus className="w-6 h-6" />
-                  <span className="font-medium">Add New Medication</span>
+                  <AiOutlinePlus className="w-5 h-5" />
+                  Add New Medication
                 </button>
               </div>
             </div>
@@ -1418,97 +1355,18 @@ const PatientSearch = () => {
             {/* Enhanced Final Button */}
             <button
               onClick={submitConsultation}
-              disabled={isSubmitting}
-              className="w-full py-5 bg-gradient-to-r from-green-700 to-teal-700 text-white font-semibold rounded-xl shadow-2xl hover:shadow-3xl transition-all duration-300 transform hover:-translate-y-0.5 hover:scale-[1.005] active:scale-[0.98] group relative overflow-hidden isolate"
+              className="w-full py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.01]"
             >
-              {/* Hover overlay */}
-              <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 -z-10" />
-
-              {/* Main content */}
-              <div className="relative flex items-center justify-center gap-3">
-                <AiOutlineCheckCircle className="w-7 h-7 text-white/90 group-hover:text-white transition-colors duration-200" />
-                <span className="text-lg tracking-wide font-medium">
-                  Finalize Consultation
-                </span>
-
-                {/* Loading overlay */}
-                {isSubmitting && (
-                  <div className="absolute inset-0 bg-green-950/90 backdrop-blur-sm flex items-center justify-center rounded-xl">
-                    {/* Modern spinner */}
-                    <div className="animate-spin size-8 border-4 border-white/20 border-t-white rounded-full" />
-                  </div>
-                )}
-
-                {/* Progress bar */}
-                {isSubmitting && (
-                  <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-green-900/30 overflow-hidden">
-                    <div className="h-full bg-white/90 animate-progress origin-left" />
-                  </div>
-                )}
-              </div>
+              <span className="inline-block mr-2">✅</span>
+              Finalize & Save Consultation
             </button>
           </div>
         ) : (
           showAddPatient && (
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="bg-blue-600 p-2 rounded-lg text-white">📝</div>
-                <h3 className="text-lg font-semibold text-gray-800">
-                  New Patient Registration
-                </h3>
-              </div>
-              <form
-                onSubmit={handlePatientSubmit(addPatient)}
-                className="grid grid-cols-2 gap-4"
-              >
-                {[
-                  { name: "name", label: "Full Name" },
-                  { name: "age", label: "Age", type: "number" },
-                  { name: "mobile", label: "Mobile Number" },
-                ].map((field) => (
-                  <div key={field.name} className="space-y-1">
-                    <label className="text-sm font-medium text-gray-600">
-                      {field.label}
-                    </label>
-                    <input
-                      {...registerPatient(field.name)}
-                      type={field.type || "text"}
-                      className="w-full rounded-lg border-2 border-gray-100 p-3 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all"
-                    />
-                  </div>
-                ))}
-                <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-600">
-                    Gender
-                  </label>
-                  <select
-                    {...registerPatient("gender")}
-                    className="w-full rounded-lg border-2 border-gray-100 p-3 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all"
-                  >
-                    <option value="">Select Gender</option>
-                    <option value="Male">Male</option>
-                    <option value="Female">Female</option>
-                    <option value="Others">Others</option>
-                  </select>
-                </div>
-                <button
-                  type="submit"
-                  className="col-span-2 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all"
-                >
-                  📥 Register New Patient
-                </button>
-              </form>
-              <div className="mt-4 space-y-2">
-                {Object.values(patientErrors).map((error, index) => (
-                  <p
-                    key={index}
-                    className="text-sm text-red-600 flex items-center gap-2"
-                  >
-                    ⚠️ {error.message}
-                  </p>
-                ))}
-              </div>
-            </div>
+            <AddPatientForm
+              searchedMobile={searchedMobile}
+              onSuccess={handleNewPatient}
+            />
           )
         )}
       </div>
