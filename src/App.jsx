@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import axios from "axios";
 import Select from "react-select";
+import CreatableSelect from "react-select/creatable";
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { toast } from 'react-toastify';
@@ -960,15 +961,20 @@ const PatientSearch = () => {
                   </p>
                 </div>
               </div>
-              <Select
+
+              <CreatableSelect
                 isMulti
                 options={symptoms}
                 value={selectedSymptoms}
                 onChange={setSelectedSymptoms}
                 placeholder="Select or type symptoms..."
                 classNamePrefix="react-select"
-                onCreateOption={handleCreateSymptom} // Handles new symptoms
                 isClearable
+                onCreateOption={(inputValue) => {
+                  const newSymptom = { value: inputValue, label: inputValue };
+                  setSymptoms([...symptoms, newSymptom]); // Add to available symptoms
+                  setSelectedSymptoms([...selectedSymptoms, newSymptom]); // Select newly added symptom
+                }}
                 formatCreateLabel={(inputValue) => `Add "${inputValue}"`} // Custom create label
                 styles={{
                   control: (base) => ({
@@ -994,151 +1000,95 @@ const PatientSearch = () => {
             </div>
 
             {/* test section */}
-            <div className="space-y-4">
-              {/* Selected Tests Display */}
-              <div className="flex flex-wrap gap-2 mb-4">
-                {selectedTests.map((test) => (
-                  <div
-                    key={test}
-                    className="bg-blue-100 text-blue-800 px-3 py-1.5 rounded-full text-sm flex items-center gap-2"
-                  >
-                    {test}
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setSelectedTests(
-                          selectedTests.filter((t) => t !== test)
-                        )
-                      }
-                      className="text-blue-600 hover:text-blue-800"
-                    >
-                      ×
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              {/* Custom Test Input */}
-              <div className="mb-4">
-                <div className="flex gap-2">
-                  <input
-                    type="text"
-                    placeholder="Add custom test..."
-                    value={customTest}
-                    onChange={(e) => setCustomTest(e.target.value)}
-                    className="flex-1 rounded-lg border-2 border-gray-100 p-2.5 shadow-sm focus:border-blue-400 focus:ring-4 focus:ring-blue-50/50 transition-all duration-200"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (customTest.trim()) {
-                        setSelectedTests([...selectedTests, customTest.trim()]);
-                        setCustomTest("");
-                      }
-                    }}
-                    className="px-4 py-2.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors duration-200"
-                  >
-                    Add
-                  </button>
-                </div>
-              </div>
-
-              {/* Test Selection */}
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Select Standard Tests
-                </label>
-                <div className="relative">
-                  <Select
-                    isMulti
-                    options={[
-                      { value: "CBC", label: "Complete Blood Count (CBC)" },
-                      { value: "LFT", label: "Liver Function Test (LFT)" },
-                      { value: "RFT", label: "Renal Function Test (RFT)" },
-                      { value: "HbA1c", label: "Hemoglobin A1c (HbA1c)" },
-                      { value: "Lipid Profile", label: "Lipid Profile" },
-                      { value: "Thyroid Panel", label: "Thyroid Panel" },
-                      {
-                        value: "Urine Routine",
-                        label: "Urine Routine Examination",
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Select or Add a Test
+              </label>
+              <div className="relative">
+                <CreatableSelect
+                  isMulti
+                  options={[
+                    { value: "CBC", label: "Complete Blood Count (CBC)" },
+                    { value: "LFT", label: "Liver Function Test (LFT)" },
+                    { value: "RFT", label: "Renal Function Test (RFT)" },
+                  ]}
+                  value={selectedTests.map((test) => ({
+                    value: test,
+                    label: test,
+                  }))}
+                  onChange={(selectedOptions) =>
+                    setSelectedTests(
+                      selectedOptions.map((option) => option.value)
+                    )
+                  }
+                  onCreateOption={(newTest) => {
+                    const newOption = { value: newTest, label: newTest };
+                    setSelectedTests([...selectedTests, newTest]); // Add to selected
+                  }}
+                  className="react-select-container"
+                  classNamePrefix="react-select"
+                  placeholder="Type or select a test..."
+                  styles={{
+                    control: (base) => ({
+                      ...base,
+                      border: "2px solid #f3f4f6",
+                      borderRadius: "0.75rem",
+                      padding: "0.5rem",
+                      boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                      "&:hover": { borderColor: "#93c5fd" },
+                    }),
+                    multiValue: (base) => ({
+                      ...base,
+                      backgroundColor: "#bfdbfe",
+                      borderRadius: "9999px",
+                      padding: "0 8px",
+                    }),
+                    multiValueLabel: (base) => ({
+                      ...base,
+                      color: "#1e40af",
+                      fontWeight: "500",
+                    }),
+                    menu: (base) => ({
+                      ...base,
+                      borderRadius: "0.75rem",
+                      border: "2px solid #f3f4f6",
+                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    }),
+                    option: (base, state) => ({
+                      ...base,
+                      backgroundColor: state.isSelected ? "#3b82f6" : "white",
+                      color: state.isSelected ? "white" : "#1f2937",
+                      "&:hover": {
+                        backgroundColor: "#60a5fa",
+                        color: "white",
                       },
-                      { value: "ECG", label: "Electrocardiogram (ECG)" },
-                      { value: "X-Ray Chest", label: "Chest X-Ray" },
-                      { value: "MRI Brain", label: "Brain MRI" },
-                    ]}
-                    value={selectedTests.map((test) => ({
-                      value: test,
-                      label: test,
-                    }))}
-                    onChange={(selectedOptions) =>
-                      setSelectedTests(
-                        selectedOptions.map((option) => option.value)
-                      )
-                    }
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    placeholder="Search or select tests..."
-                    styles={{
-                      control: (base) => ({
-                        ...base,
-                        border: "2px solid #f3f4f6",
-                        borderRadius: "0.75rem",
-                        padding: "0.5rem",
-                        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
-                        "&:hover": { borderColor: "#93c5fd" },
-                      }),
-                      multiValue: (base) => ({
-                        ...base,
-                        backgroundColor: "#bfdbfe",
-                        borderRadius: "9999px",
-                        padding: "0 8px",
-                      }),
-                      multiValueLabel: (base) => ({
-                        ...base,
-                        color: "#1e40af",
-                        fontWeight: "500",
-                      }),
-                      menu: (base) => ({
-                        ...base,
-                        borderRadius: "0.75rem",
-                        border: "2px solid #f3f4f6",
-                        boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                      }),
-                      option: (base, state) => ({
-                        ...base,
-                        backgroundColor: state.isSelected ? "#3b82f6" : "white",
-                        color: state.isSelected ? "white" : "#1f2937",
-                        "&:hover": {
-                          backgroundColor: "#60a5fa",
-                          color: "white",
-                        },
-                      }),
-                    }}
-                    components={{
-                      DropdownIndicator: () => (
-                        <div className="pr-3">
-                          <svg
-                            className="w-5 h-5 text-gray-400"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M19 9l-7 7-7-7"
-                            />
-                          </svg>
-                        </div>
-                      ),
-                    }}
-                  />
-                </div>
-                <p className="text-xs text-gray-500 mt-1">
-                  {selectedTests.length} tests selected • Start typing to search
-                </p>
+                    }),
+                  }}
+                  components={{
+                    DropdownIndicator: () => (
+                      <div className="pr-3">
+                        <svg
+                          className="w-5 h-5 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M19 9l-7 7-7-7"
+                          />
+                        </svg>
+                      </div>
+                    ),
+                  }}
+                />
               </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {selectedTests.length} tests selected • Type to search or add a
+                custom test
+              </p>
             </div>
 
             {/* Enhanced Medicines Section */}
