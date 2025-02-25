@@ -5,9 +5,9 @@ import * as z from "zod";
 import axios from "axios";
 import Select from "react-select";
 import CreatableSelect from "react-select/creatable";
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
-import { toast } from 'react-toastify';
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
 
 import {
   AiOutlinePlus,
@@ -393,26 +393,33 @@ const PatientSearch = () => {
 
   // Fetch symptoms and medicines on load
   useEffect(() => {
-    axios.get("https://patient-management-backend-nine.vercel.app/api/symptoms").then((res) => {
-      setSymptoms(res.data.map((s) => ({ value: s.id, label: s.name })));
-    });
+    axios
+      .get("https://patient-management-backend-nine.vercel.app/api/symptoms")
+      .then((res) => {
+        setSymptoms(res.data.map((s) => ({ value: s.id, label: s.name })));
+      });
 
-    axios.get("https://patient-management-backend-nine.vercel.app/api/medicines").then((res) => {
-      setMedicines(
-        res.data.map((m) => ({
-          value: m.id,
-          label: `${m.form} ${m.brand_name} (${m.strength}))`,
-        }))
-      );
-    });
+    axios
+      .get("https://patient-management-backend-nine.vercel.app/api/medicines")
+      .then((res) => {
+        setMedicines(
+          res.data.map((m) => ({
+            value: m.id,
+            label: `${m.form} ${m.brand_name} (${m.strength}))`,
+          }))
+        );
+      });
   }, []);
 
   // handle create symptoms
   const handleCreateSymptom = async (inputValue) => {
     try {
-      const response = await axios.post("https://patient-management-backend-nine.vercel.app/api/symptoms", {
-        name: inputValue, // Sending new symptom name
-      });
+      const response = await axios.post(
+        "https://patient-management-backend-nine.vercel.app/api/symptoms",
+        {
+          name: inputValue, // Sending new symptom name
+        }
+      );
 
       const newSymptom = {
         value: response.data.id, // Assuming the API returns the new symptom's ID
@@ -534,18 +541,25 @@ const PatientSearch = () => {
 
       console.log("Sending vitals data:", JSON.stringify(vitalsData, null, 2));
 
-      await axios.post("https://patient-management-backend-nine.vercel.app/api/vitals", vitalsData, {
-        headers: { "Content-Type": "application/json" },
-      });
+      await axios.post(
+        "https://patient-management-backend-nine.vercel.app/api/vitals",
+        vitalsData,
+        {
+          headers: { "Content-Type": "application/json" },
+        }
+      );
 
       // Step 5: Submit tests
       console.log("Submitting tests:", selectedTests);
 
-      await axios.post("https://patient-management-backend-nine.vercel.app/api/tests", {
-        consultation_id: consultationId,
-        test_name: selectedTests, // Assuming selectedTests is a single test
-        test_notes: "Optional test notes",
-      });
+      await axios.post(
+        "https://patient-management-backend-nine.vercel.app/api/tests",
+        {
+          consultation_id: consultationId,
+          test_name: selectedTests, // Assuming selectedTests is a single test
+          test_notes: "Optional test notes",
+        }
+      );
       toast.success("Consultation added successfully! 🎉", {
         position: "top-right",
         autoClose: 3000,
@@ -972,10 +986,10 @@ const PatientSearch = () => {
                 isClearable
                 onCreateOption={(inputValue) => {
                   const newSymptom = { value: inputValue, label: inputValue };
-                  setSymptoms([...symptoms, newSymptom]); 
-                  setSelectedSymptoms([...selectedSymptoms, newSymptom]); 
+                  setSymptoms([...symptoms, newSymptom]);
+                  setSelectedSymptoms([...selectedSymptoms, newSymptom]);
                 }}
-                formatCreateLabel={(inputValue) => `Create "${inputValue}"`} 
+                formatCreateLabel={(inputValue) => `Create "${inputValue}"`}
                 styles={{
                   control: (base) => ({
                     ...base,
@@ -998,97 +1012,145 @@ const PatientSearch = () => {
                 }}
               />
             </div>
-
-            {/* test section */}
-            <div className="space-y-2">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select or Add a Test
-              </label>
-              <div className="relative">
-                <CreatableSelect
-                  isMulti
-                  options={[
-                    { value: "CBC", label: "Complete Blood Count (CBC)" },
-                    { value: "LFT", label: "Liver Function Test (LFT)" },
-                    { value: "RFT", label: "Renal Function Test (RFT)" },
-                  ]}
-                  value={selectedTests.map((test) => ({
-                    value: test,
-                    label: test,
-                  }))}
-                  onChange={(selectedOptions) =>
-                    setSelectedTests(
-                      selectedOptions.map((option) => option.value)
-                    )
-                  }
-                  onCreateOption={(newTest) => {
-                    const newOption = { value: newTest, label: newTest };
-                    setSelectedTests([...selectedTests, newTest]); 
-                  }}
-                  className="react-select-container"
-                  classNamePrefix="react-select"
-                  placeholder="Type or select a test..."
-                  styles={{
-                    control: (base) => ({
-                      ...base,
-                      border: "2px solid #f3f4f6",
-                      borderRadius: "0.75rem",
-                      padding: "0.5rem",
-                      boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
-                      "&:hover": { borderColor: "#93c5fd" },
-                    }),
-                    multiValue: (base) => ({
-                      ...base,
-                      backgroundColor: "#bfdbfe",
-                      borderRadius: "9999px",
-                      padding: "0 8px",
-                    }),
-                    multiValueLabel: (base) => ({
-                      ...base,
-                      color: "#1e40af",
-                      fontWeight: "500",
-                    }),
-                    menu: (base) => ({
-                      ...base,
-                      borderRadius: "0.75rem",
-                      border: "2px solid #f3f4f6",
-                      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                    }),
-                    option: (base, state) => ({
-                      ...base,
-                      backgroundColor: state.isSelected ? "#3b82f6" : "white",
-                      color: state.isSelected ? "white" : "#1f2937",
-                      "&:hover": {
-                        backgroundColor: "#60a5fa",
-                        color: "white",
-                      },
-                    }),
-                  }}
-                  components={{
-                    DropdownIndicator: () => (
-                      <div className="pr-3">
-                        <svg
-                          className="w-5 h-5 text-gray-400"
-                          fill="none"
-                          stroke="currentColor"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M19 9l-7 7-7-7"
-                          />
-                        </svg>
-                      </div>
-                    ),
-                  }}
-                />
+            {/* test sections */}
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
+                <div className="bg-orange-900 p-2.5 rounded-lg text-white shadow-sm">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Add Tests
+                  </h3>
+                  <p className="text-sm text-gray-600">Prescribed Tests</p>
+                </div>
               </div>
-              <p className="text-xs text-gray-500 mt-1">
-                {selectedTests.length} tests selected • Type to search or add a
-                custom test
-              </p>
+
+              <CreatableSelect
+                isMulti
+                options={[
+                  { value: "CBC", label: "Complete Blood Count (CBC)" },
+                  { value: "LFT", label: "Liver Function Test (LFT)" },
+                  { value: "RFT", label: "Renal Function Test (RFT)" },
+                ]}
+                value={selectedTests.map((test) => ({
+                  value: test,
+                  label: test,
+                }))}
+                onChange={(selectedOptions) =>
+                  setSelectedTests(
+                    selectedOptions.map((option) => option.value)
+                  )
+                }
+                onCreateOption={(newTest) => {
+                  const newOption = { value: newTest, label: newTest };
+                  setSelectedTests([...selectedTests, newTest]);
+                }}
+                className="react-select-container"
+                classNamePrefix="react-select"
+                placeholder={
+                  <div className="text-gray-400 flex items-center gap-2">
+                    Type or select a test...
+                  </div>
+                }
+                styles={{
+                  control: (base, state) => ({
+                    ...base,
+                    border: "2px solid #e5e7eb",
+                    borderRadius: "0.75rem",
+                    padding: "0.5rem 1rem",
+                    boxShadow: state.isFocused
+                      ? "0 0 0 3px rgba(59, 130, 246, 0.1)"
+                      : "0 1px 2px rgba(0, 0, 0, 0.05)",
+                    "&:hover": {
+                      borderColor: "#93c5fd",
+                      boxShadow: "0 0 0 3px rgba(147, 197, 253, 0.1)",
+                    },
+                    transition: "all 0.2s ease-in-out",
+                  }),
+                  multiValue: (base) => ({
+                    ...base,
+                    backgroundColor: "#bfdbfe",
+                    borderRadius: "9999px",
+                    padding: "0 12px",
+                    transform: "scale(0.95)",
+                    transition: "all 0.2s ease-in-out",
+                    "&:hover": {
+                      transform: "scale(1)",
+                      backgroundColor: "#93c5fd",
+                    },
+                  }),
+                  multiValueLabel: (base) => ({
+                    ...base,
+                    color: "#1e40af",
+                    fontWeight: "600",
+                    fontSize: "0.875rem",
+                  }),
+                  multiValueRemove: (base) => ({
+                    ...base,
+                    color: "#1e40af",
+                    "&:hover": {
+                      backgroundColor: "transparent",
+                      color: "#1e3a8a",
+                    },
+                  }),
+                  menu: (base) => ({
+                    ...base,
+                    borderRadius: "0.75rem",
+                    border: "2px solid #e5e7eb",
+                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                    marginTop: "4px",
+                  }),
+                  option: (base, state) => ({
+                    ...base,
+                    backgroundColor: state.isSelected ? "#3b82f6" : "white",
+                    color: state.isSelected ? "white" : "#1f2937",
+                    padding: "12px 16px",
+                    "&:hover": {
+                      backgroundColor: state.isSelected ? "#3b82f6" : "#f3f4f6",
+                      color: state.isSelected ? "white" : "#1f2937",
+                    },
+                    transition: "all 0.2s ease-in-out",
+                  }),
+                  placeholder: (base) => ({
+                    ...base,
+                    color: "#9ca3af",
+                    marginLeft: "4px",
+                  }),
+                }}
+                components={{
+                  DropdownIndicator: () => (
+                    <div className="pr-3 transform transition-transform">
+                      <svg
+                        className="w-5 h-5 text-gray-500 hover:text-blue-600"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 9l-7 7-7-7"
+                        />
+                      </svg>
+                    </div>
+                  ),
+                }}
+              />
             </div>
 
             {/* Enhanced Medicines Section */}
