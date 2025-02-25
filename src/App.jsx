@@ -562,7 +562,7 @@ const PatientSearch = () => {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-8 relative overflow-hidden isolate before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.9),_transparent)] before:opacity-50 before:-z-10">
       <div className="mx-auto max-w-2xl rounded-2xl border border-white/30 bg-white/95 backdrop-blur-sm p-8 shadow-2xl shadow-gray-100/30">
         {/* Enhanced Header Section */}
-        <div className="mb-6 text-center border-b border-gray-200 pb-6 space-y-4">
+        {/* <div className="mb-6 text-center border-b border-gray-200 pb-6 space-y-4">
           <div className="flex items-center justify-center gap-3">
             <div className="bg-blue-600 p-2 rounded-xl shadow-sm">
               <svg
@@ -678,7 +678,7 @@ const PatientSearch = () => {
               Society, Pakistan Neurology Council
             </p>
           </div>
-        </div>
+        </div> */}
 
         <h2 className="mb-6 border-b border-gray-200 pb-4 text-2xl font-bold text-gray-900">
           <span className="bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
