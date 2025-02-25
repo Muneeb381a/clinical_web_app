@@ -972,10 +972,10 @@ const PatientSearch = () => {
                 isClearable
                 onCreateOption={(inputValue) => {
                   const newSymptom = { value: inputValue, label: inputValue };
-                  setSymptoms([...symptoms, newSymptom]); // Add to available symptoms
-                  setSelectedSymptoms([...selectedSymptoms, newSymptom]); // Select newly added symptom
+                  setSymptoms([...symptoms, newSymptom]); 
+                  setSelectedSymptoms([...selectedSymptoms, newSymptom]); 
                 }}
-                formatCreateLabel={(inputValue) => `Add "${inputValue}"`} // Custom create label
+                formatCreateLabel={(inputValue) => `Create "${inputValue}"`} 
                 styles={{
                   control: (base) => ({
                     ...base,
@@ -1023,7 +1023,7 @@ const PatientSearch = () => {
                   }
                   onCreateOption={(newTest) => {
                     const newOption = { value: newTest, label: newTest };
-                    setSelectedTests([...selectedTests, newTest]); // Add to selected
+                    setSelectedTests([...selectedTests, newTest]); 
                   }}
                   className="react-select-container"
                   classNamePrefix="react-select"
