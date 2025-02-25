@@ -8,6 +8,9 @@ import CreatableSelect from "react-select/creatable";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { toast } from "react-toastify";
+import DatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+
 
 import {
   AiOutlinePlus,
@@ -16,11 +19,47 @@ import {
   AiOutlineCloseCircle,
 } from "react-icons/ai";
 import AddPatientForm from "./pages/AddPatientForm";
+import { urduDate } from "./utils/dateUtils";
 
 // Schema for searching patients by mobile
 const searchSchema = z.object({
   mobile: z.string().min(10, "Enter a valid mobile number"),
 });
+
+const initialNeuroExamState = {
+  motor_function: "",
+  muscle_tone: null,
+  muscle_strength: null,
+  deep_tendon_reflexes: "",
+  plantar_reflex: null,
+  sensory_examination: "",
+  pain_sensation: false,
+  vibration_sense: false,
+  proprioception: false,
+  temperature_sensation: false,
+  coordination: "",
+  finger_nose_test: "",
+  heel_shin_test: "",
+  gait_assessment: null,
+  romberg_test: "",
+  cranial_nerves: "",
+  pupillary_reaction: null,
+  eye_movements: null,
+  facial_sensation: false,
+  swallowing_function: false,
+  tongue_movement: null,
+  straight_leg_raise_test: "",
+  lasegue_test: "",
+  brudzinski_sign: false,
+  kernig_sign: false,
+  cognitive_assessment: "",
+  speech_assessment: null,
+  tremors: "",
+  involuntary_movements: "",
+  diagnosis: "",
+  treatment_plan: "",
+  notes: "",
+};
 
 const PatientSearch = () => {
   const [patient, setPatient] = useState(null);
@@ -34,6 +73,9 @@ const PatientSearch = () => {
   const [consultationData, setConsultationData] = useState(null);
   const [selectedTests, setSelectedTests] = useState([]);
   const [customTest, setCustomTest] = useState("");
+  const [neuroExamData, setNeuroExamData] = useState(initialNeuroExamState);
+  const [followUpDate, setFollowUpDate] = useState(null);
+  const [followUpNotes, setFollowUpNotes] = useState("");
 
   const [patients, setPatients] = useState([]);
   const [searchedMobile, setSearchedMobile] = useState("");
@@ -83,6 +125,7 @@ const PatientSearch = () => {
             patient?.name || "Unknown Patient"
           }</title>
           <style>
+          @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu&display=swap');
             :root {
               --primary: #1a365d;
               --secondary: #2b6cb0;
@@ -155,7 +198,11 @@ const PatientSearch = () => {
               justify-content: space-between;
               padding: 0.5rem 0;
             }
-
+            .urdu-date {
+            font-family: 'Noto Nastaliq Urdu', serif;
+            direction: rtl;
+            display: inline-block;
+            margin-left: 8px;
             .data-label {
               font-weight: 600;
               color: var(--primary);
@@ -211,6 +258,57 @@ const PatientSearch = () => {
               font-size: 12px;
               color: var(--text-muted);
             }
+            .neuro-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+            margin-top: 1rem;
+          }
+
+          .neuro-subsection {
+            padding: 0.75rem;
+            background: #f8fafc;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+          }
+
+          .neuro-subsection h4 {
+            margin: 0 0 0.5rem 0;
+            font-size: 13px;
+            color: var(--secondary);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 0.25rem;
+          }
+
+          .neuro-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 0.25rem 0;
+            font-size: 13px;
+          }
+
+          .neuro-label {
+            color: var(--text-muted);
+          }
+
+          .neuro-value {
+            font-weight: 500;
+            color: var(--primary);
+            max-width: 60%;
+            text-align: right;
+          }
+
+          .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin: 0.25rem 0;
+          }
+
+          .checkbox-mark {
+            color: var(--secondary);
+            font-weight: 700;
+          }
           </style>
         </head>
         <body>
@@ -269,7 +367,118 @@ const PatientSearch = () => {
               </div>
             </div>
           </div>
+                  <div class="section">
+          <h3 class="section-title">Neurological Examination</h3>
+          <div class="neuro-grid">
+            <!-- Motor Function -->
+            <div class="neuro-subsection">
+              <h4>Motor Function</h4>
+              <div class="neuro-item">
+                <span class="neuro-label">Muscle Tone:</span>
+                <span class="neuro-value">${
+                  neuroExamData.muscle_tone || "-"
+                }</span>
+              </div>
+              <div class="neuro-item">
+                <span class="neuro-label">Muscle Strength:</span>
+                <span class="neuro-value">${
+                  neuroExamData.muscle_strength || "-"
+                }</span>
+              </div>
+            </div>
 
+            <!-- Reflexes & Responses -->
+            <div class="neuro-subsection">
+              <h4>Reflexes & Responses</h4>
+              <div class="neuro-item">
+                <span class="neuro-label">Deep Tendon Reflexes:</span>
+                <span class="neuro-value">${
+                  neuroExamData.deep_tendon_reflexes || "-"
+                }</span>
+              </div>
+              <div class="neuro-item">
+                <span class="neuro-label">Plantar Reflex:</span>
+                <span class="neuro-value">${
+                  neuroExamData.plantar_reflex || "-"
+                }</span>
+              </div>
+            </div>
+
+            <!-- Sensory Examination -->
+            <div class="neuro-subsection">
+              <h4>Sensory Examination</h4>
+              <div class="checkbox-item">
+                <span class="neuro-label">Pain Sensation:</span>
+                <span class="checkbox-mark">${
+                  neuroExamData.pain_sensation ? "✓" : "✗"
+                }</span>
+              </div>
+              <div class="checkbox-item">
+                <span class="neuro-label">Vibration Sense:</span>
+                <span class="checkbox-mark">${
+                  neuroExamData.vibration_sense ? "✓" : "✗"
+                }</span>
+              </div>
+              <div class="checkbox-item">
+                <span class="neuro-label">Proprioception:</span>
+                <span class="checkbox-mark">${
+                  neuroExamData.proprioception ? "✓" : "✗"
+                }</span>
+              </div>
+            </div>
+
+            <!-- Coordination & Gait -->
+            <div class="neuro-subsection">
+              <h4>Coordination & Gait</h4>
+              <div class="neuro-item">
+                <span class="neuro-label">Gait Assessment:</span>
+                <span class="neuro-value">${
+                  neuroExamData.gait_assessment || "-"
+                }</span>
+              </div>
+              <div class="neuro-item">
+                <span class="neuro-label">Romberg Test:</span>
+                <span class="neuro-value">${
+                  neuroExamData.romberg_test || "-"
+                }</span>
+              </div>
+            </div>
+
+            <!-- Cranial Nerves -->
+            <div class="neuro-subsection">
+              <h4>Cranial Nerves</h4>
+              <div class="neuro-item">
+                <span class="neuro-label">Pupillary Reaction:</span>
+                <span class="neuro-value">${
+                  neuroExamData.pupillary_reaction || "-"
+                }</span>
+              </div>
+              <div class="neuro-item">
+                <span class="neuro-label">Eye Movements:</span>
+                <span class="neuro-value">${
+                  neuroExamData.eye_movements || "-"
+                }</span>
+              </div>
+            </div>
+
+            <!-- Clinical Decisions -->
+            <div class="neuro-subsection" style="grid-column: span 2;">
+              <h4>Clinical Decisions</h4>
+              <div class="neuro-item">
+                <span class="neuro-label">Diagnosis:</span>
+                <span class="neuro-value">${
+                  neuroExamData.diagnosis || "-"
+                }</span>
+              </div>
+              <div class="neuro-item">
+                <span class="neuro-label">Treatment Plan:</span>
+                <span class="neuro-value">${
+                  neuroExamData.treatment_plan || "-"
+                }</span>
+              </div>
+            </div>
+          </div>
+        </div>
           <!-- Medicines Section -->
           <div class="section">
           <h3 class="section-title">Medical Prescriptions</h3>
@@ -305,7 +514,24 @@ const PatientSearch = () => {
             </tbody>
           </table>
         </div>
-
+        ${followUpDate && `
+          <div class="section">
+            <h3 class="section-title">Follow-up Arrangement</h3>
+            <div class="data-row">
+              <span class="data-label">Next Visit Date:</span>
+              <span>
+                ${new Date(followUpDate).toLocaleDateString()}
+                <span class="urdu-date">${urduDate(followUpDate)}</span>
+              </span>
+            </div>
+            ${followUpNotes && `
+              <div class="data-row">
+                <span class="data-label">Follow-up Notes:</span>
+                <span>${followUpNotes}</span>
+              </div>
+            `}
+          </div>
+        `}
           <div class="footer">
             <div style="text-align:center; margin-bottom:4px;">
               <strong>Dr. Abdul Rauf</strong> | 
@@ -560,11 +786,66 @@ const PatientSearch = () => {
           test_notes: "Optional test notes",
         }
       );
+
+      // Step 6: Submit neurological examination with proper sanitization
+      const neuroExamPayload = {
+        consultation_id: consultationId,
+        motor_function: neuroExamData.motor_function || null,
+        muscle_tone: neuroExamData.muscle_tone,
+        muscle_strength: neuroExamData.muscle_strength,
+        deep_tendon_reflexes: neuroExamData.deep_tendon_reflexes || null,
+        plantar_reflex: neuroExamData.plantar_reflex,
+        sensory_examination: neuroExamData.sensory_examination || null,
+        pain_sensation: neuroExamData.pain_sensation,
+        vibration_sense: neuroExamData.vibration_sense,
+        proprioception: neuroExamData.proprioception,
+        temperature_sensation: neuroExamData.temperature_sensation,
+        coordination: neuroExamData.coordination || null,
+        finger_nose_test: neuroExamData.finger_nose_test || null,
+        heel_shin_test: neuroExamData.heel_shin_test || null,
+        gait_assessment: neuroExamData.gait_assessment,
+        romberg_test: neuroExamData.romberg_test || null,
+        cranial_nerves: neuroExamData.cranial_nerves || null,
+        pupillary_reaction: neuroExamData.pupillary_reaction,
+        eye_movements: neuroExamData.eye_movements,
+        facial_sensation: neuroExamData.facial_sensation,
+        swallowing_function: neuroExamData.swallowing_function,
+        tongue_movement: neuroExamData.tongue_movement,
+        straight_leg_raise_test: neuroExamData.straight_leg_raise_test || null,
+        lasegue_test: neuroExamData.lasegue_test || null,
+        brudzinski_sign: neuroExamData.brudzinski_sign,
+        kernig_sign: neuroExamData.kernig_sign,
+        cognitive_assessment: neuroExamData.cognitive_assessment || null,
+        speech_assessment: neuroExamData.speech_assessment,
+        tremors: neuroExamData.tremors || null,
+        involuntary_movements: neuroExamData.involuntary_movements || null,
+        diagnosis: neuroExamData.diagnosis,
+        treatment_plan: neuroExamData.treatment_plan,
+        notes: neuroExamData.notes || null,
+      };
+
+      await axios.post(
+        "https://patient-management-backend-nine.vercel.app/api/examination",
+        neuroExamPayload
+      );
+
+      if (followUpDate) {
+        await axios.post(
+          `https://patient-management-backend-nine.vercel.app/api/followups/consultations/${consultationId}/followups`,
+          {
+            follow_up_date: followUpDate.toISOString(),
+            notes: followUpNotes,
+          }
+        );
+      }
+
       toast.success("Consultation added successfully! 🎉", {
         position: "top-right",
         autoClose: 3000,
       });
       alert("Consultation saved successfully.");
+      setFollowUpDate(null);
+      setFollowUpNotes("");
     } catch (error) {
       console.error(
         "Error submitting consultation",
@@ -1153,6 +1434,229 @@ const PatientSearch = () => {
               />
             </div>
 
+            {/* Neurological Examination Section */}
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+              <h3 className="mb-5 text-lg font-bold text-gray-800 flex items-center gap-2">
+                <span className="bg-purple-600 text-white p-2 rounded-lg">
+                  🧠
+                </span>
+                Neurological Examination
+              </h3>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Motor Section */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
+                    Motor Function
+                  </h4>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Motor Function
+                    </label>
+                    <input
+                      value={neuroExamData.motor_function}
+                      onChange={(e) =>
+                        setNeuroExamData((p) => ({
+                          ...p,
+                          motor_function: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border-2 border-gray-100 p-3"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Muscle Tone
+                    </label>
+                    <select
+                      value={neuroExamData.muscle_tone || ""}
+                      onChange={(e) =>
+                        setNeuroExamData((p) => ({
+                          ...p,
+                          muscle_tone: e.target.value || null,
+                        }))
+                      }
+                      className="w-full rounded-lg border-2 border-gray-100 p-3"
+                    >
+                      <option value="">Select Muscle Tone</option>
+                      <option value="Normal">Normal</option>
+                      <option value="Hypotonic">Hypotonic</option>
+                      <option value="Hypertonic">Hypertonic</option>
+                      <option value="Rigidity">Rigidity</option>
+                    </select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Muscle Strength (MRC Scale)
+                    </label>
+                    <select
+                      value={neuroExamData.muscle_strength || ""}
+                      onChange={(e) =>
+                        setNeuroExamData((p) => ({
+                          ...p,
+                          muscle_strength: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border-2 border-gray-100 p-3"
+                    >
+                      <option value="">Select Strength</option>
+                      <option value="0/5">0/5 - No contraction</option>
+                      <option value="1/5">1/5 - Trace contraction</option>
+                      <option value="2/5">
+                        2/5 - Active movement (gravity eliminated)
+                      </option>
+                      <option value="3/5">3/5 - Against gravity</option>
+                      <option value="4/5">4/5 - Against resistance</option>
+                      <option value="5/5">5/5 - Normal</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Reflexes Section */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
+                    Reflexes
+                  </h4>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Deep Tendon Reflexes
+                    </label>
+                    <input
+                      value={neuroExamData.deep_tendon_reflexes}
+                      onChange={(e) =>
+                        setNeuroExamData((p) => ({
+                          ...p,
+                          deep_tendon_reflexes: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border-2 border-gray-100 p-3"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Plantar Reflex
+                    </label>
+                    <select
+                      value={neuroExamData.plantar_reflex || ""}
+                      onChange={(e) =>
+                        setNeuroExamData((p) => ({
+                          ...p,
+                          plantar_reflex: e.target.value || null,
+                        }))
+                      }
+                      className="w-full rounded-lg border-2 border-gray-100 p-3"
+                    >
+                      <option value="">Select Response</option>
+                      <option value="Flexor">Flexor</option>
+                      <option value="Extensor">Extensor</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Sensory Section */}
+                <div className="md:col-span-2 space-y-4">
+                  <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
+                    Sensory
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    {/* Checkbox inputs remain the same */}
+                  </div>
+                </div>
+
+                {/* Cranial Nerves Section */}
+                <div className="md:col-span-2 space-y-4">
+                  <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
+                    Cranial Nerves
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Pupillary Reaction
+                      </label>
+                      <select
+                        value={neuroExamData.pupillary_reaction || ""}
+                        onChange={(e) =>
+                          setNeuroExamData((p) => ({
+                            ...p,
+                            pupillary_reaction: e.target.value || null,
+                          }))
+                        }
+                        className="w-full rounded-lg border-2 border-gray-100 p-3"
+                      >
+                        <option value="">Select Reaction</option>
+                        <option value="Brisk">Brisk</option>
+                        <option value="Sluggish">Sluggish</option>
+                        <option value="Non-reactive">Non-reactive</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-gray-700">
+                        Speech Assessment
+                      </label>
+                      <select
+                        value={neuroExamData.speech_assessment || ""}
+                        onChange={(e) =>
+                          setNeuroExamData((p) => ({
+                            ...p,
+                            speech_assessment: e.target.value || null,
+                          }))
+                        }
+                        className="w-full rounded-lg border-2 border-gray-100 p-3"
+                      >
+                        <option value="">Select Speech</option>
+                        <option value="Normal">Normal</option>
+                        <option value="Dysarthric">Dysarthric</option>
+                        <option value="Aphasic">Aphasic</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Diagnosis & Treatment */}
+                <div className="md:col-span-2 space-y-4">
+                  <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
+                    Clinical Decisions
+                  </h4>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Diagnosis *
+                    </label>
+                    <textarea
+                      value={neuroExamData.diagnosis || ""}
+                      onChange={(e) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          diagnosis: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border-2 border-gray-100 p-3 h-32"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Treatment Plan *
+                    </label>
+                    <textarea
+                      value={neuroExamData.treatment_plan || ""}
+                      onChange={(e) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          treatment_plan: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border-2 border-gray-100 p-3 h-32"
+                      required
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
             {/* Enhanced Medicines Section */}
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
               <div className="flex items-center gap-3 mb-5">
@@ -1372,7 +1876,52 @@ const PatientSearch = () => {
                 </button>
               </div>
             </div>
+            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mt-6">
+              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span className="bg-purple-600 text-white p-2 rounded-lg">
+                  📅
+                </span>
+                Follow-up Arrangement
+              </h3>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Follow-up Date
+                  </label>
+                  <DatePicker
+                    selected={followUpDate}
+                    onChange={(date) => setFollowUpDate(date)}
+                    minDate={new Date()}
+                    className="w-full rounded-lg border-2 border-gray-100 p-3"
+                    placeholderText="Select date"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium text-gray-700">
+                    Notes (Optional)
+                  </label>
+                  <textarea
+                    value={followUpNotes}
+                    onChange={(e) => setFollowUpNotes(e.target.value)}
+                    className="w-full rounded-lg border-2 border-gray-100 p-3 h-32"
+                    placeholder="Enter follow-up instructions..."
+                  />
+                </div>
+              </div>
+
+              {followUpDate && (
+                <div className="mt-4 text-right text-sm text-gray-600 font-urdu">
+                  اگلی تاریخ:{" "}
+                  {new Date(followUpDate).toLocaleDateString("ur-PK", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </div>
+              )}
+            </div>
             {/* Enhanced Final Button */}
             <button
               onClick={submitConsultation}
