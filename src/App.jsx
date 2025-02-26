@@ -8,9 +8,8 @@ import CreatableSelect from "react-select/creatable";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { toast } from "react-toastify";
-import DatePicker from 'react-datepicker';
-import 'react-datepicker/dist/react-datepicker.css';
-
+import DatePicker from "react-datepicker";
+import "react-datepicker/dist/react-datepicker.css";
 
 import {
   AiOutlinePlus,
@@ -76,6 +75,7 @@ const PatientSearch = () => {
   const [neuroExamData, setNeuroExamData] = useState(initialNeuroExamState);
   const [followUpDate, setFollowUpDate] = useState(null);
   const [followUpNotes, setFollowUpNotes] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const [patients, setPatients] = useState([]);
   const [searchedMobile, setSearchedMobile] = useState("");
@@ -514,7 +514,9 @@ const PatientSearch = () => {
             </tbody>
           </table>
         </div>
-        ${followUpDate && `
+        ${
+          followUpDate &&
+          `
           <div class="section">
             <h3 class="section-title">Follow-up Arrangement</h3>
             <div class="data-row">
@@ -524,14 +526,18 @@ const PatientSearch = () => {
                 <span class="urdu-date">${urduDate(followUpDate)}</span>
               </span>
             </div>
-            ${followUpNotes && `
+            ${
+              followUpNotes &&
+              `
               <div class="data-row">
                 <span class="data-label">Follow-up Notes:</span>
                 <span>${followUpNotes}</span>
               </div>
-            `}
+            `
+            }
           </div>
-        `}
+        `
+        }
           <div class="footer">
             <div style="text-align:center; margin-bottom:4px;">
               <strong>Dr. Abdul Rauf</strong> | 
@@ -712,7 +718,7 @@ const PatientSearch = () => {
       alert("Please search for a patient first.");
       return;
     }
-
+    setLoading(true);
     try {
       // Step 1: Create a consultation entry
       const consultationRes = await axios.post(
@@ -851,6 +857,8 @@ const PatientSearch = () => {
         "Error submitting consultation",
         error.response?.data || error.message
       );
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -1925,10 +1933,41 @@ const PatientSearch = () => {
             {/* Enhanced Final Button */}
             <button
               onClick={submitConsultation}
-              className="w-full py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.01]"
+              className={`w-full py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.01] flex items-center justify-center ${
+                loading ? "opacity-75 cursor-not-allowed" : ""
+              }`}
+              disabled={loading}
             >
-              <span className="inline-block mr-2">✅</span>
-              Finalize & Save Consultation
+              {loading ? (
+                <>
+                  <svg
+                    className="animate-spin h-5 w-5 mr-2 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    ></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <span className="inline-block mr-2">✅</span>
+                  Finalize & Save Consultation
+                </>
+              )}
             </button>
           </div>
         ) : (
