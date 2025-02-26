@@ -203,6 +203,7 @@ const PatientSearch = () => {
             direction: rtl;
             display: inline-block;
             margin-left: 8px;
+          }
             .data-label {
               font-weight: 600;
               color: var(--primary);
