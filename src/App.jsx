@@ -77,7 +77,7 @@ const PatientSearch = () => {
   const [followUpNotes, setFollowUpNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState(null);
-
+  const [isFetchingSymptoms, setIsFetchingSymptoms] = useState(false);
   const [patients, setPatients] = useState([]);
   const [searchedMobile, setSearchedMobile] = useState("");
 
@@ -117,7 +117,7 @@ const PatientSearch = () => {
       alert("No consultation data to print");
       return;
     }
-  
+
     const printWindow = window.open("", "_blank");
     printWindow.document.write(`
       <html>
@@ -195,9 +195,15 @@ const PatientSearch = () => {
         <body>
           <table class="patient-info-table">
             <tr>
-              <td width="33%"><strong>MR#:</strong> ${patient?.mr_no || "-"}</td>
-              <td width="34%"><strong>Name:</strong> ${patient?.name || "-"}</td>
-              <td width="33%"><strong>Age/Sex:</strong> ${patient?.age || "-"}/${patient?.gender || "-"}</td>
+              <td width="33%"><strong>MR#:</strong> ${
+                patient?.mr_no || "-"
+              }</td>
+              <td width="34%"><strong>Name:</strong> ${
+                patient?.name || "-"
+              }</td>
+              <td width="33%"><strong>Age/Sex:</strong> ${
+                patient?.age || "-"
+              }/${patient?.gender || "-"}</td>
             </tr>
           </table>
   
@@ -217,9 +223,12 @@ const PatientSearch = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    ${selectedMedicines.map((med) => {
-                      const medicineData = medicines.find(m => m.value === med.medicine_id);
-                      return `
+                    ${selectedMedicines
+                      .map((med) => {
+                        const medicineData = medicines.find(
+                          (m) => m.value === med.medicine_id
+                        );
+                        return `
                         <tr>
                           <td>${medicineData?.label || "-"}</td>
                           <td>${med.dosage || "-"}</td>
@@ -228,7 +237,8 @@ const PatientSearch = () => {
                           <td>${med.instructions_urdu || "-"}</td>
                         </tr>
                       `;
-                    }).join("")}
+                      })
+                      .join("")}
                   </tbody>
                 </table>
               </td>
@@ -240,11 +250,15 @@ const PatientSearch = () => {
                 <div class="section-title">RECOMMENDED TESTS</div>
                 <table class="data-table">
                   <tbody>
-                    ${selectedTests.map(test => `
+                    ${selectedTests
+                      .map(
+                        (test) => `
                       <tr>
                         <td>• ${test}</td>
                       </tr>
-                    `).join("")}
+                    `
+                      )
+                      .join("")}
                   </tbody>
                 </table>
               </td>
@@ -257,16 +271,28 @@ const PatientSearch = () => {
                 <table class="data-table">
                   <tbody>
                     <tr>
-                      <td width="50%"><strong>Muscle Tone:</strong> ${neuroExamData.muscle_tone || "-"}</td>
-                      <td><strong>Reflexes:</strong> ${neuroExamData.deep_tendon_reflexes || "-"}</td>
+                      <td width="50%"><strong>Muscle Tone:</strong> ${
+                        neuroExamData.muscle_tone || "-"
+                      }</td>
+                      <td><strong>Reflexes:</strong> ${
+                        neuroExamData.deep_tendon_reflexes || "-"
+                      }</td>
                     </tr>
                     <tr>
-                      <td><strong>Gait:</strong> ${neuroExamData.gait_assessment || "-"}</td>
-                      <td><strong>Pupils:</strong> ${neuroExamData.pupillary_reaction || "-"}</td>
+                      <td><strong>Gait:</strong> ${
+                        neuroExamData.gait_assessment || "-"
+                      }</td>
+                      <td><strong>Pupils:</strong> ${
+                        neuroExamData.pupillary_reaction || "-"
+                      }</td>
                     </tr>
                     <tr>
-                      <td><strong>Romberg:</strong> ${neuroExamData.romberg_test || "-"}</td>
-                      <td><strong>Sensation:</strong> ${neuroExamData.pain_sensation ? "✓" : "✗"}</td>
+                      <td><strong>Romberg:</strong> ${
+                        neuroExamData.romberg_test || "-"
+                      }</td>
+                      <td><strong>Sensation:</strong> ${
+                        neuroExamData.pain_sensation ? "✓" : "✗"
+                      }</td>
                     </tr>
                   </tbody>
                 </table>
@@ -274,20 +300,30 @@ const PatientSearch = () => {
             </tr>
   
             <!-- Follow-up -->
-            ${followUpDate ? `
+            ${
+              followUpDate
+                ? `
               <tr>
                 <td>
                   <div class="section-title">FOLLOW UP</div>
                   <table class="data-table">
                     <tr>
-                      <td width="30%"><strong>Date:</strong> ${new Date(followUpDate).toLocaleDateString()}</td>
-                      <td><span class="urdu-date">${urduDate(followUpDate)}</span></td>
-                      <td width="50%"><strong>Notes:</strong> ${followUpNotes || "-"}</td>
+                      <td width="30%"><strong>Date:</strong> ${new Date(
+                        followUpDate
+                      ).toLocaleDateString()}</td>
+                      <td><span class="urdu-date">${urduDate(
+                        followUpDate
+                      )}</span></td>
+                      <td width="50%"><strong>Notes:</strong> ${
+                        followUpNotes || "-"
+                      }</td>
                     </tr>
                   </table>
                 </td>
               </tr>
-            ` : ''}
+            `
+                : ""
+            }
           </table>
         </body>
       </html>
@@ -364,27 +400,51 @@ const PatientSearch = () => {
   };
 
   // Fetch symptoms and medicines on load
-  useEffect(() => {
-    axios
-      .get("https://patient-management-backend-nine.vercel.app/api/symptoms")
-      .then((res) => {
-        setSymptoms(res.data.map((s) => ({ value: s.id, label: s.name })));
-      });
 
-    axios
-      .get("https://patient-management-backend-nine.vercel.app/api/medicines")
-      .then((res) => {
+  useEffect(() => {
+    const fetchSymptoms = async () => {
+      setIsFetchingSymptoms(true);
+      try {
+        const res = await axios.get(
+          "https://patient-management-backend-nine.vercel.app/api/symptoms"
+        );
+        setSymptoms(res.data.map((s) => ({ value: s.id, label: s.name })));
+      } catch (error) {
+        console.error("Error fetching symptoms:", error);
+      } finally {
+        setIsFetchingSymptoms(false);
+      }
+    };
+  
+    const fetchMedicines = async () => {
+      setIsFetchingMedicines(true);
+      try {
+        const res = await axios.get(
+          "https://patient-management-backend-nine.vercel.app/api/medicines"
+        );
         setMedicines(
           res.data.map((m) => ({
             value: m.id,
-            label: `${m.form} ${m.brand_name} (${m.strength}))`,
+            label: `${m.form} ${m.brand_name} (${m.strength})`,
           }))
         );
-      });
+      } catch (error) {
+        console.error("Error fetching medicines:", error);
+      } finally {
+        setIsFetchingMedicines(false);
+      }
+    };
+    
+  
+    fetchSymptoms();
+    fetchMedicines();
   }, []);
 
+
+  
   // handle create symptoms
   const handleCreateSymptom = async (inputValue) => {
+    setIsFetchingSymptoms(true);
     try {
       const response = await axios.post(
         "https://patient-management-backend-nine.vercel.app/api/symptoms",
@@ -392,16 +452,18 @@ const PatientSearch = () => {
           name: inputValue, // Sending new symptom name
         }
       );
-
+  
       const newSymptom = {
         value: response.data.id, // Assuming the API returns the new symptom's ID
         label: response.data.name,
       };
-
+  
       setSymptoms((prev) => [...prev, newSymptom]); // Add to options
       setSelectedSymptoms((prev) => [...prev, newSymptom]); // Select it immediately
     } catch (error) {
       console.error("Error adding new symptom:", error);
+    } finally {
+      setIsFetchingSymptoms(false);
     }
   };
 
@@ -562,21 +624,20 @@ const PatientSearch = () => {
         alert("براہ کرم ایک مدت منتخب کریں");
         return;
       }
-    
+
       try {
         await axios.post(
           `https://patient-management-backend-nine.vercel.app/api/followups/consultations/${consultationId}/followups`,
           {
-            follow_up_date: followUpDate.toISOString().split('T')[0],
+            follow_up_date: followUpDate.toISOString().split("T")[0],
             notes: followUpNotes || "عام چیک اپ", // Default Urdu note
-            duration_days: selectedDuration
+            duration_days: selectedDuration,
           }
         );
-        
+
         alert("فالو اپ کامیابی سے شیڈول ہو گیا!");
         setSelectedDuration(null);
         setFollowUpNotes("");
-        
       } catch (error) {
         console.error("فالو اپ شیڈولنگ میں خرابی:", error);
         alert("فالو اپ شیڈول کرنے میں ناکامی۔ براہ کرم دوبارہ کوشش کریں۔");
@@ -871,7 +932,7 @@ const PatientSearch = () => {
             </div>
 
             {/* Enhanced Action Buttons */}
-            <div className="flex gap-4">
+            {/*<div className="flex gap-4">
               <button
                 onClick={handlePrint}
                 className="flex-1 flex items-center gap-3 justify-center rounded-xl bg-gray-100 hover:bg-gray-200 px-6 py-3.5 text-gray-700 transition-all group"
@@ -895,7 +956,7 @@ const PatientSearch = () => {
                     : "Download Patient Report"}
                 </span>
               </button>
-            </div>
+            </div> */}
             {/* Symptoms Section */}
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
               <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
@@ -932,11 +993,8 @@ const PatientSearch = () => {
                 placeholder="Select or type symptoms..."
                 classNamePrefix="react-select"
                 isClearable
-                onCreateOption={(inputValue) => {
-                  const newSymptom = { value: inputValue, label: inputValue };
-                  setSymptoms([...symptoms, newSymptom]);
-                  setSelectedSymptoms([...selectedSymptoms, newSymptom]);
-                }}
+                onCreateOption={handleCreateSymptom}
+                isLoading={isFetchingSymptoms}
                 formatCreateLabel={(inputValue) => `Create "${inputValue}"`}
                 styles={{
                   control: (base) => ({
