@@ -11,7 +11,6 @@ const patientSchema = z.object({
   age: z.coerce.number().positive("Enter a valid age"),
   gender: z.enum(["Male", "Female", "Others"]),
   mobile: z.string().min(10, "Enter a valid mobile number").max(15),
-  checkupDate: z.string().min(1, "Checkup date is required"),
 });
 
 const AddPatientForm = ({ searchedMobile, onSuccess }) => {
@@ -40,7 +39,6 @@ const AddPatientForm = ({ searchedMobile, onSuccess }) => {
         age: Number(data.age),
         gender: data.gender,
         mobile: data.mobile,
-        checkup_date: data.checkupDate, // Fixed field name mismatch
       });
 
       toast.success("Patient registered successfully! 🎉", {
@@ -71,7 +69,6 @@ const AddPatientForm = ({ searchedMobile, onSuccess }) => {
           { name: "name", label: "Full Name" },
           { name: "age", label: "Age", type: "number" },
           { name: "mobile", label: "Mobile Number", type: "text", readOnly: true },
-          { name: "checkupDate", label: "Checkup Date", type: "date" }, 
         ].map((field) => (
           <div key={field.name} className="space-y-1">
             <label className="text-sm font-medium text-gray-600">{field.label}</label>

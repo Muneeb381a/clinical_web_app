@@ -76,6 +76,7 @@ const PatientSearch = () => {
   const [followUpDate, setFollowUpDate] = useState(null);
   const [followUpNotes, setFollowUpNotes] = useState("");
   const [loading, setLoading] = useState(false);
+  const [selectedDuration, setSelectedDuration] = useState(null);
 
   const [patients, setPatients] = useState([]);
   const [searchedMobile, setSearchedMobile] = useState("");
@@ -84,14 +85,14 @@ const PatientSearch = () => {
     setPatients([...patients, newPatient]); // Update patient list
   };
 
-  const [vitalSigns, setVitalSigns] = useState({
-    temperature: "",
-    bloodPressure: "",
-    heartRate: "",
-    respiratoryRate: "",
-    oxygenSaturation: "",
-    weight: "",
-  });
+  // const [vitalSigns, setVitalSigns] = useState({
+  //   temperature: "",
+  //   bloodPressure: "",
+  //   heartRate: "",
+  //   respiratoryRate: "",
+  //   oxygenSaturation: "",
+  //   weight: "",
+  // });
 
   const customSelectStyles = {
     control: (base) => ({
@@ -352,21 +353,6 @@ const PatientSearch = () => {
             </div>
 
             <!-- Vitals Column -->
-            <div class="section">
-              <h3 class="section-title">Vital Signs</h3>
-              <div class="patient-info vital-signs">
-                ${Object.entries(vitalSigns)
-                  .map(
-                    ([key, value]) => `
-                  <div class="patient-detail">
-                    <span>${key}:</span>
-                    <span>${value || "-"}</span>
-                  </div>
-                `
-                  )
-                  .join("")}
-              </div>
-            </div>
           </div>
                   <div class="section">
           <h3 class="section-title">Neurological Examination</h3>
@@ -680,13 +666,14 @@ const PatientSearch = () => {
       return;
     }
 
+    const mobile = data.mobile.trim();
     const startTime = Date.now();
     setIsSearching(true);
 
     try {
       const res = await axios.get(
         `https://patient-management-backend-nine.vercel.app/api/patients/search?mobile=${encodeURIComponent(
-          data.mobile
+          mobile
         )}`
       );
 
@@ -700,7 +687,7 @@ const PatientSearch = () => {
         setShowAddPatient(false);
       } else {
         setPatient(null);
-        setSearchedMobile(data.mobile);
+        setSearchedMobile(mobile);
         setShowAddPatient(true);
       }
     } catch (error) {
@@ -711,6 +698,10 @@ const PatientSearch = () => {
     } finally {
       setIsSearching(false);
     }
+  };
+  const handleNewPatientAdded = () => {
+    // Re-trigger the search with the same mobile number
+    onSearch({ mobile: searchedMobile });
   };
 
   // Submit symptoms & medicines for a patient
@@ -760,28 +751,6 @@ const PatientSearch = () => {
           headers: { "Content-Type": "application/json" },
         }
       );
-
-      const vitalsData = {
-        consultation_id: consultationId,
-        temperature: vitalSigns?.temperature ?? 0.0,
-        blood_pressure: vitalSigns?.bloodPressure?.match(/^\d{2,3}\/\d{2,3}$/)
-          ? vitalSigns.bloodPressure
-          : "120/80",
-        pulse_rate: vitalSigns?.heartRate ?? 0,
-        respiratory_rate: vitalSigns?.respiratoryRate ?? 0,
-        oxygen_saturation: vitalSigns?.oxygenSaturation ?? 0,
-      };
-
-      console.log("Sending vitals data:", JSON.stringify(vitalsData, null, 2));
-
-      await axios.post(
-        "https://patient-management-backend-nine.vercel.app/api/vitals",
-        vitalsData,
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-
       // Step 5: Submit tests
       console.log("Submitting tests:", selectedTests);
 
@@ -836,14 +805,28 @@ const PatientSearch = () => {
         neuroExamPayload
       );
 
-      if (followUpDate) {
+      if (!selectedDuration) {
+        alert("براہ کرم ایک مدت منتخب کریں");
+        return;
+      }
+    
+      try {
         await axios.post(
           `https://patient-management-backend-nine.vercel.app/api/followups/consultations/${consultationId}/followups`,
           {
-            follow_up_date: followUpDate.toISOString(),
-            notes: followUpNotes,
+            follow_up_date: followUpDate.toISOString().split('T')[0],
+            notes: followUpNotes || "عام چیک اپ", // Default Urdu note
+            duration_days: selectedDuration
           }
         );
+        
+        alert("فالو اپ کامیابی سے شیڈول ہو گیا!");
+        setSelectedDuration(null);
+        setFollowUpNotes("");
+        
+      } catch (error) {
+        console.error("فالو اپ شیڈولنگ میں خرابی:", error);
+        alert("فالو اپ شیڈول کرنے میں ناکامی۔ براہ کرم دوبارہ کوشش کریں۔");
       }
 
       toast.success("Consultation added successfully! 🎉", {
@@ -853,6 +836,7 @@ const PatientSearch = () => {
       alert("Consultation saved successfully.");
       setFollowUpDate(null);
       setFollowUpNotes("");
+      handlePrint();
     } catch (error) {
       console.error(
         "Error submitting consultation",
@@ -1159,85 +1143,6 @@ const PatientSearch = () => {
                 </span>
               </button>
             </div>
-
-            {/* Enhanced Vital Signs */}
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-              <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
-                <div className="bg-red-700 p-2.5 rounded-lg text-white shadow-sm">
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                    ></path>
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Clinical Measurements
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Record patient's vital parameters
-                  </p>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  {
-                    label: "Temperature (°C)",
-                    key: "temperature",
-                    icon: "thermometer",
-                  },
-                  {
-                    label: "Blood Pressure (mmHg)",
-                    key: "bloodPressure",
-                    icon: "heart-pulse",
-                  },
-                  {
-                    label: "Heart Rate (bpm)",
-                    key: "heartRate",
-                    icon: "heart",
-                  },
-                  {
-                    label: "Respiratory Rate",
-                    key: "respiratoryRate",
-                    icon: "lungs",
-                  },
-                  {
-                    label: "Oxygen Saturation (%)",
-                    key: "oxygenSaturation",
-                    icon: "oxygen",
-                  },
-                  { label: "Weight (kg)", key: "weight", icon: "weight" },
-                ].map((field) => (
-                  <div key={field.key} className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <svg className="w-4 h-4 text-gray-500">{/* Icon */}</svg>
-                      {field.label}
-                    </label>
-                    <input
-                      type="number"
-                      value={vitalSigns[field.key]}
-                      onChange={(e) =>
-                        setVitalSigns({
-                          ...vitalSigns,
-                          [field.key]: e.target.value,
-                        })
-                      }
-                      className="w-full rounded-lg border-2 border-gray-200 bg-white p-3 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                      placeholder="--"
-                    />
-                  </div>
-                ))}
-              </div>
-            </div>
-
             {/* Symptoms Section */}
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
               <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
@@ -1885,44 +1790,58 @@ const PatientSearch = () => {
                 </button>
               </div>
             </div>
+
+            {/* followup */}
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mt-6">
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                 <span className="bg-purple-600 text-white p-2 rounded-lg">
                   📅
                 </span>
-                Follow-up Arrangement
+                فالو اپ کا انتظام
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Follow-up Date
+                    فالو اپ کی مدت منتخب کریں
                   </label>
-                  <DatePicker
-                    selected={followUpDate}
-                    onChange={(date) => setFollowUpDate(date)}
-                    minDate={new Date()}
-                    className="w-full rounded-lg border-2 border-gray-100 p-3"
-                    placeholderText="Select date"
-                  />
+                  <select
+                    value={selectedDuration}
+                    onChange={(e) => {
+                      const days = parseInt(e.target.value);
+                      const date = new Date();
+                      date.setDate(date.getDate() + days);
+                      setFollowUpDate(date);
+                      setSelectedDuration(days);
+                    }}
+                    className="w-full rounded-lg border-2 border-gray-100 p-3 urdu-font"
+                    required
+                  >
+                    <option value="">مدت منتخب کریں</option>
+                    <option value="10">10 دن بعد (10 Days)</option>
+                    <option value="15">15 دن بعد (15 Days)</option>
+                    <option value="30">ایک مہینہ بعد (1 Month)</option>
+                    <option value="45">ڈیڑھ مہینہ بعد (1.5 Months)</option>
+                    <option value="60">دو مہینے بعد (2 Months)</option>
+                  </select>
                 </div>
 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Notes (Optional)
+                    اضافی ہدایات (اختیاری)
                   </label>
                   <textarea
                     value={followUpNotes}
                     onChange={(e) => setFollowUpNotes(e.target.value)}
-                    className="w-full rounded-lg border-2 border-gray-100 p-3 h-32"
-                    placeholder="Enter follow-up instructions..."
+                    className="w-full rounded-lg border-2 border-gray-100 p-3 h-32 urdu-font"
+                    placeholder="ہدایات درج کریں..."
                   />
                 </div>
               </div>
 
-              {followUpDate && (
-                <div className="mt-4 text-right text-sm text-gray-600 font-urdu">
-                  اگلی تاریخ:{" "}
+              {selectedDuration && (
+                <div className="mt-4 text-right text-sm text-gray-600 urdu-font">
+                  منتخب کردہ تاریخ:{" "}
                   {new Date(followUpDate).toLocaleDateString("ur-PK", {
                     year: "numeric",
                     month: "long",
@@ -1975,7 +1894,7 @@ const PatientSearch = () => {
           showAddPatient && (
             <AddPatientForm
               searchedMobile={searchedMobile}
-              onSuccess={handleNewPatient}
+              onSuccess={handleNewPatientAdded}
             />
           )
         )}

@@ -1,1 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu&display=swap');
 @import "tailwindcss";
+
+
+
+.font-urdu {
+  font-family: 'Noto Nastaliq Urdu', serif;
+  font-size: 1.1rem;
+}
+
+.react-select__option {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+  }
