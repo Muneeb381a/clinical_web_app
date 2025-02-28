@@ -1727,13 +1727,13 @@ const PatientSearch = () => {
                 <span className="bg-purple-600 text-white p-2 rounded-lg">
                   📅
                 </span>
-                فالو اپ کا انتظام
+                Follow Up
               </h3>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    فالو اپ کی مدت منتخب کریں
+                  Please Select the Date of Followup
                   </label>
                   <select
                     value={selectedDuration}
@@ -1758,13 +1758,13 @@ const PatientSearch = () => {
 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    اضافی ہدایات (اختیاری)
+                    Additional Instructions(Optional) 
                   </label>
                   <textarea
                     value={followUpNotes}
                     onChange={(e) => setFollowUpNotes(e.target.value)}
                     className="w-full rounded-lg border-2 border-gray-100 p-3 h-32 urdu-font"
-                    placeholder="ہدایات درج کریں..."
+                    placeholder="Write Instruction Here"
                   />
                 </div>
               </div>
