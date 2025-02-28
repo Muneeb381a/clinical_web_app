@@ -90,24 +90,27 @@ const PatientSearch = () => {
   const handleCreateMedicine = async (inputValue) => {
     setIsCreating(true);
     try {
-      const response = await axios.post("https://patient-management-backend-nine.vercel.app/api/medicines", {
-        medicine_name: inputValue,
-        generic_name: "",
-        urdu_name: "",
-        urdu_form: "",
-        urdu_strength: "",
-      });
-  
+      const response = await axios.post(
+        "https://patient-management-backend-nine.vercel.app/api/medicines",
+        {
+          medicine_name: inputValue,
+          generic_name: "",
+          urdu_name: "",
+          urdu_form: "",
+          urdu_strength: "",
+        }
+      );
+
       const newMedicine = response.data;
-  
+
       const formattedMedicine = {
         value: newMedicine.id,
         label: `${newMedicine.form} ${newMedicine.brand_name} (${newMedicine.strength})`,
       };
-  
+
       // Add new medicine to options
       setMedicines((prev) => [...prev, formattedMedicine]);
-  
+
       return newMedicine.id; // 🔹 Return new medicine ID ✅
     } catch (error) {
       console.error("Creation failed:", error);
@@ -117,7 +120,6 @@ const PatientSearch = () => {
       setIsCreating(false);
     }
   };
-  
 
   // const [vitalSigns, setVitalSigns] = useState({
   //   temperature: "",
@@ -1481,7 +1483,10 @@ const PatientSearch = () => {
                         <Select
                           options={[
                             { value: "morning", label: "صبح" },
+                            { value: "noon", label: "دوپہر" },
+                            { value: "evening", label: "شام" },
                             { value: "night", label: "رات" },
+                            { value: "as_needed", label: "ضرورت کے مطابق" },
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -1511,6 +1516,14 @@ const PatientSearch = () => {
                           options={[
                             { value: "1", label: "1 گولی" },
                             { value: "2", label: "2 گولیاں" },
+                            { value: "3", label: "3 گولیاں" },
+                            { value: "4", label: "4 گولیاں" },
+                            { value: "5", label: "5 گولیاں" },
+                            { value: "6", label: "6 گولیاں" },
+                            { value: "7", label: "7 گولیاں" },
+                            { value: "8", label: "8 گولیاں" },
+                            { value: "9", label: "9 گولیاں" },
+                            { value: "10", label: "10 گولیاں" },
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -1534,8 +1547,18 @@ const PatientSearch = () => {
                         </label>
                         <Select
                           options={[
+                            { value: "1_day", label: "1 دن" },
+                            { value: "2_days", label: "2 دن" },
+                            { value: "3_days", label: "3 دن" },
+                            { value: "4_days", label: "4 دن" },
+                            { value: "5_days", label: "5 دن" },
+                            { value: "6_days", label: "6 دن" },
                             { value: "1_week", label: "1 ہفتہ" },
                             { value: "2_weeks", label: "2 ہفتے" },
+                            { value: "3_weeks", label: "3 ہفتے" },
+                            { value: "1_month", label: "1 مہینہ" },
+                            { value: "2_months", label: "2 مہینے" },
+                            { value: "3_months", label: "3 مہینے" },
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -1565,6 +1588,8 @@ const PatientSearch = () => {
                           options={[
                             { value: "after_meal", label: "کھانے کے بعد" },
                             { value: "before_meal", label: "کھانے سے پہلے" },
+                            { value: "before_sleep", label: "سونے سے پہلے" },
+                            { value: "after_waking", label: "جاگنے کے بعد" },
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -1592,9 +1617,48 @@ const PatientSearch = () => {
                         </label>
                         <Select
                           options={[
-                            { value: "mouth", label: "From Mouth" },
-                            { value: "injection", label: "Injection" },
-                            { value: "topical", label: "Topical Application" },
+                            { value: "mouth", label: "منہ کے ذریعے" },
+                            { value: "injection", label: "انجیکشن" },
+                            { value: "topical", label: "جلد پر لگانے کی دوا" },
+                            {
+                              value: "sublingual",
+                              label: "زبان کے نیچے رکھنے والی دوا",
+                            },
+                            { value: "inhalation", label: "سانس کے ذریعے" },
+                            { value: "nasal", label: "ناک میں ڈالنے کی دوا" },
+                            {
+                              value: "eye_drops",
+                              label: "آنکھوں میں ڈالنے کی دوا",
+                            },
+                            {
+                              value: "ear_drops",
+                              label: "کان میں ڈالنے کی دوا",
+                            },
+                            {
+                              value: "rectal",
+                              label: "مقعد کے ذریعے (سپوزٹری)",
+                            },
+                            { value: "vaginal", label: "اندام نہانی کے ذریعے" },
+                            {
+                              value: "intravenous",
+                              label: "ورید کے ذریعے (IV)",
+                            },
+                            {
+                              value: "intramuscular",
+                              label: "پٹھوں میں انجیکشن",
+                            },
+                            {
+                              value: "subcutaneous",
+                              label: "جلد کے نیچے انجیکشن",
+                            },
+                            {
+                              value: "buccal",
+                              label: "گال کے اندر جذب ہونے والی دوا",
+                            },
+                            {
+                              value: "transdermal",
+                              label: "جلد پر لگانے والا پیچ",
+                            },
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
