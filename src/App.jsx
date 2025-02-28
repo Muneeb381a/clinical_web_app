@@ -80,10 +80,44 @@ const PatientSearch = () => {
   const [isFetchingSymptoms, setIsFetchingSymptoms] = useState(false);
   const [patients, setPatients] = useState([]);
   const [searchedMobile, setSearchedMobile] = useState("");
+  const [fetchingMedicines, setIsFetchingMedicines] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
 
   const handleNewPatient = (newPatient) => {
     setPatients([...patients, newPatient]); // Update patient list
   };
+
+  const handleCreateMedicine = async (inputValue) => {
+    setIsCreating(true);
+    try {
+      const response = await axios.post("https://patient-management-backend-nine.vercel.app/api/medicines", {
+        medicine_name: inputValue,
+        generic_name: "",
+        urdu_name: "",
+        urdu_form: "",
+        urdu_strength: "",
+      });
+  
+      const newMedicine = response.data;
+  
+      const formattedMedicine = {
+        value: newMedicine.id,
+        label: `${newMedicine.form} ${newMedicine.brand_name} (${newMedicine.strength})`,
+      };
+  
+      // Add new medicine to options
+      setMedicines((prev) => [...prev, formattedMedicine]);
+  
+      return newMedicine.id; // 🔹 Return new medicine ID ✅
+    } catch (error) {
+      console.error("Creation failed:", error);
+      alert(error.response?.data?.error || "Invalid medicine format");
+      return null;
+    } finally {
+      setIsCreating(false);
+    }
+  };
+  
 
   // const [vitalSigns, setVitalSigns] = useState({
   //   temperature: "",
@@ -415,7 +449,7 @@ const PatientSearch = () => {
         setIsFetchingSymptoms(false);
       }
     };
-  
+
     const fetchMedicines = async () => {
       setIsFetchingMedicines(true);
       try {
@@ -434,14 +468,11 @@ const PatientSearch = () => {
         setIsFetchingMedicines(false);
       }
     };
-    
-  
+
     fetchSymptoms();
     fetchMedicines();
   }, []);
 
-
-  
   // handle create symptoms
   const handleCreateSymptom = async (inputValue) => {
     setIsFetchingSymptoms(true);
@@ -452,12 +483,12 @@ const PatientSearch = () => {
           name: inputValue, // Sending new symptom name
         }
       );
-  
+
       const newSymptom = {
         value: response.data.id, // Assuming the API returns the new symptom's ID
         label: response.data.name,
       };
-  
+
       setSymptoms((prev) => [...prev, newSymptom]); // Add to options
       setSelectedSymptoms((prev) => [...prev, newSymptom]); // Select it immediately
     } catch (error) {
@@ -1401,15 +1432,39 @@ const PatientSearch = () => {
                         <label className="text-sm font-medium text-gray-600">
                           Medicine
                         </label>
-                        <Select
+                        <CreatableSelect
+                          isLoading={isCreating}
+                          loadingMessage={() => "Creating medicine..."}
                           options={medicines}
-                          className="react-select-container"
-                          classNamePrefix="react-select"
-                          onChange={(e) => {
+                          value={
+                            medicines.find(
+                              (m) =>
+                                m.value ===
+                                selectedMedicines[index]?.medicine_id
+                            ) || null
+                          }
+                          onCreateOption={async (inputValue) => {
+                            const newId = await handleCreateMedicine(
+                              inputValue
+                            );
+                            if (newId) {
+                              setSelectedMedicines((prev) =>
+                                prev.map((item, i) =>
+                                  i === index
+                                    ? { ...item, medicine_id: newId }
+                                    : item
+                                )
+                              );
+                            }
+                          }}
+                          onChange={(selectedOption) => {
                             setSelectedMedicines((prev) =>
                               prev.map((item, i) =>
                                 i === index
-                                  ? { ...item, medicine_id: e.value }
+                                  ? {
+                                      ...item,
+                                      medicine_id: selectedOption.value,
+                                    }
                                   : item
                               )
                             );
