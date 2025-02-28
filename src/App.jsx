@@ -70,6 +70,7 @@ const PatientSearch = () => {
   const [isSearching, setIsSearching] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [consultationData, setConsultationData] = useState(null);
+  const [tests, setTests] = useState([]);
   const [selectedTests, setSelectedTests] = useState([]);
   const [customTest, setCustomTest] = useState("");
   const [neuroExamData, setNeuroExamData] = useState(initialNeuroExamState);
@@ -85,6 +86,18 @@ const PatientSearch = () => {
 
   const handleNewPatient = (newPatient) => {
     setPatients([...patients, newPatient]); // Update patient list
+  };
+
+  useEffect(() => {
+    axios
+      .get("https://patient-management-backend-nine.vercel.app/api/tests")
+      .then((res) => setTests(res.data))
+      .catch((err) => console.error("Error fetching tests:", err));
+  }, []);
+
+  // Handle test selection or creation
+  const handleTestChange = (selectedOptions) => {
+    setSelectedTests(selectedOptions.map((option) => option.value));
   };
 
   const handleCreateMedicine = async (inputValue) => {
@@ -600,16 +613,29 @@ const PatientSearch = () => {
         }
       );
       // Step 5: Submit tests
-      console.log("Submitting tests:", selectedTests);
+      for (const testName of selectedTests) {
+        try {
+          let test = tests.find((t) => t.test_name === testName);
 
-      await axios.post(
-        "https://patient-management-backend-nine.vercel.app/api/tests",
-        {
-          consultation_id: consultationId,
-          test_name: selectedTests, // Assuming selectedTests is a single test
-          test_notes: "Optional test notes",
+          // If test does not exist, create a new one
+          if (!test) {
+            const testResponse = await axios.post(
+              "https://patient-management-backend-nine.vercel.app/api/tests",
+              { test_name: testName, test_notes: "Optional test notes" }
+            );
+            test = testResponse.data; // Assign the created test
+            setTests((prevTests) => [...prevTests, test]); // Update the test list
+          }
+
+          // Assign test to consultation
+          await axios.post("https://patient-management-backend-nine.vercel.app/api/tests/assign", {
+            test_id: test.id,
+            consultation_id: consultationId,
+          });
+        } catch (error) {
+          console.error("Error adding/assigning test:", error);
         }
-      );
+      }
 
       // Step 6: Submit neurological examination with proper sanitization
       const neuroExamPayload = {
@@ -1080,115 +1106,23 @@ const PatientSearch = () => {
 
               <CreatableSelect
                 isMulti
-                options={[
-                  { value: "CBC", label: "Complete Blood Count (CBC)" },
-                  { value: "LFT", label: "Liver Function Test (LFT)" },
-                  { value: "RFT", label: "Renal Function Test (RFT)" },
-                ]}
+                options={tests.map((test) => ({
+                  value: test.test_name,
+                  label: test.test_name,
+                }))}
                 value={selectedTests.map((test) => ({
                   value: test,
                   label: test,
                 }))}
-                onChange={(selectedOptions) =>
-                  setSelectedTests(
-                    selectedOptions.map((option) => option.value)
-                  )
+                onChange={(newTests) =>
+                  setSelectedTests(newTests.map((t) => t.value))
                 }
-                onCreateOption={(newTest) => {
-                  const newOption = { value: newTest, label: newTest };
-                  setSelectedTests([...selectedTests, newTest]);
+                onCreateOption={(newTestName) => {
+                  setSelectedTests([...selectedTests, newTestName]);
                 }}
+                placeholder="Type or select a test..."
                 className="react-select-container"
                 classNamePrefix="react-select"
-                placeholder={
-                  <div className="text-gray-400 flex items-center gap-2">
-                    Type or select a test...
-                  </div>
-                }
-                styles={{
-                  control: (base, state) => ({
-                    ...base,
-                    border: "2px solid #e5e7eb",
-                    borderRadius: "0.75rem",
-                    padding: "0.5rem 1rem",
-                    boxShadow: state.isFocused
-                      ? "0 0 0 3px rgba(59, 130, 246, 0.1)"
-                      : "0 1px 2px rgba(0, 0, 0, 0.05)",
-                    "&:hover": {
-                      borderColor: "#93c5fd",
-                      boxShadow: "0 0 0 3px rgba(147, 197, 253, 0.1)",
-                    },
-                    transition: "all 0.2s ease-in-out",
-                  }),
-                  multiValue: (base) => ({
-                    ...base,
-                    backgroundColor: "#bfdbfe",
-                    borderRadius: "9999px",
-                    padding: "0 12px",
-                    transform: "scale(0.95)",
-                    transition: "all 0.2s ease-in-out",
-                    "&:hover": {
-                      transform: "scale(1)",
-                      backgroundColor: "#93c5fd",
-                    },
-                  }),
-                  multiValueLabel: (base) => ({
-                    ...base,
-                    color: "#1e40af",
-                    fontWeight: "600",
-                    fontSize: "0.875rem",
-                  }),
-                  multiValueRemove: (base) => ({
-                    ...base,
-                    color: "#1e40af",
-                    "&:hover": {
-                      backgroundColor: "transparent",
-                      color: "#1e3a8a",
-                    },
-                  }),
-                  menu: (base) => ({
-                    ...base,
-                    borderRadius: "0.75rem",
-                    border: "2px solid #e5e7eb",
-                    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-                    marginTop: "4px",
-                  }),
-                  option: (base, state) => ({
-                    ...base,
-                    backgroundColor: state.isSelected ? "#3b82f6" : "white",
-                    color: state.isSelected ? "white" : "#1f2937",
-                    padding: "12px 16px",
-                    "&:hover": {
-                      backgroundColor: state.isSelected ? "#3b82f6" : "#f3f4f6",
-                      color: state.isSelected ? "white" : "#1f2937",
-                    },
-                    transition: "all 0.2s ease-in-out",
-                  }),
-                  placeholder: (base) => ({
-                    ...base,
-                    color: "#9ca3af",
-                    marginLeft: "4px",
-                  }),
-                }}
-                components={{
-                  DropdownIndicator: () => (
-                    <div className="pr-3 transform transition-transform">
-                      <svg
-                        className="w-5 h-5 text-gray-500 hover:text-blue-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </div>
-                  ),
-                }}
               />
             </div>
 
@@ -1733,7 +1667,7 @@ const PatientSearch = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
-                  Please Select the Date of Followup
+                    Please Select the Date of Followup
                   </label>
                   <select
                     value={selectedDuration}
@@ -1758,7 +1692,7 @@ const PatientSearch = () => {
 
                 <div className="space-y-2">
                   <label className="block text-sm font-medium text-gray-700">
-                    Additional Instructions(Optional) 
+                    Additional Instructions(Optional)
                   </label>
                   <textarea
                     value={followUpNotes}
