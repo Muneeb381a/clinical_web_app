@@ -491,10 +491,9 @@ const PatientSearch = () => {
   }, []);
 
   const fetchPrescriptions = async (patientId) => {
-    console.log("Fetching prescriptions for patient ID:", patientId);
     try {
       const response = await axios.get(
-        `http://localhost:4500/api/prescriptions/patient/${patientId}`
+        `https://patient-management-backend-nine.vercel.app/api/prescriptions/patient/${patientId}`
       );
       setPrescriptions(response.data);
       setShowPopup(true);
