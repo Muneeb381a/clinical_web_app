@@ -13,7 +13,7 @@ const patientSchema = z.object({
   mobile: z.string().min(10, "Enter a valid mobile number").max(15),
 });
 
-const AddPatientForm = ({ searchedMobile, onSuccess }) => {
+const AddPatientForm = ({ searchedMobile, onSuccess, onClose }) => {
   const {
     register,
     handleSubmit,
@@ -41,12 +41,11 @@ const AddPatientForm = ({ searchedMobile, onSuccess }) => {
         mobile: data.mobile,
       });
 
-      toast.success("Patient registered successfully! 🎉", {
-        position: "top-right",
-        autoClose: 3000,
-      });
+      
 
-      if (onSuccess) onSuccess();
+      if (onSuccess) onSuccess(); // Trigger any additional success actions
+      if (onClose) onClose(); // Close the popup after success
+
       console.log("Patient Registered:", res.data);
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Failed to register patient";
@@ -65,11 +64,8 @@ const AddPatientForm = ({ searchedMobile, onSuccess }) => {
       <ToastContainer />
       <h3 className="text-lg font-semibold text-gray-800">New Patient Registration</h3>
       <form onSubmit={handleSubmit(addPatient)} className="grid grid-cols-2 gap-4 mt-4">
-        {[
-          { name: "name", label: "Full Name" },
-          { name: "age", label: "Age", type: "number" },
-          { name: "mobile", label: "Mobile Number", type: "text", readOnly: true },
-        ].map((field) => (
+        {[{ name: "name", label: "Full Name" }, { name: "age", label: "Age", type: "number" },
+          { name: "mobile", label: "Mobile Number", type: "text", readOnly: true }].map((field) => (
           <div key={field.name} className="space-y-1">
             <label className="text-sm font-medium text-gray-600">{field.label}</label>
             <input

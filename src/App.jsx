@@ -169,7 +169,12 @@ const PatientSearch = () => {
       return;
     }
 
-    const printWindow = window.open("", "_blank");
+
+     const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    alert("Pop-up blocked! Allow pop-ups for this site.");
+    return;
+  }
     printWindow.document.write(`
       <html>
         <head>
@@ -382,74 +387,6 @@ const PatientSearch = () => {
     printWindow.document.close();
     printWindow.print();
   };
-
-  const generatePDF = async () => {
-    if (!patient) {
-      alert("No patient data available");
-      return;
-    }
-
-    setIsGeneratingPDF(true);
-    try {
-      const doc = new jsPDF();
-
-      // Add clinic header
-      doc.setFontSize(16);
-      doc.text("Specialist Clinics, Lab and Imaging Services", 15, 15);
-      doc.setFontSize(10);
-      doc.text(
-        "G.T Road, Gujar Khan. Ph: 051-3513287, 0315-3513287, 0322-3513287",
-        15,
-        22
-      );
-      doc.text("Email: omerclinic@outlook.com", 15, 27);
-
-      // Add patient information
-      doc.setFontSize(12);
-      let yPos = 40;
-      doc.text(`Patient Name: ${patient.name}`, 15, yPos);
-      yPos += 8;
-      doc.text(`MR#: ${patient.mrNumber || "N/A"}`, 15, yPos);
-      yPos += 8;
-      doc.text(`Age/Gender: ${patient.age}Y/${patient.gender}`, 15, yPos);
-      yPos += 15;
-
-      // Add vital signs
-      doc.setFontSize(14);
-      doc.text("Vital Signs:", 15, yPos);
-      yPos += 8;
-      Object.entries(vitalSigns).forEach(([key, value]) => {
-        doc.text(`${key}: ${value}`, 20, yPos);
-        yPos += 8;
-      });
-
-      // Add medications
-      yPos += 10;
-      doc.setFontSize(14);
-      doc.text("Prescribed Medications:", 15, yPos);
-      yPos += 8;
-      selectedMedicines.forEach((med, index) => {
-        const medicine = medicines.find((m) => m.value === med.medicine_id);
-        doc.text(
-          `${index + 1}. ${medicine?.label || "Unknown"} - ${med.dosage}`,
-          20,
-          yPos
-        );
-        yPos += 8;
-      });
-
-      doc.save(
-        `consultation-${patient.name}-${new Date()
-          .toISOString()
-          .slice(0, 10)}.pdf`
-      );
-    } catch (error) {
-      console.error("Error generating PDF:", error);
-      alert("Error generating PDF");
-    }
-    setIsGeneratingPDF(false);
-  };
-
   // Fetch symptoms and medicines on load
 
   useEffect(() => {
@@ -727,7 +664,9 @@ const PatientSearch = () => {
       alert("Consultation saved successfully.");
       setFollowUpDate(null);
       setFollowUpNotes("");
-      handlePrint();
+      setTimeout(() => {
+        handlePrint();
+      }, 500);
     } catch (error) {
       console.error(
         "Error submitting consultation",
