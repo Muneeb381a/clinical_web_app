@@ -606,10 +606,10 @@ const PatientSearch = () => {
 
       // Step 3: Submit medicines
       await axios.post(
-        "http://localhost:4500/api/prescriptions",
+        "https://patient-management-backend-nine.vercel.app/api/prescriptions",
         {
           consultation_id: consultationId,
-          patient_id: patient.id, // Include patient_id
+          patient_id: patient.id, 
           medicines: selectedMedicines.map((med) => ({
             medicine_id: med.medicine_id,
             dosage: med.dosage,
