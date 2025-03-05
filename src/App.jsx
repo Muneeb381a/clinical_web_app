@@ -56,7 +56,6 @@ const initialNeuroExamState = {
   tremors: "",
   involuntary_movements: "",
   diagnosis: "",
-  treatment_plan: "",
   notes: "",
 };
 
@@ -625,7 +624,6 @@ const PatientSearch = () => {
         tremors: neuroExamData.tremors || null,
         involuntary_movements: neuroExamData.involuntary_movements || null,
         diagnosis: neuroExamData.diagnosis,
-        treatment_plan: neuroExamData.treatment_plan,
         notes: neuroExamData.notes || null,
       };
 
@@ -796,16 +794,6 @@ const PatientSearch = () => {
                   { label: "Full Name", value: patient.name, icon: "user" },
                   { label: "Age", value: patient.age, icon: "calendar" },
                   { label: "Gender", value: patient.gender, icon: "gender" },
-                  {
-                    label: "Weight",
-                    value: `${patient.weight} kg`,
-                    icon: "weight",
-                  },
-                  {
-                    label: "Height",
-                    value: `${patient.height} cm`,
-                    icon: "height",
-                  },
                   {
                     label: "Last Visit",
                     value: patient.checkup_date || "N/A",
@@ -1216,23 +1204,6 @@ const PatientSearch = () => {
                         setNeuroExamData((prev) => ({
                           ...prev,
                           diagnosis: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border-2 border-gray-100 p-3 h-32"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Treatment Plan *
-                    </label>
-                    <textarea
-                      value={neuroExamData.treatment_plan || ""}
-                      onChange={(e) =>
-                        setNeuroExamData((prev) => ({
-                          ...prev,
-                          treatment_plan: e.target.value,
                         }))
                       }
                       className="w-full rounded-lg border-2 border-gray-100 p-3 h-32"
