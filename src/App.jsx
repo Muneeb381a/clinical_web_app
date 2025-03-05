@@ -169,7 +169,7 @@ const PatientSearch = () => {
     }
 
 
-     const printWindow = window.open("", "_blank");
+     const printWindow = window.open("https://paitient-prescription-frontend.vercel.app", "_blank");
   if (!printWindow) {
     alert("Pop-up blocked! Allow pop-ups for this site.");
     return;
