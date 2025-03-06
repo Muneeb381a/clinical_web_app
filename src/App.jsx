@@ -168,12 +168,14 @@ const PatientSearch = () => {
       return;
     }
 
-
-     const printWindow = window.open("https://paitient-prescription-frontend.vercel.app", "_blank");
-  if (!printWindow) {
-    alert("Pop-up blocked! Allow pop-ups for this site.");
-    return;
-  }
+    const printWindow = window.open(
+      "https://paitient-prescription-frontend.vercel.app",
+      "_blank"
+    );
+    if (!printWindow) {
+      alert("Pop-up blocked! Allow pop-ups for this site.");
+      return;
+    }
     printWindow.document.write(`
       <html>
         <head>
@@ -545,7 +547,7 @@ const PatientSearch = () => {
         "https://patient-management-backend-nine.vercel.app/api/prescriptions",
         {
           consultation_id: consultationId,
-          patient_id: patient.id, 
+          patient_id: patient.id,
           medicines: selectedMedicines.map((med) => ({
             medicine_id: med.medicine_id,
             dosage: med.dosage,
@@ -815,7 +817,7 @@ const PatientSearch = () => {
               </div>
             </div>
             {/* presciption details */}
-      <div className="border border-red-500 rounded-xl p-4">
+            <div className="border border-red-500 rounded-xl p-4">
               {/* Button to fetch and show prescriptions */}
               {patient && (
                 <button
@@ -830,70 +832,111 @@ const PatientSearch = () => {
 
               {/* Conditional rendering of the popup */}
               {showPopup && (
-                <div className="fixed inset-0  backdrop-blur-sm flex items-start justify-center p-4 pt-20 transition-all">
-                  <div className="bg-white p-6 rounded-2xl shadow-xl max-w-md w-full border border-gray-200 transform transition-all">
-                    <h2 className="text-xl font-bold mb-4 text-gray-700 text-center border-b pb-2">
-                      📋 Previous Prescriptions
-                    </h2>
-
-                    {/* Prescription list */}
-                    {prescriptions.length > 0 ? (
-                      <ul className="space-y-4 max-h-[50vh] overflow-y-auto pr-2">
-                        {prescriptions.map((prescription) => (
-                          <li
-                            key={prescription.id}
-                            className="bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors border border-gray-200"
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-md z-50 overflow-y-auto">
+                  <div className="min-h-screen flex items-start justify-center p-4 pt-20 pb-8">
+                    <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border border-gray-200">
+                      <div className="flex justify-between items-center mb-4 pb-2 border-b">
+                        <h2 className="text-2xl font-bold text-gray-800">
+                          📋 Previous Prescriptions
+                        </h2>
+                        <button
+                          onClick={() => setShowPopup(false)}
+                          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-6 w-6 text-gray-600"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            stroke="currentColor"
                           >
-                            <div className="space-y-2">
-                              <p className="text-gray-700 text-sm">
-                                <span className="font-medium">Medicine:</span>{" "}
-                                <span className="text-blue-600">
-                                  {prescription.brand_name}
-                                </span>{" "}
-                                (
-                                <span className="text-gray-600">
-                                  {prescription.urdu_name}
-                                </span>
-                                )
-                              </p>
-                              <p className="text-gray-600 text-sm">
-                                <span className="font-medium">Dosage:</span>{" "}
-                                {prescription.dosage}
-                              </p>
-                              <p className="text-gray-600 text-sm">
-                                <span className="font-medium">Frequency:</span>{" "}
-                                {prescription.frequency_en} (
-                                {prescription.frequency_urdu})
-                              </p>
-                              <p className="text-gray-600 text-sm">
-                                <span className="font-medium">Duration:</span>{" "}
-                                {prescription.duration_en} (
-                                {prescription.duration_urdu})
-                              </p>
-                              <p className="text-gray-600 text-sm">
-                                <span className="font-medium">
-                                  Instructions:
-                                </span>{" "}
-                                {prescription.instructions_en} (
-                                {prescription.instructions_urdu})
-                              </p>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="text-gray-500 text-center py-4 italic text-sm">
-                        No previous prescriptions found.
-                      </p>
-                    )}
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
+                        </button>
+                      </div>
 
-                    {/* Close button */}
-                    <button
-                      onClick={() => setShowPopup(false)}
-                      className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-all duration-200 w-auto mx-auto block text-sm font-medium focus:outline-none focus:ring-2 focus:ring-red-300"
-                    >
-                      Close
-                    </button>
+                      {/* Prescription list */}
+                      {prescriptions.length > 0 ? (
+                        <div className="space-y-4">
+                          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                            {prescriptions.map((prescription) => (
+                              <div
+                                key={prescription.id}
+                                className="bg-gray-50 p-4 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200"
+                              >
+                                <div className="space-y-2">
+                                  <h3 className="text-lg font-medium text-gray-800">
+                                    {prescription.brand_name}
+                                    <span className="block text-sm text-gray-500">
+                                      {prescription.urdu_name}
+                                    </span>
+                                  </h3>
+                                  <div className="space-y-1 text-sm">
+                                    <p className="text-gray-600">
+                                      <span className="font-medium">
+                                        Dosage:
+                                      </span>{" "}
+                                      {prescription.dosage}
+                                    </p>
+                                    <p className="text-gray-600">
+                                      <span className="font-medium">
+                                        Frequency:
+                                      </span>{" "}
+                                      {prescription.frequency_en}
+                                      <span className="text-gray-500">
+                                        {" "}
+                                        ({prescription.frequency_urdu})
+                                      </span>
+                                    </p>
+                                    <p className="text-gray-600">
+                                      <span className="font-medium">
+                                        Duration:
+                                      </span>{" "}
+                                      {prescription.duration_en}
+                                      <span className="text-gray-500">
+                                        {" "}
+                                        ({prescription.duration_urdu})
+                                      </span>
+                                    </p>
+                                    <p className="text-gray-600">
+                                      <span className="font-medium">
+                                        Instructions:
+                                      </span>{" "}
+                                      {prescription.instructions_en}
+                                      <span className="text-gray-500">
+                                        {" "}
+                                        ({prescription.instructions_urdu})
+                                      </span>
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <p className="text-gray-500 italic">
+                            No previous prescriptions found.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Sticky Close Button for mobile */}
+                      <div className="sticky bottom-0 bg-white pt-4 border-t mt-6 md:hidden">
+                        <button
+                          onClick={() => setShowPopup(false)}
+                          className="w-full py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                        >
+                          Close
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
@@ -957,54 +1000,6 @@ const PatientSearch = () => {
                     fontWeight: "500",
                   }),
                 }}
-              />
-            </div>
-            {/* test sections */}
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-              <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
-                <div className="bg-orange-900 p-2.5 rounded-lg text-white shadow-sm">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    viewBox="0 0 24 24"
-                    className="w-6 h-6 text-white"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
-                    />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Add Tests
-                  </h3>
-                  <p className="text-sm text-gray-600">Prescribed Tests</p>
-                </div>
-              </div>
-
-              <CreatableSelect
-                isMulti
-                options={tests.map((test) => ({
-                  value: test.test_name,
-                  label: test.test_name,
-                }))}
-                value={selectedTests.map((test) => ({
-                  value: test,
-                  label: test,
-                }))}
-                onChange={(newTests) =>
-                  setSelectedTests(newTests.map((t) => t.value))
-                }
-                onCreateOption={(newTestName) => {
-                  setSelectedTests([...selectedTests, newTestName]);
-                }}
-                placeholder="Type or select a test..."
-                className="react-select-container"
-                classNamePrefix="react-select"
               />
             </div>
             {/* Neurological Examination Section */}
@@ -1212,6 +1207,54 @@ const PatientSearch = () => {
                   </div>
                 </div>
               </div>
+            </div>
+            {/* test sections */}
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+              <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
+                <div className="bg-orange-900 p-2.5 rounded-lg text-white shadow-sm">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    className="w-6 h-6 text-white"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    Add Tests
+                  </h3>
+                  <p className="text-sm text-gray-600">Prescribed Tests</p>
+                </div>
+              </div>
+
+              <CreatableSelect
+                isMulti
+                options={tests.map((test) => ({
+                  value: test.test_name,
+                  label: test.test_name,
+                }))}
+                value={selectedTests.map((test) => ({
+                  value: test,
+                  label: test,
+                }))}
+                onChange={(newTests) =>
+                  setSelectedTests(newTests.map((t) => t.value))
+                }
+                onCreateOption={(newTestName) => {
+                  setSelectedTests([...selectedTests, newTestName]);
+                }}
+                placeholder="Type or select a test..."
+                className="react-select-container"
+                classNamePrefix="react-select"
+              />
             </div>
             {/* Enhanced Medicines Section */}
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
