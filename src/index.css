@@ -13,3 +13,30 @@
     justify-content: space-between !important;
     align-items: center !important;
   }
+
+
+  @layer components {
+    datalist {
+      @apply mt-1 border border-gray-200 rounded-lg;
+    }
+  
+    datalist option {
+      @apply px-4 py-2 text-sm;
+    }
+  
+    datalist option:hover {
+      @apply bg-purple-50;
+    }
+  }
+  
+  /* Animation styles */
+  @layer utilities {
+    @keyframes fade-in {
+      from { opacity: 0; transform: translateY(-5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+  
+    .animate-fade-in {
+      animation: fade-in 0.2s ease-out;
+    }
+  }

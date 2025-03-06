@@ -10,6 +10,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { toast } from "react-toastify";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
+import { FaArrowUp, FaArrowDown, FaBan, FaReply } from "react-icons/fa";
 
 import {
   AiOutlinePlus,
@@ -25,40 +26,6 @@ const searchSchema = z.object({
   mobile: z.string().min(10, "Enter a valid mobile number"),
 });
 
-const initialNeuroExamState = {
-  motor_function: "",
-  muscle_tone: null,
-  muscle_strength: null,
-  deep_tendon_reflexes: "",
-  plantar_reflex: null,
-  sensory_examination: "",
-  pain_sensation: false,
-  vibration_sense: false,
-  proprioception: false,
-  temperature_sensation: false,
-  coordination: "",
-  finger_nose_test: "",
-  heel_shin_test: "",
-  gait_assessment: null,
-  romberg_test: "",
-  cranial_nerves: "",
-  pupillary_reaction: null,
-  eye_movements: null,
-  facial_sensation: false,
-  swallowing_function: false,
-  tongue_movement: null,
-  straight_leg_raise_test: "",
-  lasegue_test: "",
-  brudzinski_sign: false,
-  kernig_sign: false,
-  cognitive_assessment: "",
-  speech_assessment: null,
-  tremors: "",
-  involuntary_movements: "",
-  diagnosis: "",
-  notes: "",
-};
-
 const PatientSearch = () => {
   const [patient, setPatient] = useState(null);
   const [showAddPatient, setShowAddPatient] = useState(false);
@@ -72,7 +39,7 @@ const PatientSearch = () => {
   const [tests, setTests] = useState([]);
   const [selectedTests, setSelectedTests] = useState([]);
   const [customTest, setCustomTest] = useState("");
-  const [neuroExamData, setNeuroExamData] = useState(initialNeuroExamState);
+  const [neuroExamData, setNeuroExamData] = useState([]);
   const [followUpDate, setFollowUpDate] = useState(null);
   const [followUpNotes, setFollowUpNotes] = useState("");
   const [loading, setLoading] = useState(false);
@@ -593,45 +560,33 @@ const PatientSearch = () => {
         }
       }
 
-      // Step 6: Submit neurological examination with proper sanitization
-      const neuroExamPayload = {
-        consultation_id: consultationId,
-        motor_function: neuroExamData.motor_function || null,
-        muscle_tone: neuroExamData.muscle_tone,
-        muscle_strength: neuroExamData.muscle_strength,
-        deep_tendon_reflexes: neuroExamData.deep_tendon_reflexes || null,
-        plantar_reflex: neuroExamData.plantar_reflex,
-        sensory_examination: neuroExamData.sensory_examination || null,
-        pain_sensation: neuroExamData.pain_sensation,
-        vibration_sense: neuroExamData.vibration_sense,
-        proprioception: neuroExamData.proprioception,
-        temperature_sensation: neuroExamData.temperature_sensation,
-        coordination: neuroExamData.coordination || null,
-        finger_nose_test: neuroExamData.finger_nose_test || null,
-        heel_shin_test: neuroExamData.heel_shin_test || null,
-        gait_assessment: neuroExamData.gait_assessment,
-        romberg_test: neuroExamData.romberg_test || null,
-        cranial_nerves: neuroExamData.cranial_nerves || null,
-        pupillary_reaction: neuroExamData.pupillary_reaction,
-        eye_movements: neuroExamData.eye_movements,
-        facial_sensation: neuroExamData.facial_sensation,
-        swallowing_function: neuroExamData.swallowing_function,
-        tongue_movement: neuroExamData.tongue_movement,
-        straight_leg_raise_test: neuroExamData.straight_leg_raise_test || null,
-        lasegue_test: neuroExamData.lasegue_test || null,
-        brudzinski_sign: neuroExamData.brudzinski_sign,
-        kernig_sign: neuroExamData.kernig_sign,
-        cognitive_assessment: neuroExamData.cognitive_assessment || null,
-        speech_assessment: neuroExamData.speech_assessment,
-        tremors: neuroExamData.tremors || null,
-        involuntary_movements: neuroExamData.involuntary_movements || null,
-        diagnosis: neuroExamData.diagnosis,
-        notes: neuroExamData.notes || null,
-      };
-
       await axios.post(
         "https://patient-management-backend-nine.vercel.app/api/examination",
-        neuroExamPayload
+        {
+          consultation_id: consultationId,
+          patient_id: patient.id,
+          motor_function: neuroExamData.motor_function || "",
+          muscle_tone: neuroExamData.muscle_tone || "",
+          muscle_strength: neuroExamData.muscle_strength || "",
+          straight_leg_raise_test: neuroExamData.straight_leg_raise_test || "",
+          deep_tendon_reflexes: neuroExamData.deep_tendon_reflexes || "",
+          plantar_reflex: neuroExamData.plantar_reflex || "",
+          pupillary_reaction: neuroExamData.pupillary_reaction || "",
+          speech_assessment: neuroExamData.speech_assessment || "",
+          gait: neuroExamData.gait || "",
+          coordination: neuroExamData.coordination || "",
+          sensory_function: neuroExamData.sensory_function || "",
+          cranial_nerves: neuroExamData.cranial_nerves || "",
+          mental_status: neuroExamData.mental_status || "",
+          cerebellar_function: neuroExamData.cerebellar_function || "",
+          muscle_wasting: neuroExamData.muscle_wasting || "",
+          abnormal_movements: neuroExamData.abnormal_movements || "",
+          romberg_test: neuroExamData.romberg_test || "",
+          nystagmus: neuroExamData.nystagmus || "",
+          fundoscopy: neuroExamData.fundoscopy || "",
+          diagnosis: neuroExamData.diagnosis || "",
+        },
+        { headers: { "Content-Type": "application/json" } }
       );
 
       if (!selectedDuration) {
@@ -1014,173 +969,2228 @@ const PatientSearch = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Motor Section */}
                 <div className="space-y-4">
-                  <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
+                  <h4 className="font-semibold text-gray-800 border-l-4 border-purple-500 pl-3 py-1.5">
                     Motor Function
                   </h4>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
                       Motor Function
                     </label>
-                    <input
-                      value={neuroExamData.motor_function}
-                      onChange={(e) =>
-                        setNeuroExamData((p) => ({
-                          ...p,
-                          motor_function: e.target.value,
+                    <CreatableSelect
+                      options={[
+                        { value: "Normal", label: "Normal" },
+                        { value: "Weakness", label: "Weakness" },
+                        { value: "Paralysis", label: "Paralysis" },
+                        { value: "Spasticity", label: "Spasticity" },
+                        { value: "Rigidity", label: "Rigidity" },
+                        { value: "Tremors", label: "Tremors" },
+                        {
+                          value: "Bradykinesia",
+                          label: "Slowness of Movement (Bradykinesia)",
+                        },
+                        {
+                          value: "Hyperkinesia",
+                          label: "Excessive Movement (Hyperkinesia)",
+                        },
+                        {
+                          value: "Ataxia",
+                          label: "Lack of Coordination (Ataxia)",
+                        },
+                        {
+                          value: "Dystonia",
+                          label: "Involuntary Muscle Contractions (Dystonia)",
+                        },
+                        {
+                          value: "Fasciculations",
+                          label: "Muscle Twitching (Fasciculations)",
+                        },
+                        {
+                          value: "Hypotonia",
+                          label: "Decreased Muscle Tone (Hypotonia)",
+                        },
+                        {
+                          value: "Hypertonia",
+                          label: "Increased Muscle Tone (Hypertonia)",
+                        },
+                        {
+                          value: "Myoclonus",
+                          label: "Sudden Muscle Jerks (Myoclonus)",
+                        },
+                        {
+                          value: "Chorea",
+                          label: "Involuntary Rapid Movements (Chorea)",
+                        },
+                        {
+                          value: "Hemiparesis",
+                          label: "Weakness on One Side (Hemiparesis)",
+                        },
+                        {
+                          value: "Hemiplegia",
+                          label: "Paralysis on One Side (Hemiplegia)",
+                        },
+                        {
+                          value: "Quadriparesis",
+                          label: "Weakness in All Limbs (Quadriparesis)",
+                        },
+                        {
+                          value: "Quadriplegia",
+                          label: "Paralysis in All Limbs (Quadriplegia)",
+                        },
+                        {
+                          value: "Monoparesis",
+                          label: "Weakness in One Limb (Monoparesis)",
+                        },
+                        {
+                          value: "Monoplegia",
+                          label: "Paralysis in One Limb (Monoplegia)",
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        [
+                          { value: "Normal", label: "Normal" },
+                          { value: "Weakness", label: "Weakness" },
+                          { value: "Paralysis", label: "Paralysis" },
+                          { value: "Spasticity", label: "Spasticity" },
+                          { value: "Rigidity", label: "Rigidity" },
+                          { value: "Tremors", label: "Tremors" },
+                          {
+                            value: "Bradykinesia",
+                            label: "Slowness of Movement (Bradykinesia)",
+                          },
+                          {
+                            value: "Hyperkinesia",
+                            label: "Excessive Movement (Hyperkinesia)",
+                          },
+                          {
+                            value: "Ataxia",
+                            label: "Lack of Coordination (Ataxia)",
+                          },
+                          {
+                            value: "Dystonia",
+                            label: "Involuntary Muscle Contractions (Dystonia)",
+                          },
+                          {
+                            value: "Fasciculations",
+                            label: "Muscle Twitching (Fasciculations)",
+                          },
+                          {
+                            value: "Hypotonia",
+                            label: "Decreased Muscle Tone (Hypotonia)",
+                          },
+                          {
+                            value: "Hypertonia",
+                            label: "Increased Muscle Tone (Hypertonia)",
+                          },
+                          {
+                            value: "Myoclonus",
+                            label: "Sudden Muscle Jerks (Myoclonus)",
+                          },
+                          {
+                            value: "Chorea",
+                            label: "Involuntary Rapid Movements (Chorea)",
+                          },
+                          {
+                            value: "Hemiparesis",
+                            label: "Weakness on One Side (Hemiparesis)",
+                          },
+                          {
+                            value: "Hemiplegia",
+                            label: "Paralysis on One Side (Hemiplegia)",
+                          },
+                          {
+                            value: "Quadriparesis",
+                            label: "Weakness in All Limbs (Quadriparesis)",
+                          },
+                          {
+                            value: "Quadriplegia",
+                            label: "Paralysis in All Limbs (Quadriplegia)",
+                          },
+                          {
+                            value: "Monoparesis",
+                            label: "Weakness in One Limb (Monoparesis)",
+                          },
+                          {
+                            value: "Monoplegia",
+                            label: "Paralysis in One Limb (Monoplegia)",
+                          },
+                        ].find(
+                          (option) =>
+                            option.value === neuroExamData.motor_function
+                        ) ||
+                        (neuroExamData.motor_function
+                          ? {
+                              value: neuroExamData.motor_function,
+                              label: neuroExamData.motor_function,
+                            }
+                          : null)
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          motor_function: selectedOption
+                            ? selectedOption.value
+                            : "",
                         }))
                       }
-                      className="w-full rounded-lg border-2 border-gray-100 p-3"
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          motor_function: inputValue, // Allows custom text input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          borderColor: "#d1d5db", // gray-300
+                          backgroundImage:
+                            "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiA2YjcyOGIiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1jaGV2cm9uLWRvd24iPjxwYXRoIGQ9Im02IDkgNiA2IDYtNiIvPjwvc3ZnPg==')",
+                          backgroundRepeat: "no-repeat",
+                          backgroundPosition: "right 1rem center",
+                        }),
+                      }}
                     />
                   </div>
-
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
                       Muscle Tone
                     </label>
-                    <select
-                      value={neuroExamData.muscle_tone || ""}
-                      onChange={(e) =>
-                        setNeuroExamData((p) => ({
-                          ...p,
-                          muscle_tone: e.target.value || null,
+                    <CreatableSelect
+                      options={[
+                        { value: "Normal", label: "Normal" },
+                        {
+                          value: "Hypotonic",
+                          label: "Hypotonic (Decreased Muscle Tone)",
+                        },
+                        {
+                          value: "Hypertonic",
+                          label: "Hypertonic (Increased Muscle Tone)",
+                        },
+                        { value: "Rigidity", label: "Rigidity" },
+                        { value: "Spasticity", label: "Spasticity" },
+                        {
+                          value: "Flaccidity",
+                          label: "Flaccidity (Complete Loss of Muscle Tone)",
+                        },
+                        {
+                          value: "Clonus",
+                          label:
+                            "Clonus (Involuntary Rhythmic Muscle Contractions)",
+                        },
+                        {
+                          value: "Dystonia",
+                          label: "Dystonia (Involuntary Muscle Contractions)",
+                        },
+                        {
+                          value: "Paratonia",
+                          label:
+                            "Paratonia (Involuntary Resistance to Passive Movement)",
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        neuroExamData.muscle_tone
+                          ? {
+                              value: neuroExamData.muscle_tone,
+                              label: neuroExamData.muscle_tone,
+                            }
+                          : null
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          muscle_tone: selectedOption
+                            ? selectedOption.value
+                            : "",
                         }))
                       }
-                      className="w-full rounded-lg border-2 border-gray-100 p-3"
-                    >
-                      <option value="">Select Muscle Tone</option>
-                      <option value="Normal">Normal</option>
-                      <option value="Hypotonic">Hypotonic</option>
-                      <option value="Hypertonic">Hypertonic</option>
-                      <option value="Rigidity">Rigidity</option>
-                    </select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Muscle Strength (MRC Scale)
-                    </label>
-                    <select
-                      value={neuroExamData.muscle_strength || ""}
-                      onChange={(e) =>
-                        setNeuroExamData((p) => ({
-                          ...p,
-                          muscle_strength: e.target.value,
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          muscle_tone: inputValue, // Allows custom text input
                         }))
                       }
-                      className="w-full rounded-lg border-2 border-gray-100 p-3"
-                    >
-                      <option value="">Select Strength</option>
-                      <option value="0/5">0/5 - No contraction</option>
-                      <option value="1/5">1/5 - Trace contraction</option>
-                      <option value="2/5">
-                        2/5 - Active movement (gravity eliminated)
-                      </option>
-                      <option value="3/5">3/5 - Against gravity</option>
-                      <option value="4/5">4/5 - Against resistance</option>
-                      <option value="5/5">5/5 - Normal</option>
-                    </select>
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
                   </div>
                 </div>
-
                 {/* Reflexes Section */}
                 <div className="space-y-4">
-                  <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
+                  <h4 className="font-semibold text-gray-800 border-l-4 border-purple-500 pl-3 py-1.5">
                     Reflexes
                   </h4>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Deep Tendon Reflexes
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Reflexes
                     </label>
-                    <input
-                      value={neuroExamData.deep_tendon_reflexes}
-                      onChange={(e) =>
-                        setNeuroExamData((p) => ({
-                          ...p,
-                          deep_tendon_reflexes: e.target.value,
+                    <CreatableSelect
+                      options={[
+                        { value: "Normal", label: "Normal" },
+                        { value: "Brisk", label: "Brisk" },
+                        { value: "Exaggerated", label: "Exaggerated" },
+                        {
+                          value: "Hyperreflexia",
+                          label: "Hyperreflexia (Overactive Reflexes)",
+                        },
+                        {
+                          value: "Hyporeflexia",
+                          label: "Hyporeflexia (Reduced Reflexes)",
+                        },
+                        { value: "Absent", label: "Absent" },
+                        {
+                          value: "Clonus",
+                          label:
+                            "Clonus (Involuntary Rhythmic Reflex Contractions)",
+                        },
+                        {
+                          value: "Babinski Sign",
+                          label: "Babinski Sign (Upgoing Toe Reflex)",
+                        },
+                        {
+                          value: "Hoffmann’s Reflex",
+                          label: "Hoffmann’s Reflex (Finger Flexor Response)",
+                        },
+                        {
+                          value: "Pendular Reflexes",
+                          label:
+                            "Pendular Reflexes (Slow, Repetitive Reflex Movements)",
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        neuroExamData.deep_tendon_reflexes
+                          ? {
+                              value: neuroExamData.deep_tendon_reflexes,
+                              label: neuroExamData.deep_tendon_reflexes,
+                            }
+                          : null
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          deep_tendon_reflexes: selectedOption
+                            ? selectedOption.value
+                            : "",
                         }))
                       }
-                      className="w-full rounded-lg border-2 border-gray-100 p-3"
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          deep_tendon_reflexes: inputValue, // Allows custom text input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Muscle Strength
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        {
+                          value: "0/5 - No contraction",
+                          label: "0/5 - No contraction",
+                        },
+                        {
+                          value: "1/5 - Trace contraction",
+                          label: "1/5 - Trace contraction",
+                        },
+                        {
+                          value: "2/5 - Active movement (gravity eliminated)",
+                          label: "2/5 - Active movement (gravity eliminated)",
+                        },
+                        {
+                          value: "3/5 - Active movement against gravity",
+                          label: "3/5 - Active movement against gravity",
+                        },
+                        {
+                          value: "4/5 - Active movement against resistance",
+                          label: "4/5 - Active movement against resistance",
+                        },
+                        { value: "5/5 - Normal", label: "5/5 - Normal" },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        neuroExamData.muscle_strenght
+                          ? {
+                              value: neuroExamData.muscle_strenght,
+                              label: neuroExamData.muscle_strenght,
+                            }
+                          : null
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          muscle_strenght: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          muscle_strenght: inputValue, // Allows custom text input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* other sections   */}
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Straight Leg Raise (SLR) Test
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "Negative", label: "✅ Negative" },
+                        {
+                          value: "Positive at 30°",
+                          label: "📏 Positive at 30°",
+                        },
+                        {
+                          value: "Positive at 45°",
+                          label: "📏 Positive at 45°",
+                        },
+                        {
+                          value: "Positive at 60°",
+                          label: "📏 Positive at 60°",
+                        },
+                        {
+                          value: "Bilateral Positive",
+                          label: "🔄 Bilateral Positive",
+                        },
+                        {
+                          value: "Bilateral Negative",
+                          label: "✅✅ Bilateral Negative",
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        neuroExamData.slr_test
+                          ? {
+                              value: neuroExamData.slr_test,
+                              label: neuroExamData.slr_test_label,
+                            }
+                          : null
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          slr_test: selectedOption ? selectedOption.value : "",
+                          slr_test_label: selectedOption
+                            ? selectedOption.label
+                            : "", // Stores the icon version
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          slr_test: inputValue,
+                          slr_test_label: inputValue, // Custom input preserves text
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Plantar Reflex
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Plantars
                     </label>
-                    <select
-                      value={neuroExamData.plantar_reflex || ""}
-                      onChange={(e) =>
-                        setNeuroExamData((p) => ({
-                          ...p,
-                          plantar_reflex: e.target.value || null,
+                    <CreatableSelect
+                      options={[
+                        {
+                          value: "Upwards",
+                          label: (
+                            <div className="flex items-center gap-2">
+                              <FaArrowUp className="text-blue-600" /> Upwards
+                            </div>
+                          ),
+                        },
+                        {
+                          value: "Downward",
+                          label: (
+                            <div className="flex items-center gap-2">
+                              <FaArrowDown className="text-green-600" />{" "}
+                              Downward
+                            </div>
+                          ),
+                        },
+                        {
+                          value: "Mute",
+                          label: (
+                            <div className="flex items-center gap-2">
+                              <FaBan className="text-gray-500" /> Mute
+                            </div>
+                          ),
+                        },
+                        {
+                          value: "Withdrawal",
+                          label: (
+                            <div className="flex items-center gap-2">
+                              <FaReply className="text-red-600" /> Withdrawal
+                            </div>
+                          ),
+                        },
+                        {
+                          value: "Bilateral Upwards",
+                          label: (
+                            <div className="flex items-center gap-2">
+                              <FaArrowUp className="text-blue-600" />
+                              <FaArrowUp className="text-blue-600" /> Bilateral
+                              Upwards
+                            </div>
+                          ),
+                        },
+                        {
+                          value: "Bilateral Downward",
+                          label: (
+                            <div className="flex items-center gap-2">
+                              <FaArrowDown className="text-green-600" />
+                              <FaArrowDown className="text-green-600" />{" "}
+                              Bilateral Downward
+                            </div>
+                          ),
+                        },
+                        {
+                          value: "Bilateral Mute",
+                          label: (
+                            <div className="flex items-center gap-2">
+                              <FaBan className="text-gray-500" />
+                              <FaBan className="text-gray-500" /> Bilateral Mute
+                            </div>
+                          ),
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        neuroExamData.plantar_reflex
+                          ? {
+                              value: neuroExamData.plantar_reflex,
+                              label: (
+                                <div className="flex items-center gap-2">
+                                  {neuroExamData.plantar_reflex.includes(
+                                    "Upwards"
+                                  ) && <FaArrowUp className="text-blue-600" />}
+                                  {neuroExamData.plantar_reflex.includes(
+                                    "Downward"
+                                  ) && (
+                                    <FaArrowDown className="text-green-600" />
+                                  )}
+                                  {neuroExamData.plantar_reflex.includes(
+                                    "Mute"
+                                  ) && <FaBan className="text-gray-500" />}
+                                  {neuroExamData.plantar_reflex.includes(
+                                    "Withdrawal"
+                                  ) && <FaReply className="text-red-600" />}
+                                  {neuroExamData.plantar_reflex}
+                                </div>
+                              ),
+                            }
+                          : null
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          plantar_reflex: selectedOption
+                            ? selectedOption.value
+                            : "",
                         }))
                       }
-                      className="w-full rounded-lg border-2 border-gray-100 p-3"
-                    >
-                      <option value="">Select Response</option>
-                      <option value="Flexor">Flexor</option>
-                      <option value="Extensor">Extensor</option>
-                    </select>
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          plantar_reflex: inputValue, // Allows custom input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 flex items-center ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                </div>
+                {/* Reflexes Section */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Sensory Examination
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "Normal", label: "Normal" },
+                        {
+                          value: "Altered",
+                          label: "Altered",
+                        },
+                        {
+                          value: "Intact",
+                          label: "Intact",
+                        },
+                        {
+                          value: "Increased Sensation (Hyperesthesia)",
+                          label: "Increased Sensation (Hyperesthesia)",
+                        },
+                        {
+                          value: "Tingling or Burning (Paresthesia)",
+                          label: "Tingling or Burning (Paresthesia)",
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        neuroExamData.sensory_examination
+                          ? {
+                              value: neuroExamData.sensory_examination,
+                              label: neuroExamData.sensory_examination,
+                            }
+                          : null
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          sensory_examination: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          sensory_examination: inputValue, // Allows custom text input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Pain Sensation
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "Normal", label: "Normal" },
+                        {
+                          value: "Hypalgesia",
+                          label: "Reduced Pain Sensation (Hypalgesia)",
+                        },
+                        {
+                          value: "Analgesia",
+                          label: "Absent Pain Sensation (Analgesia)",
+                        },
+                        {
+                          value: "Hyperalgesia",
+                          label: "Increased Pain Sensation (Hyperalgesia)",
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        [
+                          { value: "Normal", label: "Normal" },
+                          {
+                            value: "Hypalgesia",
+                            label: "Reduced Pain Sensation (Hypalgesia)",
+                          },
+                          {
+                            value: "Analgesia",
+                            label: "Absent Pain Sensation (Analgesia)",
+                          },
+                          {
+                            value: "Hyperalgesia",
+                            label: "Increased Pain Sensation (Hyperalgesia)",
+                          },
+                        ].find(
+                          (option) =>
+                            option.value === neuroExamData.pain_sensation
+                        ) ||
+                        (neuroExamData.pain_sensation
+                          ? {
+                              value: neuroExamData.pain_sensation,
+                              label: neuroExamData.pain_sensation,
+                            }
+                          : null)
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          pain_sensation: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          pain_sensation: inputValue, // Allows custom text input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                      styles={{
+                        control: (base) => ({
+                          ...base,
+                          borderColor: "#d1d5db", // gray-300
+                          backgroundImage:
+                            "url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSJub25lIiBzdHJva2U9IiA2YjcyOGIiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIiBjbGFzcz0ibHVjaWRlIGx1Y2lkZS1jaGV2cm9uLWRvd24iPjxwYXRoIGQ9Im02IDkgNiA2IDYtNiIvPjwvc3ZnPg==')",
+                          backgroundRepeat: "no-repeat",
+                          backgroundPosition: "right 1rem center",
+                        }),
+                      }}
+                    />
                   </div>
                 </div>
 
-                {/* Sensory Section */}
-                <div className="md:col-span-2 space-y-4">
-                  <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
-                    Sensory
-                  </h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                    {/* Checkbox inputs remain the same */}
+                {/* more sections */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Speech Assessment
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "Normal", label: "Normal" },
+                        { value: "Slurred", label: "Slurred Speech" },
+                        {
+                          value: "Dysarthria",
+                          label: "Dysarthria (Weak or Slow Speech)",
+                        },
+                        {
+                          value: "Aphasia",
+                          label: "Aphasia (Loss of Speech Ability)",
+                        },
+                        {
+                          value: "Dysphonia",
+                          label: "Dysphonia (Hoarse or Weak Voice)",
+                        },
+                        {
+                          value: "Mutism",
+                          label: "Mutism (Inability to Speak)",
+                        },
+                        {
+                          value: "scanning speech",
+                          label: "scanning speech (speech abnormality)",
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        [
+                          { value: "Normal", label: "Normal" },
+                          { value: "Slurred", label: "Slurred Speech" },
+                          {
+                            value: "Dysarthria",
+                            label: "Dysarthria (Weak or Slow Speech)",
+                          },
+                          {
+                            value: "Aphasia",
+                            label: "Aphasia (Loss of Speech Ability)",
+                          },
+                          {
+                            value: "Dysphonia",
+                            label: "Dysphonia (Hoarse or Weak Voice)",
+                          },
+                          {
+                            value: "Mutism",
+                            label: "Mutism (Inability to Speak)",
+                          },
+                        ].find(
+                          (option) =>
+                            option.value === neuroExamData.speech_assessment
+                        ) ||
+                        (neuroExamData.speech_assessment
+                          ? {
+                              value: neuroExamData.speech_assessment,
+                              label: neuroExamData.speech_assessment,
+                            }
+                          : null)
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          speech_assessment: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          speech_assessment: inputValue, // Allows custom input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Coordination
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "Normal", label: "Normal" },
+                        {
+                          value: "Dysmetria",
+                          label: "Dysmetria (Impaired Distance Control)",
+                        },
+                        {
+                          value: "Ataxia",
+                          label: "Ataxia (Uncoordinated Movements)",
+                        },
+                        {
+                          value: "Tremors",
+                          label: "Tremors (Shaking Movements)",
+                        },
+                        {
+                          value: "Adiadochokinesia",
+                          label:
+                            "Adiadochokinesia (Inability to Perform Rapid Movements)",
+                        },
+                        {
+                          value: "Dyssynergia",
+                          label: "Dyssynergia (Lack of Smooth Coordination)",
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        [
+                          { value: "Normal", label: "Normal" },
+                          {
+                            value: "Dysmetria",
+                            label: "Dysmetria (Impaired Distance Control)",
+                          },
+                          {
+                            value: "Ataxia",
+                            label: "Ataxia (Uncoordinated Movements)",
+                          },
+                          {
+                            value: "Tremors",
+                            label: "Tremors (Shaking Movements)",
+                          },
+                          {
+                            value: "Adiadochokinesia",
+                            label:
+                              "Adiadochokinesia (Inability to Perform Rapid Movements)",
+                          },
+                          {
+                            value: "Dyssynergia",
+                            label: "Dyssynergia (Lack of Smooth Coordination)",
+                          },
+                        ].find(
+                          (option) =>
+                            option.value === neuroExamData.coordination
+                        ) ||
+                        (neuroExamData.coordination
+                          ? {
+                              value: neuroExamData.coordination,
+                              label: neuroExamData.coordination,
+                            }
+                          : null)
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          coordination: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          coordination: inputValue, // Allows custom input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Sensory Function
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "Normal", label: "Normal" },
+                        {
+                          value: "Hypoesthesia",
+                          label: "Hypoesthesia (Decreased Sensation)",
+                        },
+                        {
+                          value: "Anesthesia",
+                          label: "Anesthesia (Absent Sensation)",
+                        },
+                        {
+                          value: "Hyperesthesia",
+                          label: "Hyperesthesia (Increased Sensation)",
+                        },
+                        {
+                          value: "Paresthesia",
+                          label: "Paresthesia (Tingling or Burning)",
+                        },
+                        {
+                          value: "Dysesthesia",
+                          label: "Dysesthesia (Abnormal Unpleasant Sensation)",
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        [
+                          { value: "Normal", label: "Normal" },
+                          {
+                            value: "Hypoesthesia",
+                            label: "Hypoesthesia (Decreased Sensation)",
+                          },
+                          {
+                            value: "Anesthesia",
+                            label: "Anesthesia (Absent Sensation)",
+                          },
+                          {
+                            value: "Hyperesthesia",
+                            label: "Hyperesthesia (Increased Sensation)",
+                          },
+                          {
+                            value: "Paresthesia",
+                            label: "Paresthesia (Tingling or Burning)",
+                          },
+                          {
+                            value: "Dysesthesia",
+                            label:
+                              "Dysesthesia (Abnormal Unpleasant Sensation)",
+                          },
+                        ].find(
+                          (option) =>
+                            option.value === neuroExamData.sensory_function
+                        ) ||
+                        (neuroExamData.sensory_function
+                          ? {
+                              value: neuroExamData.sensory_function,
+                              label: neuroExamData.sensory_function,
+                            }
+                          : null)
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          sensory_function: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          sensory_function: inputValue, // Allows custom input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Cranial Nerves
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "Normal", label: "Normal" },
+                        {
+                          value: "CN I - Olfactory (Smell Impairment)",
+                          label: "CN I - Olfactory (Smell Impairment)",
+                        },
+                        {
+                          value: "CN II - Optic (Vision Loss)",
+                          label: "CN II - Optic (Vision Loss)",
+                        },
+                        {
+                          value: "CN III - Oculomotor (Ptosis, Diplopia)",
+                          label: "CN III - Oculomotor (Ptosis, Diplopia)",
+                        },
+                        {
+                          value: "CN IV - Trochlear (Vertical Diplopia)",
+                          label: "CN IV - Trochlear (Vertical Diplopia)",
+                        },
+                        {
+                          value: "CN V - Trigeminal (Facial Numbness)",
+                          label: "CN V - Trigeminal (Facial Numbness)",
+                        },
+                        {
+                          value: "CN VI - Abducens (Lateral Gaze Palsy)",
+                          label: "CN VI - Abducens (Lateral Gaze Palsy)",
+                        },
+                        {
+                          value: "CN VII - Facial (Facial Weakness)",
+                          label: "CN VII - Facial (Facial Weakness)",
+                        },
+                        {
+                          value:
+                            "CN VIII - Vestibulocochlear (Hearing Loss, Vertigo)",
+                          label:
+                            "CN VIII - Vestibulocochlear (Hearing Loss, Vertigo)",
+                        },
+                        {
+                          value:
+                            "CN IX - Glossopharyngeal (Swallowing Difficulty)",
+                          label:
+                            "CN IX - Glossopharyngeal (Swallowing Difficulty)",
+                        },
+                        {
+                          value: "CN X - Vagus (Hoarseness, Dysphagia)",
+                          label: "CN X - Vagus (Hoarseness, Dysphagia)",
+                        },
+                        {
+                          value: "CN XI - Accessory (Shoulder Weakness)",
+                          label: "CN XI - Accessory (Shoulder Weakness)",
+                        },
+                        {
+                          value: "CN XII - Hypoglossal (Tongue Deviation)",
+                          label: "CN XII - Hypoglossal (Tongue Deviation)",
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        [
+                          { value: "Normal", label: "Normal" },
+                          {
+                            value: "CN I - Olfactory (Smell Impairment)",
+                            label: "CN I - Olfactory (Smell Impairment)",
+                          },
+                          {
+                            value: "CN II - Optic (Vision Loss)",
+                            label: "CN II - Optic (Vision Loss)",
+                          },
+                          {
+                            value: "CN III - Oculomotor (Ptosis, Diplopia)",
+                            label: "CN III - Oculomotor (Ptosis, Diplopia)",
+                          },
+                          {
+                            value: "CN IV - Trochlear (Vertical Diplopia)",
+                            label: "CN IV - Trochlear (Vertical Diplopia)",
+                          },
+                          {
+                            value: "CN V - Trigeminal (Facial Numbness)",
+                            label: "CN V - Trigeminal (Facial Numbness)",
+                          },
+                          {
+                            value: "CN VI - Abducens (Lateral Gaze Palsy)",
+                            label: "CN VI - Abducens (Lateral Gaze Palsy)",
+                          },
+                          {
+                            value: "CN VII - Facial (Facial Weakness)",
+                            label: "CN VII - Facial (Facial Weakness)",
+                          },
+                          {
+                            value:
+                              "CN VIII - Vestibulocochlear (Hearing Loss, Vertigo)",
+                            label:
+                              "CN VIII - Vestibulocochlear (Hearing Loss, Vertigo)",
+                          },
+                          {
+                            value:
+                              "CN IX - Glossopharyngeal (Swallowing Difficulty)",
+                            label:
+                              "CN IX - Glossopharyngeal (Swallowing Difficulty)",
+                          },
+                          {
+                            value: "CN X - Vagus (Hoarseness, Dysphagia)",
+                            label: "CN X - Vagus (Hoarseness, Dysphagia)",
+                          },
+                          {
+                            value: "CN XI - Accessory (Shoulder Weakness)",
+                            label: "CN XI - Accessory (Shoulder Weakness)",
+                          },
+                          {
+                            value: "CN XII - Hypoglossal (Tongue Deviation)",
+                            label: "CN XII - Hypoglossal (Tongue Deviation)",
+                          },
+                        ].find(
+                          (option) =>
+                            option.value === neuroExamData.cranial_nerves
+                        ) ||
+                        (neuroExamData.cranial_nerves
+                          ? {
+                              value: neuroExamData.cranial_nerves,
+                              label: neuroExamData.cranial_nerves,
+                            }
+                          : null)
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          cranial_nerves: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          cranial_nerves: inputValue, // Allows custom input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
                   </div>
                 </div>
 
-                {/* Cranial Nerves Section */}
-                <div className="md:col-span-2 space-y-4">
-                  <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
-                    Cranial Nerves
-                  </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">
-                        Pupillary Reaction
-                      </label>
-                      <select
-                        value={neuroExamData.pupillary_reaction || ""}
-                        onChange={(e) =>
-                          setNeuroExamData((p) => ({
-                            ...p,
-                            pupillary_reaction: e.target.value || null,
-                          }))
-                        }
-                        className="w-full rounded-lg border-2 border-gray-100 p-3"
-                      >
-                        <option value="">Select Reaction</option>
-                        <option value="Brisk">Brisk</option>
-                        <option value="Sluggish">Sluggish</option>
-                        <option value="Non-reactive">Non-reactive</option>
-                      </select>
-                    </div>
+                {/* add more sections */}
 
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium text-gray-700">
-                        Speech Assessment
-                      </label>
-                      <select
-                        value={neuroExamData.speech_assessment || ""}
-                        onChange={(e) =>
-                          setNeuroExamData((p) => ({
-                            ...p,
-                            speech_assessment: e.target.value || null,
-                          }))
-                        }
-                        className="w-full rounded-lg border-2 border-gray-100 p-3"
-                      >
-                        <option value="">Select Speech</option>
-                        <option value="Normal">Normal</option>
-                        <option value="Dysarthric">Dysarthric</option>
-                        <option value="Aphasic">Aphasic</option>
-                      </select>
-                    </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Mental Status
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "Alert", label: "Alert" },
+                        { value: "Confused", label: "Confused" },
+                        { value: "Disoriented", label: "Disoriented" },
+                        { value: "Lethargic", label: "Lethargic" },
+                        { value: "Stuporous", label: "Stuporous" },
+                        { value: "Comatose", label: "Comatose" },
+                        { value: "Agitated", label: "Agitated" },
+                        { value: "Delirious", label: "Delirious" },
+                        { value: "Unresponsive", label: "Unresponsive" },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        [
+                          { value: "Alert", label: "Alert" },
+                          { value: "Confused", label: "Confused" },
+                          { value: "Disoriented", label: "Disoriented" },
+                          { value: "Lethargic", label: "Lethargic" },
+                          { value: "Stuporous", label: "Stuporous" },
+                          { value: "Comatose", label: "Comatose" },
+                          { value: "Agitated", label: "Agitated" },
+                          { value: "Delirious", label: "Delirious" },
+                          { value: "Unresponsive", label: "Unresponsive" },
+                        ].find(
+                          (option) =>
+                            option.value === neuroExamData.mental_status
+                        ) ||
+                        (neuroExamData.mental_status
+                          ? {
+                              value: neuroExamData.mental_status,
+                              label: neuroExamData.mental_status,
+                            }
+                          : null)
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          mental_status: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          mental_status: inputValue, // Allows custom input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Cerebellar Function
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "Normal", label: "Normal" },
+                        { value: "Ataxia", label: "Ataxia" },
+                        {
+                          value: "Dysdiadochokinesia",
+                          label: "Dysdiadochokinesia",
+                        },
+                        {
+                          value: "Intention Tremor",
+                          label: "Intention Tremor",
+                        },
+                        { value: "Dysmetria", label: "Dysmetria" },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        [
+                          { value: "Normal", label: "Normal" },
+                          { value: "Ataxia", label: "Ataxia" },
+                          {
+                            value: "Dysdiadochokinesia",
+                            label: "Dysdiadochokinesia",
+                          },
+                          {
+                            value: "Intention Tremor",
+                            label: "Intention Tremor",
+                          },
+                          { value: "Dysmetria", label: "Dysmetria" },
+                        ].find(
+                          (option) =>
+                            option.value === neuroExamData.cerebellar_function
+                        ) ||
+                        (neuroExamData.cerebellar_function
+                          ? {
+                              value: neuroExamData.cerebellar_function,
+                              label: neuroExamData.cerebellar_function,
+                            }
+                          : null)
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          cerebellar_function: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          cerebellar_function: inputValue, // Allows custom input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Muscle Wasting
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "None", label: "None" },
+                        { value: "Mild", label: "Mild" },
+                        { value: "Moderate", label: "Moderate" },
+                        { value: "Severe", label: "Severe" },
+                        { value: "Generalized", label: "Generalized" },
+                        { value: "Localized", label: "Localized" },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        [
+                          { value: "None", label: "None" },
+                          { value: "Mild", label: "Mild" },
+                          { value: "Moderate", label: "Moderate" },
+                          { value: "Severe", label: "Severe" },
+                          { value: "Generalized", label: "Generalized" },
+                          { value: "Localized", label: "Localized" },
+                        ].find(
+                          (option) =>
+                            option.value === neuroExamData.muscle_wasting
+                        ) ||
+                        (neuroExamData.muscle_wasting
+                          ? {
+                              value: neuroExamData.muscle_wasting,
+                              label: neuroExamData.muscle_wasting,
+                            }
+                          : null)
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          muscle_wasting: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          muscle_wasting: inputValue, // Allows custom input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Abnormal Movements
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "None", label: "None" },
+                        { value: "Tremors", label: "Tremors" },
+                        { value: "Chorea", label: "Chorea" },
+                        { value: "Athetosis", label: "Athetosis" },
+                        { value: "Myoclonus", label: "Myoclonus" },
+                        { value: "Dystonia", label: "Dystonia" },
+                        { value: "Tics", label: "Tics" },
+                        {
+                          value: "Bradykinesia",
+                          label: "Bradykinesia (Slow Movement)",
+                        },
+                        { value: "Rigidity", label: "Rigidity" },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        [
+                          { value: "None", label: "None" },
+                          { value: "Tremors", label: "Tremors" },
+                          { value: "Chorea", label: "Chorea" },
+                          { value: "Athetosis", label: "Athetosis" },
+                          { value: "Myoclonus", label: "Myoclonus" },
+                          { value: "Dystonia", label: "Dystonia" },
+                          { value: "Tics", label: "Tics" },
+                          {
+                            value: "Bradykinesia",
+                            label: "Bradykinesia (Slow Movement)",
+                          },
+                          { value: "Rigidity", label: "Rigidity" },
+                        ].find(
+                          (option) =>
+                            option.value === neuroExamData.abnormal_movements
+                        ) ||
+                        (neuroExamData.abnormal_movements
+                          ? {
+                              value: neuroExamData.abnormal_movements,
+                              label: neuroExamData.abnormal_movements,
+                            }
+                          : null)
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          abnormal_movements: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          abnormal_movements: inputValue, // Allows custom input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* remaining fields */}
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Romberg Test
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "Negative", label: "Negative (Normal)" },
+                        {
+                          value: "Positive",
+                          label: "Positive (Instability Present)",
+                        },
+                        {
+                          value: "Mild Instability",
+                          label: "Mild Instability",
+                        },
+                        {
+                          value: "Severe Instability",
+                          label: "Severe Instability",
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        [
+                          { value: "Negative", label: "Negative (Normal)" },
+                          {
+                            value: "Positive",
+                            label: "Positive (Instability Present)",
+                          },
+                          {
+                            value: "Mild Instability",
+                            label: "Mild Instability",
+                          },
+                          {
+                            value: "Severe Instability",
+                            label: "Severe Instability",
+                          },
+                        ].find(
+                          (option) =>
+                            option.value === neuroExamData.romberg_test
+                        ) ||
+                        (neuroExamData.romberg_test
+                          ? {
+                              value: neuroExamData.romberg_test,
+                              label: neuroExamData.romberg_test,
+                            }
+                          : null)
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          romberg_test: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          romberg_test: inputValue, // Allows custom input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Nystagmus
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "Absent", label: "Absent (Normal)" },
+                        { value: "Horizontal", label: "Horizontal Nystagmus" },
+                        { value: "Vertical", label: "Vertical Nystagmus" },
+                        { value: "Rotatory", label: "Rotatory Nystagmus" },
+                        {
+                          value: "Gaze-Evoked",
+                          label: "Gaze-Evoked Nystagmus",
+                        },
+                        { value: "Positional", label: "Positional Nystagmus" },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        [
+                          { value: "Absent", label: "Absent (Normal)" },
+                          {
+                            value: "Horizontal",
+                            label: "Horizontal Nystagmus",
+                          },
+                          { value: "Vertical", label: "Vertical Nystagmus" },
+                          { value: "Rotatory", label: "Rotatory Nystagmus" },
+                          {
+                            value: "Gaze-Evoked",
+                            label: "Gaze-Evoked Nystagmus",
+                          },
+                          {
+                            value: "Positional",
+                            label: "Positional Nystagmus",
+                          },
+                        ].find(
+                          (option) => option.value === neuroExamData.nystagmus
+                        ) ||
+                        (neuroExamData.nystagmus
+                          ? {
+                              value: neuroExamData.nystagmus,
+                              label: neuroExamData.nystagmus,
+                            }
+                          : null)
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          nystagmus: selectedOption ? selectedOption.value : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          nystagmus: inputValue, // Allows custom input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Muscle Wasting
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "None", label: "None" },
+                        { value: "Mild", label: "Mild" },
+                        { value: "Moderate", label: "Moderate" },
+                        { value: "Severe", label: "Severe" },
+                        { value: "Generalized", label: "Generalized" },
+                        { value: "Localized", label: "Localized" },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        [
+                          { value: "None", label: "None" },
+                          { value: "Mild", label: "Mild" },
+                          { value: "Moderate", label: "Moderate" },
+                          { value: "Severe", label: "Severe" },
+                          { value: "Generalized", label: "Generalized" },
+                          { value: "Localized", label: "Localized" },
+                        ].find(
+                          (option) =>
+                            option.value === neuroExamData.muscle_wasting
+                        ) ||
+                        (neuroExamData.muscle_wasting
+                          ? {
+                              value: neuroExamData.muscle_wasting,
+                              label: neuroExamData.muscle_wasting,
+                            }
+                          : null)
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          muscle_wasting: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          muscle_wasting: inputValue, // Allows custom input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Fundoscopy (Fundal Examination)
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "Normal", label: "👁 Normal" },
+                        { value: "Papilledema", label: "🔴 Papilledema" },
+                        { value: "Optic Atrophy", label: "⚪ Optic Atrophy" },
+                        {
+                          value: "Retinal Hemorrhages",
+                          label: "🩸 Retinal Hemorrhages",
+                        },
+                        {
+                          value: "Hypertensive Retinopathy",
+                          label: "⚡ Hypertensive Retinopathy",
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        neuroExamData.fundoscopy
+                          ? {
+                              value: neuroExamData.fundoscopy,
+                              label: neuroExamData.fundoscopy,
+                            }
+                          : null
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          fundoscopy: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          fundoscopy: inputValue, // Allows adding custom text
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                </div>
+
+                {/* Additional Fields */}
+                <div className="space-y-4 md:col-span-2">
+                  <h4 className="font-semibold text-gray-800 border-l-4 border-purple-500 pl-3 py-1.5">
+                    Additional Observations
+                  </h4>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Gait Analysis
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "Normal Gait", label: "Normal Gait" },
+                        {
+                          value: "Ataxic Gait",
+                          label: "Ataxic Gait (Unsteady, Staggering)",
+                        },
+                        {
+                          value: "Shuffling Gait",
+                          label: "Shuffling Gait (Short Steps, Dragging Feet)",
+                        },
+                        {
+                          value: "Hemiplegic Gait",
+                          label:
+                            "Hemiplegic Gait (One-Sided Weakness, Circumduction)",
+                        },
+                        {
+                          value: "Spastic Gait",
+                          label: "Spastic Gait (Stiff, Scissoring Legs)",
+                        },
+                        {
+                          value: "Steppage Gait",
+                          label: "Steppage Gait (High Steps, Foot Drop)",
+                        },
+                        {
+                          value: "Waddling Gait",
+                          label: "Waddling Gait (Hip Weakness)",
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        [
+                          { value: "Normal Gait", label: "Normal Gait" },
+                          {
+                            value: "Ataxic Gait",
+                            label: "Ataxic Gait (Unsteady, Staggering)",
+                          },
+                          {
+                            value: "Shuffling Gait",
+                            label:
+                              "Shuffling Gait (Short Steps, Dragging Feet)",
+                          },
+                          {
+                            value: "Hemiplegic Gait",
+                            label:
+                              "Hemiplegic Gait (One-Sided Weakness, Circumduction)",
+                          },
+                          {
+                            value: "Spastic Gait",
+                            label: "Spastic Gait (Stiff, Scissoring Legs)",
+                          },
+                          {
+                            value: "Steppage Gait",
+                            label: "Steppage Gait (High Steps, Foot Drop)",
+                          },
+                          {
+                            value: "Waddling Gait",
+                            label: "Waddling Gait (Hip Weakness)",
+                          },
+                        ].find(
+                          (option) =>
+                            option.value === neuroExamData.gait_analysis
+                        ) ||
+                        (neuroExamData.gait_analysis
+                          ? {
+                              value: neuroExamData.gait_analysis,
+                              label: neuroExamData.gait_analysis,
+                            }
+                          : null)
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          gait_analysis: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          gait_analysis: inputValue, // Allows custom text input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Pupillary Reaction
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        {
+                          value: "Normal",
+                          label: "Normal (Reactive to Light)",
+                        },
+                        { value: "Sluggish", label: "Sluggish Reaction" },
+                        { value: "Non-Reactive", label: "Non-Reactive Pupils" },
+                        {
+                          value: "Unequal",
+                          label: "Unequal Pupils (Anisocoria)",
+                        },
+                        {
+                          value: "Dilation",
+                          label: "Dilated Pupils (Mydriasis)",
+                        },
+                        {
+                          value: "Constriction",
+                          label: "Constricted Pupils (Miosis)",
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        [
+                          {
+                            value: "Normal",
+                            label: "Normal (Reactive to Light)",
+                          },
+                          { value: "Sluggish", label: "Sluggish Reaction" },
+                          {
+                            value: "Non-Reactive",
+                            label: "Non-Reactive Pupils",
+                          },
+                          {
+                            value: "Unequal",
+                            label: "Unequal Pupils (Anisocoria)",
+                          },
+                          {
+                            value: "Dilation",
+                            label: "Dilated Pupils (Mydriasis)",
+                          },
+                          {
+                            value: "Constriction",
+                            label: "Constricted Pupils (Miosis)",
+                          },
+                        ].find(
+                          (option) =>
+                            option.value === neuroExamData.pupillary_reaction
+                        ) ||
+                        (neuroExamData.pupillary_reaction
+                          ? {
+                              value: neuroExamData.pupillary_reaction,
+                              label: neuroExamData.pupillary_reaction,
+                            }
+                          : null)
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          pupillary_reaction: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          pupillary_reaction: inputValue, // Allows custom text input
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
                   </div>
                 </div>
 
@@ -1208,6 +3218,7 @@ const PatientSearch = () => {
                 </div>
               </div>
             </div>
+
             {/* test sections */}
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
               <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
@@ -1323,11 +3334,18 @@ const PatientSearch = () => {
                         </label>
                         <Select
                           options={[
-                            { value: "morning", label: "صبح" },
-                            { value: "noon", label: "دوپہر" },
-                            { value: "evening", label: "شام" },
-                            { value: "night", label: "رات" },
-                            { value: "as_needed", label: "ضرورت کے مطابق" },
+                            { value: "morning", label: "صبح (Morning)" },
+                            { value: "noon", label: "دوپہر (Noon)" },
+                            { value: "evening", label: "شام (Evening)" },
+                            { value: "night", label: "رات (Night)" },
+                            { value: "morning_noon", label: "صبح اور دوپہر (Morning & Noon)" },
+                            { value: "morning_evening", label: "صبح اور شام (Morning & Evening)" },
+                            { value: "noon_evening", label: "دوپہر اور شام (Noon & Evening)" },
+                            { value: "evening_night", label: "شام اور رات (Evening & Night)" },
+                            { value: "morning_noon_evening", label: "صبح، دوپہر، شام (Morning, Noon, Evening)" },
+                            { value: "noon_evening_night", label: "دوپہر، شام، رات (Noon, Evening, Night)" },
+                            { value: "all_day", label: "صبح، دوپہر، شام، رات (All Day)" },
+                            { value: "as_needed", label: "ضرورت کے مطابق (As Needed)" }
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -1355,7 +3373,13 @@ const PatientSearch = () => {
                         </label>
                         <Select
                           options={[
+                            { value: "0.25", label: "ایک چوتھائی گولی (1/4 گولی)" },
+                            { value: "0.5", label: "آدھی گولی (1/2 گولی)" },
+                            { value: "0.75", label: "تین چوتھائی گولی (3/4 گولی)" },
                             { value: "1", label: "1 گولی" },
+                            { value: "1.25", label: "سوا گولی (1 1/4 گولی)" },
+                            { value: "1.5", label: "ڈیڑھ گولی (1 1/2 گولی)" },
+                            { value: "1.75", label: "پونے دو گولی (1 3/4 گولی)" },
                             { value: "2", label: "2 گولیاں" },
                             { value: "3", label: "3 گولیاں" },
                             { value: "4", label: "4 گولیاں" },
