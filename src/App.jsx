@@ -143,6 +143,7 @@ const PatientSearch = () => {
       alert("Pop-up blocked! Allow pop-ups for this site.");
       return;
     }
+
     printWindow.document.write(`
       <html>
         <head>
@@ -151,210 +152,444 @@ const PatientSearch = () => {
             @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu&display=swap');
             body {
               font-family: 'Inter', sans-serif;
-              margin: 25mm 15mm 15mm 15mm;
-              color: #2d3748;
-              font-size: 10px;
-              line-height: 1.1;
+              margin: 20mm 15mm 15mm 15mm;
+              color: #374151;
+              font-size: 11px;
+              line-height: 1.4;
             }
   
-            .main-table {
-              width: 100%;
-              border-collapse: collapse;
+            .prescription-container {
+              display: grid;
+              grid-template-columns: 1fr 1.5fr 1fr;
+              gap: 6mm;
               margin-top: 5mm;
             }
   
-            .main-table td {
-              vertical-align: top;
-              padding: 2px;
+            .column {
+              padding: 2mm;
+              border-radius: 4px;
             }
   
-            .data-table {
-              width: 100%;
-              border-collapse: collapse;
-              margin: 3px 0;
-            }
-  
-            .data-table th, 
-            .data-table td {
-              border: 1px solid #ddd;
-              padding: 3px;
-              vertical-align: top;
-            }
-  
-            .data-table th {
-              background: #f8f8f8;
-              font-weight: 600;
-            }
-  
-            .patient-info-table {
-              width: 100%;
-              border-collapse: collapse;
-              margin-bottom: 4mm;
-            }
-  
-            .patient-info-table td {
-              padding: 2px 5px;
+            .patient-info {
+              display: grid;
+              grid-template-columns: repeat(3, 1fr);
+              gap: 3mm;
+              margin-bottom: 5mm;
+              padding: 2mm;
+              background: #f8fafc;
+              border-radius: 4px;
             }
   
             .section-title {
-              background: #f0f0f0;
               font-weight: 600;
-              padding: 3px 5px;
-              margin: 5px 0;
+              color: #1e40af;
+              padding-bottom: 2mm;
+              margin-bottom: 3mm;
+              border-bottom: 1px solid #e5e7eb;
+            }
+  
+            .medicine-table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 2mm 0;
+            }
+  
+            .medicine-table th {
+              background: #eff6ff;
+              padding: 3mm 1mm;
+              text-align: left;
+              font-weight: 600;
+            }
+  
+            .medicine-table td {
+              padding: 2mm 1mm;
+              border-bottom: 1px solid #e5e7eb;
+            }
+  
+            .test-list {
+              list-style: none;
+              padding: 0;
+              margin: 0;
+            }
+  
+            .test-list li {
+              padding: 1.5mm 0;
+              border-bottom: 1px solid #e5e7eb;
+            }
+  
+            .exam-table {
+              width: 100%;
+              border-collapse: collapse;
+            }
+  
+            .exam-table td {
+              padding: 2mm 1mm;
+              border-bottom: 1px solid #e5e7eb;
+            }
+  
+            .follow-up-section {
+              margin-top: 6mm;
+              padding: 3mm;
+              background: #f0fdfa;
+              border-radius: 4px;
             }
   
             .urdu-date {
               font-family: 'Noto Nastaliq Urdu', serif;
               direction: rtl;
               margin-left: 5px;
+              color: #4b5563;
             }
   
             @media print {
               body {
-                margin: 25mm 15mm 15mm 15mm;
+                margin: 15mm 10mm 10mm 10mm;
+              }
+              .section-title {
+                color: #1e3a8a !important;
               }
             }
           </style>
         </head>
         <body>
-          <table class="patient-info-table">
-            <tr>
-              <td width="33%"><strong>MR#:</strong> ${
-                patient?.mr_no || "-"
-              }</td>
-              <td width="34%"><strong>Name:</strong> ${
-                patient?.name || "-"
-              }</td>
-              <td width="33%"><strong>Age/Sex:</strong> ${
-                patient?.age || "-"
-              }/${patient?.gender || "-"}</td>
-            </tr>
-          </table>
+          <div class="patient-info">
+            <div><strong>MR#:</strong> ${patient?.mr_no || "-"}</div>
+            <div><strong>Name:</strong> ${patient?.name || "-"}</div>
+            <div><strong>Age/Sex:</strong> ${patient?.age || "-"}/${
+      patient?.gender || "-"
+    }</div>
+          </div>
   
-          <table class="main-table">
-            <!-- Medicines -->
-            <tr>
-              <td>
-                <div class="section-title">PRESCRIPTION</div>
-                <table class="data-table">
-                  <thead>
-                    <tr>
-                      <th width="30%">Medicine</th>
-                      <th width="15%">Dosage</th>
-                      <th width="15%">Frequency</th>
-                      <th width="15%">Duration</th>
-                      <th width="25%">Instructions</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${selectedMedicines
-                      .map((med) => {
-                        const medicineData = medicines.find(
-                          (m) => m.value === med.medicine_id
-                        );
-                        return `
+          <div class="prescription-container">
+            <!-- Tests & Symptoms Column -->
+            <div class="column">
+              <div class="section-title">TESTS & SYMPTOMS</div>
+              <ul class="test-list">
+                ${selectedTests
+                  .map(
+                    (test) => `
+                  <li>${test}</li>
+                `
+                  )
+                  .join("")}
+              </ul>
+            </div>
+  
+            <!-- Medicines Column -->
+            <div class="column">
+              <div class="section-title">PRESCRIPTION</div>
+              <table class="medicine-table">
+                <thead>
+                  <tr>
+                    <th>Medicine</th>
+                    <th style="width: 15%">Dosage</th>
+                    <th style="width: 15%">Frequency</th>
+                    <th style="width: 20%">Duration</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${selectedMedicines
+                    .map((med) => {
+                      const medicineData = medicines.find(
+                        (m) => m.value === med.medicine_id
+                      );
+                      return `
                         <tr>
                           <td>${medicineData?.label || "-"}</td>
-                          <td>${med.dosage || "-"}</td>
+                          <td>${med.dosage_urdu || "-"}</td>
                           <td>${med.frequency_urdu || "-"}</td>
                           <td>${med.duration_urdu || "-"}</td>
-                          <td>${med.instructions_urdu || "-"}</td>
                         </tr>
                       `;
-                      })
-                      .join("")}
-                  </tbody>
-                </table>
-              </td>
-            </tr>
+                    })
+                    .join("")}
+                </tbody>
+              </table>
+            </div>
   
-            <!-- Tests -->
-            <tr>
-              <td>
-                <div class="section-title">RECOMMENDED TESTS</div>
-                <table class="data-table">
-                  <tbody>
-                    ${selectedTests
-                      .map(
-                        (test) => `
-                      <tr>
-                        <td>• ${test}</td>
-                      </tr>
-                    `
-                      )
-                      .join("")}
-                  </tbody>
-                </table>
-              </td>
-            </tr>
+            <!-- Examination Column -->
+            <div class="column">
+              <div class="section-title">EXAMINATION</div>
+              <table class="exam-table">
+                <tr>
+                  <td><strong>Muscle Tone:</strong></td>
+                  <td>${neuroExamData.muscle_tone || "-"}</td>
+                </tr>
+                <tr>
+                  <td><strong>Reflexes:</strong></td>
+                  <td>${neuroExamData.deep_tendon_reflexes || "-"}</td>
+                </tr>
+                <tr>
+                  <td><strong>Gait:</strong></td>
+                  <td>${neuroExamData.gait_assessment || "-"}</td>
+                </tr>
+                <tr>
+                  <td><strong>Pupils:</strong></td>
+                  <td>${neuroExamData.pupillary_reaction || "-"}</td>
+                </tr>
+                <tr>
+                  <td><strong>Romberg:</strong></td>
+                  <td>${neuroExamData.romberg_test || "-"}</td>
+                </tr>
+                <tr>
+                  <td><strong>Sensation:</strong></td>
+                  <td>${neuroExamData.pain_sensation ? "✓" : "✗"}</td>
+                </tr>
+              </table>
+            </div>
+          </div>
   
-            <!-- Examination -->
-            <tr>
-              <td>
-                <div class="section-title">EXAMINATION FINDINGS</div>
-                <table class="data-table">
-                  <tbody>
-                    <tr>
-                      <td width="50%"><strong>Muscle Tone:</strong> ${
-                        neuroExamData.muscle_tone || "-"
-                      }</td>
-                      <td><strong>Reflexes:</strong> ${
-                        neuroExamData.deep_tendon_reflexes || "-"
-                      }</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Gait:</strong> ${
-                        neuroExamData.gait_assessment || "-"
-                      }</td>
-                      <td><strong>Pupils:</strong> ${
-                        neuroExamData.pupillary_reaction || "-"
-                      }</td>
-                    </tr>
-                    <tr>
-                      <td><strong>Romberg:</strong> ${
-                        neuroExamData.romberg_test || "-"
-                      }</td>
-                      <td><strong>Sensation:</strong> ${
-                        neuroExamData.pain_sensation ? "✓" : "✗"
-                      }</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </td>
-            </tr>
-  
-            <!-- Follow-up -->
-            ${
-              followUpDate
-                ? `
-              <tr>
-                <td>
-                  <div class="section-title">FOLLOW UP</div>
-                  <table class="data-table">
-                    <tr>
-                      <td width="30%"><strong>Date:</strong> ${new Date(
-                        followUpDate
-                      ).toLocaleDateString()}</td>
-                      <td><span class="urdu-date">${urduDate(
-                        followUpDate
-                      )}</span></td>
-                      <td width="50%"><strong>Notes:</strong> ${
-                        followUpNotes || "-"
-                      }</td>
-                    </tr>
-                  </table>
-                </td>
-              </tr>
-            `
-                : ""
-            }
-          </table>
+          ${
+            followUpDate
+              ? `
+            <div class="follow-up-section">
+              <div class="section-title">FOLLOW UP</div>
+              <div style="display: flex; justify-content: space-between; gap: 5mm">
+                <div><strong>Date:</strong> ${new Date(
+                  followUpDate
+                ).toLocaleDateString()}</div>
+                <div class="urdu-date">${urduDate(followUpDate)}</div>
+                <div><strong>Notes:</strong> ${followUpNotes || "-"}</div>
+              </div>
+            </div>
+          `
+              : ""
+          }
         </body>
       </html>
     `);
     printWindow.document.close();
     printWindow.print();
   };
+
+  // const handlePrint = () => {
+  //   const printContent = document.getElementById("consultation-content");
+  //   if (!printContent) {
+  //     alert("No consultation data to print");
+  //     return;
+  //   }
+
+  //   const printWindow = window.open(
+  //     "https://paitient-prescription-frontend.vercel.app",
+  //     "_blank"
+  //   );
+  //   if (!printWindow) {
+  //     alert("Pop-up blocked! Allow pop-ups for this site.");
+  //     return;
+  //   }
+  //   printWindow.document.write(`
+  //     <html>
+  //       <head>
+  //         <title>Prescription - ${patient?.name || "Unknown Patient"}</title>
+  //         <style>
+  //           @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu&display=swap');
+  //           body {
+  //             font-family: 'Inter', sans-serif;
+  //             margin: 25mm 15mm 15mm 15mm;
+  //             color: #2d3748;
+  //             font-size: 10px;
+  //             line-height: 1.1;
+  //           }
+
+  //           .main-table {
+  //             width: 100%;
+  //             border-collapse: collapse;
+  //             margin-top: 5mm;
+  //           }
+
+  //           .main-table td {
+  //             vertical-align: top;
+  //             padding: 2px;
+  //           }
+
+  //           .data-table {
+  //             width: 100%;
+  //             border-collapse: collapse;
+  //             margin: 3px 0;
+  //           }
+
+  //           .data-table th,
+  //           .data-table td {
+  //             border: 1px solid #ddd;
+  //             padding: 3px;
+  //             vertical-align: top;
+  //           }
+
+  //           .data-table th {
+  //             background: #f8f8f8;
+  //             font-weight: 600;
+  //           }
+
+  //           .patient-info-table {
+  //             width: 100%;
+  //             border-collapse: collapse;
+  //             margin-bottom: 4mm;
+  //           }
+
+  //           .patient-info-table td {
+  //             padding: 2px 5px;
+  //           }
+
+  //           .section-title {
+  //             background: #f0f0f0;
+  //             font-weight: 600;
+  //             padding: 3px 5px;
+  //             margin: 5px 0;
+  //           }
+
+  //           .urdu-date {
+  //             font-family: 'Noto Nastaliq Urdu', serif;
+  //             direction: rtl;
+  //             margin-left: 5px;
+  //           }
+
+  //           @media print {
+  //             body {
+  //               margin: 25mm 15mm 15mm 15mm;
+  //             }
+  //           }
+  //         </style>
+  //       </head>
+  //       <body>
+  //         <table class="patient-info-table">
+  //           <tr>
+  //             <td width="33%"><strong>MR#:</strong> ${
+  //               patient?.mr_no || "-"
+  //             }</td>
+  //             <td width="34%"><strong>Name:</strong> ${
+  //               patient?.name || "-"
+  //             }</td>
+  //             <td width="33%"><strong>Age/Sex:</strong> ${
+  //               patient?.age || "-"
+  //             }/${patient?.gender || "-"}</td>
+  //           </tr>
+  //         </table>
+
+  //         <table class="main-table">
+  //           <!-- Medicines -->
+  //           <tr>
+  //             <td>
+  //               <div class="section-title">PRESCRIPTION</div>
+  //               <table class="data-table">
+  //                 <thead>
+  //                   <tr>
+  //                     <th width="30%">Medicine</th>
+  //                     <th width="15%">Dosage</th>
+  //                     <th width="15%">Frequency</th>
+  //                     <th width="15%">Duration</th>
+  //                     <th width="25%">Instructions</th>
+  //                   </tr>
+  //                 </thead>
+  //                 <tbody>
+  //                   ${selectedMedicines
+  //                     .map((med) => {
+  //                       const medicineData = medicines.find(
+  //                         (m) => m.value === med.medicine_id
+  //                       );
+  //                       return `
+  //                       <tr>
+  //                         <td>${medicineData?.label || "-"}</td>
+  //                         <td>${med.dosage || "-"}</td>
+  //                         <td>${med.frequency_urdu || "-"}</td>
+  //                         <td>${med.duration_urdu || "-"}</td>
+  //                         <td>${med.instructions_urdu || "-"}</td>
+  //                       </tr>
+  //                     `;
+  //                     })
+  //                     .join("")}
+  //                 </tbody>
+  //               </table>
+  //             </td>
+  //           </tr>
+
+  //           <!-- Tests -->
+  //           <tr>
+  //             <td>
+  //               <div class="section-title">RECOMMENDED TESTS</div>
+  //               <table class="data-table">
+  //                 <tbody>
+  //                   ${selectedTests
+  //                     .map(
+  //                       (test) => `
+  //                     <tr>
+  //                       <td>• ${test}</td>
+  //                     </tr>
+  //                   `
+  //                     )
+  //                     .join("")}
+  //                 </tbody>
+  //               </table>
+  //             </td>
+  //           </tr>
+
+  //           <!-- Examination -->
+  //           <tr>
+  //             <td>
+  //               <div class="section-title">EXAMINATION FINDINGS</div>
+  //               <table class="data-table">
+  //                 <tbody>
+  //                   <tr>
+  //                     <td width="50%"><strong>Muscle Tone:</strong> ${
+  //                       neuroExamData.muscle_tone || "-"
+  //                     }</td>
+  //                     <td><strong>Reflexes:</strong> ${
+  //                       neuroExamData.deep_tendon_reflexes || "-"
+  //                     }</td>
+  //                   </tr>
+  //                   <tr>
+  //                     <td><strong>Gait:</strong> ${
+  //                       neuroExamData.gait_assessment || "-"
+  //                     }</td>
+  //                     <td><strong>Pupils:</strong> ${
+  //                       neuroExamData.pupillary_reaction || "-"
+  //                     }</td>
+  //                   </tr>
+  //                   <tr>
+  //                     <td><strong>Romberg:</strong> ${
+  //                       neuroExamData.romberg_test || "-"
+  //                     }</td>
+  //                     <td><strong>Sensation:</strong> ${
+  //                       neuroExamData.pain_sensation ? "✓" : "✗"
+  //                     }</td>
+  //                   </tr>
+  //                 </tbody>
+  //               </table>
+  //             </td>
+  //           </tr>
+
+  //           <!-- Follow-up -->
+  //           ${
+  //             followUpDate
+  //               ? `
+  //             <tr>
+  //               <td>
+  //                 <div class="section-title">FOLLOW UP</div>
+  //                 <table class="data-table">
+  //                   <tr>
+  //                     <td width="30%"><strong>Date:</strong> ${new Date(
+  //                       followUpDate
+  //                     ).toLocaleDateString()}</td>
+  //                     <td><span class="urdu-date">${urduDate(
+  //                       followUpDate
+  //                     )}</span></td>
+  //                     <td width="50%"><strong>Notes:</strong> ${
+  //                       followUpNotes || "-"
+  //                     }</td>
+  //                   </tr>
+  //                 </table>
+  //               </td>
+  //             </tr>
+  //           `
+  //               : ""
+  //           }
+  //         </table>
+  //       </body>
+  //     </html>
+  //   `);
+  //   printWindow.document.close();
+  //   printWindow.print();
+  // };
+
   // Fetch symptoms and medicines on load
 
   useEffect(() => {
@@ -517,7 +752,8 @@ const PatientSearch = () => {
           patient_id: patient.id,
           medicines: selectedMedicines.map((med) => ({
             medicine_id: med.medicine_id,
-            dosage: med.dosage,
+            dosage_en: med.dosage_en,
+            dosage_urdu: med.dosage_urdu,
             frequency_en: med.frequency_en,
             frequency_urdu: med.frequency_urdu,
             duration_en: med.duration_en,
@@ -532,6 +768,7 @@ const PatientSearch = () => {
           headers: { "Content-Type": "application/json" },
         }
       );
+
       // Step 5: Submit tests
       for (const testName of selectedTests) {
         try {
@@ -3338,14 +3575,38 @@ const PatientSearch = () => {
                             { value: "noon", label: "دوپہر (Noon)" },
                             { value: "evening", label: "شام (Evening)" },
                             { value: "night", label: "رات (Night)" },
-                            { value: "morning_noon", label: "صبح اور دوپہر (Morning & Noon)" },
-                            { value: "morning_evening", label: "صبح اور شام (Morning & Evening)" },
-                            { value: "noon_evening", label: "دوپہر اور شام (Noon & Evening)" },
-                            { value: "evening_night", label: "شام اور رات (Evening & Night)" },
-                            { value: "morning_noon_evening", label: "صبح، دوپہر، شام (Morning, Noon, Evening)" },
-                            { value: "noon_evening_night", label: "دوپہر، شام، رات (Noon, Evening, Night)" },
-                            { value: "all_day", label: "صبح، دوپہر، شام، رات (All Day)" },
-                            { value: "as_needed", label: "ضرورت کے مطابق (As Needed)" }
+                            {
+                              value: "morning_noon",
+                              label: "صبح اور دوپہر (Morning & Noon)",
+                            },
+                            {
+                              value: "morning_evening",
+                              label: "صبح اور شام (Morning & Evening)",
+                            },
+                            {
+                              value: "noon_evening",
+                              label: "دوپہر اور شام (Noon & Evening)",
+                            },
+                            {
+                              value: "evening_night",
+                              label: "شام اور رات (Evening & Night)",
+                            },
+                            {
+                              value: "morning_noon_evening",
+                              label: "صبح، دوپہر، شام (Morning, Noon, Evening)",
+                            },
+                            {
+                              value: "noon_evening_night",
+                              label: "دوپہر، شام، رات (Noon, Evening, Night)",
+                            },
+                            {
+                              value: "all_day",
+                              label: "صبح، دوپہر، شام، رات (All Day)",
+                            },
+                            {
+                              value: "as_needed",
+                              label: "ضرورت کے مطابق (As Needed)",
+                            },
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -3373,13 +3634,22 @@ const PatientSearch = () => {
                         </label>
                         <Select
                           options={[
-                            { value: "0.25", label: "ایک چوتھائی گولی (1/4 گولی)" },
+                            {
+                              value: "0.25",
+                              label: "ایک چوتھائی گولی (1/4 گولی)",
+                            },
                             { value: "0.5", label: "آدھی گولی (1/2 گولی)" },
-                            { value: "0.75", label: "تین چوتھائی گولی (3/4 گولی)" },
+                            {
+                              value: "0.75",
+                              label: "تین چوتھائی گولی (3/4 گولی)",
+                            },
                             { value: "1", label: "1 گولی" },
                             { value: "1.25", label: "سوا گولی (1 1/4 گولی)" },
                             { value: "1.5", label: "ڈیڑھ گولی (1 1/2 گولی)" },
-                            { value: "1.75", label: "پونے دو گولی (1 3/4 گولی)" },
+                            {
+                              value: "1.75",
+                              label: "پونے دو گولی (1 3/4 گولی)",
+                            },
                             { value: "2", label: "2 گولیاں" },
                             { value: "3", label: "3 گولیاں" },
                             { value: "4", label: "4 گولیاں" },
@@ -3396,7 +3666,11 @@ const PatientSearch = () => {
                             setSelectedMedicines((prev) =>
                               prev.map((item, i) =>
                                 i === index
-                                  ? { ...item, dosage: e.value }
+                                  ? {
+                                      ...item,
+                                      dosage_en: e.value,
+                                      dosage_urdu: e.label,
+                                    } 
                                   : item
                               )
                             );
