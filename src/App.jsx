@@ -598,14 +598,14 @@ const PatientSearch = () => {
           motor_function: neuroExamData.motor_function || "",
           muscle_tone: neuroExamData.muscle_tone || "",
           muscle_strength: neuroExamData.muscle_strength || "",
-          straight_leg_raise_test: neuroExamData.straight_leg_raise_test || "",
+          straight_leg_raise_test: neuroExamData.straight_leg_raise_test,
           deep_tendon_reflexes: neuroExamData.deep_tendon_reflexes || "",
           plantar_reflex: neuroExamData.plantar_reflex || "",
           pupillary_reaction: neuroExamData.pupillary_reaction || "",
           speech_assessment: neuroExamData.speech_assessment || "",
           gait_assessment: neuroExamData.gait_assessment || "",
           coordination: neuroExamData.coordination || "",
-          sensory_function: neuroExamData.sensory_function || "",
+          sensory_examination: neuroExamData.sensory_examination || "",
           cranial_nerves: neuroExamData.cranial_nerves || "",
           mental_status: neuroExamData.mental_status || "",
           cerebellar_function: neuroExamData.cerebellar_function || "",
@@ -1488,6 +1488,26 @@ const PatientSearch = () => {
                           label: "📏 Positive at 30°",
                         },
                         {
+                          value: "Positive at 30° with Pain",
+                          label: "📏🔥 Positive at 30° with Pain",
+                        },
+                        {
+                          value: "Positive at 30° Bilateral",
+                          label: "📏🔄 Positive at 30° Bilateral",
+                        },
+                        {
+                          value: "Positive at 30° Left",
+                          label: "📏⬅️ Positive at 30° Left",
+                        },
+                        {
+                          value: "Positive at 30° Right",
+                          label: "📏➡️ Positive at 30° Right",
+                        },
+                        {
+                          value: "Positive at 30° with Sciatic Pain",
+                          label: "📏⚡ Positive at 30° with Sciatic Pain",
+                        },
+                        {
                           value: "Positive at 45°",
                           label: "📏 Positive at 45°",
                         },
@@ -1503,31 +1523,39 @@ const PatientSearch = () => {
                           value: "Bilateral Negative",
                           label: "✅✅ Bilateral Negative",
                         },
+                        { value: "Severe Pain", label: "🔥 Severe Pain" },
+                        { value: "Mild Pain", label: "💢 Mild Pain" },
+                        {
+                          value: "Restricted Movement",
+                          label: "🚫 Restricted Movement",
+                        },
+                        {
+                          value: "Hyperextension Pain",
+                          label: "⚡ Hyperextension Pain",
+                        },
                       ]}
                       isSearchable
                       isClearable
                       value={
-                        neuroExamData.slr_test
+                        neuroExamData.straight_leg_raise_test
                           ? {
-                              value: neuroExamData.slr_test,
-                              label: neuroExamData.slr_test_label,
+                              value: neuroExamData.straight_leg_raise_test,
+                              label: neuroExamData.straight_leg_raise_test, // Use same value as label
                             }
                           : null
                       }
                       onChange={(selectedOption) =>
                         setNeuroExamData((prev) => ({
                           ...prev,
-                          slr_test: selectedOption ? selectedOption.value : "",
-                          slr_test_label: selectedOption
-                            ? selectedOption.label
-                            : "", // Stores the icon version
+                          straight_leg_raise_test: selectedOption
+                            ? selectedOption.value
+                            : null, // Store only the value
                         }))
                       }
                       onCreateOption={(inputValue) =>
                         setNeuroExamData((prev) => ({
                           ...prev,
-                          slr_test: inputValue,
-                          slr_test_label: inputValue, // Custom input preserves text
+                          straight_leg_raise_test: inputValue, // Store user input directly
                         }))
                       }
                       placeholder="Select or type..."
