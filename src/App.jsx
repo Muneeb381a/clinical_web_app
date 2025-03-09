@@ -329,12 +329,38 @@ const PatientSearch = () => {
               <div class="section-title">EXAMINATION</div>
               <table class="exam-table">
   ${[
+    { label: "Motor Function", key: "motor_function" },
     { label: "Muscle Tone", key: "muscle_tone" },
+    { label: "Muscle Strength", key: "muscle_strength" },
+    { label: "Straight Leg Test", key: "straight_leg_raise_test" },
     { label: "Reflexes", key: "deep_tendon_reflexes" },
     { label: "Gait", key: "gait_assessment" },
+    { label: "Plantars", key: "plantar_reflex" },
     { label: "Pupils", key: "pupillary_reaction" },
+    { label: "Speech Assessment", key: "speech_assessment" },
+    { label: "Coordination", key: "coordination" },
+    { label: "Sensory Examination", key: "sensory_examination" },
+    { label: "Cranial Nerves", key: "cranial_nerves" },
+    { label: "Mental Status", key: "mental_status" },
+    { label: "Cerebellar Function", key: "cerebellar_function" },
+    { label: "Muscle Wasting", key: "muscle_wasting" },
+    { label: "Abnormal Movements", key: "abnormal_movements" },
     { label: "Romberg", key: "romberg_test" },
+    { label: "Nystagmus", key: "nystagmus" },
+    { label: "Fundoscopy", key: "fundoscopy" },
     { label: "Sensation", key: "pain_sensation", type: "check" },
+    { label: "Vibration Sense", key: "vibration_sense", type: "check" },
+    { label: "Proprioception", key: "proprioception", type: "check" },
+    {
+      label: "Temperature Sensation",
+      key: "temperature_sensation",
+      type: "check",
+    },
+    { label: "Brudzinski Sign", key: "brudzinski_sign", type: "check" },
+    { label: "Kernig Sign", key: "kernig_sign", type: "check" },
+    { label: "Facial Sensation", key: "facial_sensation", type: "check" },
+    { label: "Swallowing Function", key: "swallowing_function", type: "check" },
+    { label: "Diagnosis", key: "diagnosis" },
   ]
     .filter(({ key }) => {
       const value = neuroExamData[key];
