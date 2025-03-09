@@ -167,25 +167,23 @@ const PatientSearch = () => {
   
             .column {
               padding: 2mm;
-              border-radius: 4px;
+              border-right: 3px solid #000000;
             }
   
             .patient-info {
               display: grid;
               grid-template-columns: repeat(3, 1fr);
-              gap: 3mm;
+              gap: 30mm;
               margin-bottom: 5mm;
               padding: 2mm;
-              background: #f8fafc;
-              border-radius: 4px;
             }
   
             .section-title {
               font-weight: 600;
-              color: #1e40af;
+              color: #000000;
               padding-bottom: 2mm;
               margin-bottom: 3mm;
-              border-bottom: 1px solid #e5e7eb;
+              border-bottom: 1px solid #2e3033;
             }
   
             .medicine-table {
@@ -195,15 +193,16 @@ const PatientSearch = () => {
             }
   
             .medicine-table th {
-              background: #eff6ff;
               padding: 3mm 1mm;
               text-align: left;
               font-weight: 600;
+              font-size: 12px;
             }
   
             .medicine-table td {
               padding: 2mm 1mm;
               border-bottom: 1px solid #e5e7eb;
+              font-size: 10px;
             }
   
             .test-list {
@@ -215,16 +214,19 @@ const PatientSearch = () => {
             .test-list li {
               padding: 1.5mm 0;
               border-bottom: 1px solid #e5e7eb;
+              list-style-type: disc;
             }
   
             .exam-table {
               width: 100%;
               border-collapse: collapse;
             }
+
   
             .exam-table td {
               padding: 2mm 1mm;
               border-bottom: 1px solid #e5e7eb;
+              font-size: 10px;
             }
   
             .follow-up-section {
@@ -252,6 +254,7 @@ const PatientSearch = () => {
           </style>
         </head>
         <body>
+        <div style="height: 30mm"></div>
           <div class="patient-info">
             <div><strong>MR#:</strong> ${patient?.mr_no || "-"}</div>
             <div><strong>Name:</strong> ${patient?.name || "-"}</div>
@@ -273,6 +276,16 @@ const PatientSearch = () => {
                   )
                   .join("")}
               </ul>
+              <h3>Symptoms</h3>
+              <ul class="test-list">
+              ${selectedSymptoms
+                .map(
+                  (s) => `
+                <li>${s.label}</li> 
+              `
+                )
+                .join("")}
+              </ul>
             </div>
   
             <!-- Medicines Column -->
@@ -282,9 +295,11 @@ const PatientSearch = () => {
                 <thead>
                   <tr>
                     <th>Medicine</th>
-                    <th style="width: 15%">Dosage</th>
                     <th style="width: 15%">Frequency</th>
+                    <th style="width: 15%">Dosage</th>
                     <th style="width: 20%">Duration</th>
+                    <th style="width: 20%">Instructions</th>
+                    <th style="width: 20%">Route</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -296,9 +311,11 @@ const PatientSearch = () => {
                       return `
                         <tr>
                           <td>${medicineData?.label || "-"}</td>
-                          <td>${med.dosage_urdu || "-"}</td>
                           <td>${med.frequency_urdu || "-"}</td>
+                          <td>${med.dosage_urdu || "-"}</td>
                           <td>${med.duration_urdu || "-"}</td>
+                          <td>${med.instructions_urdu || "-"}</td>
+                          <td>${med.how_to_take_urdu || "-"}</td>
                         </tr>
                       `;
                     })
@@ -311,31 +328,36 @@ const PatientSearch = () => {
             <div class="column">
               <div class="section-title">EXAMINATION</div>
               <table class="exam-table">
-                <tr>
-                  <td><strong>Muscle Tone:</strong></td>
-                  <td>${neuroExamData.muscle_tone || "-"}</td>
-                </tr>
-                <tr>
-                  <td><strong>Reflexes:</strong></td>
-                  <td>${neuroExamData.deep_tendon_reflexes || "-"}</td>
-                </tr>
-                <tr>
-                  <td><strong>Gait:</strong></td>
-                  <td>${neuroExamData.gait_assessment || "-"}</td>
-                </tr>
-                <tr>
-                  <td><strong>Pupils:</strong></td>
-                  <td>${neuroExamData.pupillary_reaction || "-"}</td>
-                </tr>
-                <tr>
-                  <td><strong>Romberg:</strong></td>
-                  <td>${neuroExamData.romberg_test || "-"}</td>
-                </tr>
-                <tr>
-                  <td><strong>Sensation:</strong></td>
-                  <td>${neuroExamData.pain_sensation ? "✓" : "✗"}</td>
-                </tr>
-              </table>
+  ${[
+    { label: "Muscle Tone", key: "muscle_tone" },
+    { label: "Reflexes", key: "deep_tendon_reflexes" },
+    { label: "Gait", key: "gait_assessment" },
+    { label: "Pupils", key: "pupillary_reaction" },
+    { label: "Romberg", key: "romberg_test" },
+    { label: "Sensation", key: "pain_sensation", type: "check" },
+  ]
+    .filter(({ key }) => {
+      const value = neuroExamData[key];
+      return (
+        value !== undefined &&
+        value !== null &&
+        (typeof value !== "string" || value.trim() !== "")
+      );
+    })
+    .map(({ label, key, type }) => {
+      const value = neuroExamData[key];
+      const displayValue =
+        type === "check" ? (value ? "✓" : "✗") : value || "-";
+
+      return `
+        <tr>
+          <td><strong>${label}:</strong></td>
+          <td>${displayValue}</td>
+        </tr>
+      `;
+    })
+    .join("")}
+</table>
             </div>
           </div>
   
@@ -362,236 +384,7 @@ const PatientSearch = () => {
     printWindow.print();
   };
 
-  // const handlePrint = () => {
-  //   const printContent = document.getElementById("consultation-content");
-  //   if (!printContent) {
-  //     alert("No consultation data to print");
-  //     return;
-  //   }
-
-  //   const printWindow = window.open(
-  //     "https://paitient-prescription-frontend.vercel.app",
-  //     "_blank"
-  //   );
-  //   if (!printWindow) {
-  //     alert("Pop-up blocked! Allow pop-ups for this site.");
-  //     return;
-  //   }
-  //   printWindow.document.write(`
-  //     <html>
-  //       <head>
-  //         <title>Prescription - ${patient?.name || "Unknown Patient"}</title>
-  //         <style>
-  //           @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu&display=swap');
-  //           body {
-  //             font-family: 'Inter', sans-serif;
-  //             margin: 25mm 15mm 15mm 15mm;
-  //             color: #2d3748;
-  //             font-size: 10px;
-  //             line-height: 1.1;
-  //           }
-
-  //           .main-table {
-  //             width: 100%;
-  //             border-collapse: collapse;
-  //             margin-top: 5mm;
-  //           }
-
-  //           .main-table td {
-  //             vertical-align: top;
-  //             padding: 2px;
-  //           }
-
-  //           .data-table {
-  //             width: 100%;
-  //             border-collapse: collapse;
-  //             margin: 3px 0;
-  //           }
-
-  //           .data-table th,
-  //           .data-table td {
-  //             border: 1px solid #ddd;
-  //             padding: 3px;
-  //             vertical-align: top;
-  //           }
-
-  //           .data-table th {
-  //             background: #f8f8f8;
-  //             font-weight: 600;
-  //           }
-
-  //           .patient-info-table {
-  //             width: 100%;
-  //             border-collapse: collapse;
-  //             margin-bottom: 4mm;
-  //           }
-
-  //           .patient-info-table td {
-  //             padding: 2px 5px;
-  //           }
-
-  //           .section-title {
-  //             background: #f0f0f0;
-  //             font-weight: 600;
-  //             padding: 3px 5px;
-  //             margin: 5px 0;
-  //           }
-
-  //           .urdu-date {
-  //             font-family: 'Noto Nastaliq Urdu', serif;
-  //             direction: rtl;
-  //             margin-left: 5px;
-  //           }
-
-  //           @media print {
-  //             body {
-  //               margin: 25mm 15mm 15mm 15mm;
-  //             }
-  //           }
-  //         </style>
-  //       </head>
-  //       <body>
-  //         <table class="patient-info-table">
-  //           <tr>
-  //             <td width="33%"><strong>MR#:</strong> ${
-  //               patient?.mr_no || "-"
-  //             }</td>
-  //             <td width="34%"><strong>Name:</strong> ${
-  //               patient?.name || "-"
-  //             }</td>
-  //             <td width="33%"><strong>Age/Sex:</strong> ${
-  //               patient?.age || "-"
-  //             }/${patient?.gender || "-"}</td>
-  //           </tr>
-  //         </table>
-
-  //         <table class="main-table">
-  //           <!-- Medicines -->
-  //           <tr>
-  //             <td>
-  //               <div class="section-title">PRESCRIPTION</div>
-  //               <table class="data-table">
-  //                 <thead>
-  //                   <tr>
-  //                     <th width="30%">Medicine</th>
-  //                     <th width="15%">Dosage</th>
-  //                     <th width="15%">Frequency</th>
-  //                     <th width="15%">Duration</th>
-  //                     <th width="25%">Instructions</th>
-  //                   </tr>
-  //                 </thead>
-  //                 <tbody>
-  //                   ${selectedMedicines
-  //                     .map((med) => {
-  //                       const medicineData = medicines.find(
-  //                         (m) => m.value === med.medicine_id
-  //                       );
-  //                       return `
-  //                       <tr>
-  //                         <td>${medicineData?.label || "-"}</td>
-  //                         <td>${med.dosage || "-"}</td>
-  //                         <td>${med.frequency_urdu || "-"}</td>
-  //                         <td>${med.duration_urdu || "-"}</td>
-  //                         <td>${med.instructions_urdu || "-"}</td>
-  //                       </tr>
-  //                     `;
-  //                     })
-  //                     .join("")}
-  //                 </tbody>
-  //               </table>
-  //             </td>
-  //           </tr>
-
-  //           <!-- Tests -->
-  //           <tr>
-  //             <td>
-  //               <div class="section-title">RECOMMENDED TESTS</div>
-  //               <table class="data-table">
-  //                 <tbody>
-  //                   ${selectedTests
-  //                     .map(
-  //                       (test) => `
-  //                     <tr>
-  //                       <td>• ${test}</td>
-  //                     </tr>
-  //                   `
-  //                     )
-  //                     .join("")}
-  //                 </tbody>
-  //               </table>
-  //             </td>
-  //           </tr>
-
-  //           <!-- Examination -->
-  //           <tr>
-  //             <td>
-  //               <div class="section-title">EXAMINATION FINDINGS</div>
-  //               <table class="data-table">
-  //                 <tbody>
-  //                   <tr>
-  //                     <td width="50%"><strong>Muscle Tone:</strong> ${
-  //                       neuroExamData.muscle_tone || "-"
-  //                     }</td>
-  //                     <td><strong>Reflexes:</strong> ${
-  //                       neuroExamData.deep_tendon_reflexes || "-"
-  //                     }</td>
-  //                   </tr>
-  //                   <tr>
-  //                     <td><strong>Gait:</strong> ${
-  //                       neuroExamData.gait_assessment || "-"
-  //                     }</td>
-  //                     <td><strong>Pupils:</strong> ${
-  //                       neuroExamData.pupillary_reaction || "-"
-  //                     }</td>
-  //                   </tr>
-  //                   <tr>
-  //                     <td><strong>Romberg:</strong> ${
-  //                       neuroExamData.romberg_test || "-"
-  //                     }</td>
-  //                     <td><strong>Sensation:</strong> ${
-  //                       neuroExamData.pain_sensation ? "✓" : "✗"
-  //                     }</td>
-  //                   </tr>
-  //                 </tbody>
-  //               </table>
-  //             </td>
-  //           </tr>
-
-  //           <!-- Follow-up -->
-  //           ${
-  //             followUpDate
-  //               ? `
-  //             <tr>
-  //               <td>
-  //                 <div class="section-title">FOLLOW UP</div>
-  //                 <table class="data-table">
-  //                   <tr>
-  //                     <td width="30%"><strong>Date:</strong> ${new Date(
-  //                       followUpDate
-  //                     ).toLocaleDateString()}</td>
-  //                     <td><span class="urdu-date">${urduDate(
-  //                       followUpDate
-  //                     )}</span></td>
-  //                     <td width="50%"><strong>Notes:</strong> ${
-  //                       followUpNotes || "-"
-  //                     }</td>
-  //                   </tr>
-  //                 </table>
-  //               </td>
-  //             </tr>
-  //           `
-  //               : ""
-  //           }
-  //         </table>
-  //       </body>
-  //     </html>
-  //   `);
-  //   printWindow.document.close();
-  //   printWindow.print();
-  // };
-
   // Fetch symptoms and medicines on load
-
   useEffect(() => {
     const fetchSymptoms = async () => {
       setIsFetchingSymptoms(true);
@@ -810,7 +603,7 @@ const PatientSearch = () => {
           plantar_reflex: neuroExamData.plantar_reflex || "",
           pupillary_reaction: neuroExamData.pupillary_reaction || "",
           speech_assessment: neuroExamData.speech_assessment || "",
-          gait: neuroExamData.gait || "",
+          gait_assessment: neuroExamData.gait_assessment || "",
           coordination: neuroExamData.coordination || "",
           sensory_function: neuroExamData.sensory_function || "",
           cranial_nerves: neuroExamData.cranial_nerves || "",
@@ -822,6 +615,14 @@ const PatientSearch = () => {
           nystagmus: neuroExamData.nystagmus || "",
           fundoscopy: neuroExamData.fundoscopy || "",
           diagnosis: neuroExamData.diagnosis || "",
+          pain_sensation: !!neuroExamData.pain_sensation,
+          vibration_sense: !!neuroExamData.vibration_sense,
+          proprioception: !!neuroExamData.proprioception,
+          temperature_sensation: !!neuroExamData.temperature_sensation,
+          brudzinski_sign: !!neuroExamData.brudzinski_sign,
+          kernig_sign: !!neuroExamData.kernig_sign,
+          facial_sensation: !!neuroExamData.facial_sensation,
+          swallowing_function: !!neuroExamData.swallowing_function,
         },
         { headers: { "Content-Type": "application/json" } }
       );
@@ -1623,17 +1424,17 @@ const PatientSearch = () => {
                       isSearchable
                       isClearable
                       value={
-                        neuroExamData.muscle_strenght
+                        neuroExamData.muscle_strength
                           ? {
-                              value: neuroExamData.muscle_strenght,
-                              label: neuroExamData.muscle_strenght,
+                              value: neuroExamData.muscle_strength,
+                              label: neuroExamData.muscle_strength,
                             }
                           : null
                       }
                       onChange={(selectedOption) =>
                         setNeuroExamData((prev) => ({
                           ...prev,
-                          muscle_strenght: selectedOption
+                          muscle_strength: selectedOption
                             ? selectedOption.value
                             : "",
                         }))
@@ -1641,7 +1442,7 @@ const PatientSearch = () => {
                       onCreateOption={(inputValue) =>
                         setNeuroExamData((prev) => ({
                           ...prev,
-                          muscle_strenght: inputValue, // Allows custom text input
+                          muscle_strength: inputValue,
                         }))
                       }
                       placeholder="Select or type..."
@@ -3207,7 +3008,269 @@ const PatientSearch = () => {
                     />
                   </div>
                 </div>
+                {/* checkboxes */}
+                <div className="my-3 group">
+                  <label
+                    htmlFor="pain_sensation"
+                    className="flex items-center gap-3 cursor-pointer select-none
+              px-4 py-3 rounded-lg transition-all duration-200
+              hover:bg-blue-50 dark:hover:bg-blue-900/20
+              border border-transparent hover:border-blue-100
+              dark:hover:border-blue-900/30"
+                  >
+                    <input
+                      id="pain_sensation"
+                      type="checkbox"
+                      className="w-6 h-6 rounded-lg border-2 border-gray-300 
+                text-blue-600 focus:ring-2 focus:ring-blue-500 
+                focus:ring-offset-2 cursor-pointer
+                dark:border-gray-600 dark:bg-gray-800
+                dark:checked:bg-blue-500 dark:checked:border-blue-500
+                transition-colors duration-200"
+                      checked={neuroExamData.pain_sensation || false}
+                      onChange={(e) =>
+                        setNeuroExamData({
+                          ...neuroExamData,
+                          pain_sensation: e.target.checked,
+                        })
+                      }
+                    />
+                    <span className="text-base font-semibold text-black hover:text-gray-800 transition-colors duration-200">
+                      Pain Sensation
+                      <span
+                        className="block text-sm font-normal text-gray-500 
+                      dark:text-gray-400 mt-1"
+                      >
+                        Assess response to sharp/dull stimuli
+                      </span>
+                    </span>
 
+                    {/* Interactive status indicator */}
+                    <span
+                      className="w-3 h-3 rounded-full bg-blue-200 
+                   group-hover:bg-blue-300 ml-auto
+                   dark:bg-blue-900/40 
+                   dark:group-hover:bg-blue-900/60
+                   transition-colors duration-200"
+                    ></span>
+                  </label>
+                </div>
+
+                <div className="my-3 group">
+                  <label
+                    htmlFor="vibration_sense" // Fixed: Match input id
+                    className="flex items-center gap-3 cursor-pointer select-none
+              px-3 py-2 rounded-lg transition-all duration-200
+              hover:bg-blue-50 dark:hover:bg-blue-900/20
+              border border-transparent hover:border-blue-100
+              dark:hover:border-blue-900/30"
+                  >
+                    <input
+                      id="vibration_sense"
+                      type="checkbox"
+                      className="w-6 h-6 rounded-lg border-2 border-gray-300 
+                text-blue-600 focus:ring-2 focus:ring-blue-500 
+                focus:ring-offset-2 cursor-pointer
+                dark:border-gray-600 dark:bg-gray-800
+                dark:checked:bg-blue-500 dark:checked:border-blue-500
+                transition-colors duration-200"
+                      checked={neuroExamData.vibration_sense || false}
+                      onChange={(e) =>
+                        setNeuroExamData({
+                          ...neuroExamData,
+                          vibration_sense: e.target.checked,
+                        })
+                      }
+                    />
+                    <span className="text-base font-semibold text-black hover:text-gray-800 transition-colors duration-200">
+                      Vibration Sensation
+                      <span
+                        className="block text-xs font-normal text-gray-500 
+                      dark:text-gray-400 mt-1"
+                      >
+                        Test with tuning fork
+                      </span>
+                    </span>
+
+                    {/* Optional status indicator */}
+                    <span
+                      className="w-2 h-2 rounded-full bg-blue-200 
+                   group-hover:bg-blue-300 ml-2
+                   dark:bg-blue-900/40 
+                   dark:group-hover:bg-blue-900/60
+                   transition-colors duration-200"
+                    ></span>
+                  </label>
+                </div>
+                {/* additional check boxes */}
+
+                {/* Proprioception */}
+                <div className="my-3 group">
+                  <label
+                    htmlFor="proprioception"
+                    className="flex items-center gap-3 cursor-pointer select-none px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/30"
+                  >
+                    <input
+                      id="proprioception"
+                      type="checkbox"
+                      className="w-6 h-6 rounded-lg border-2 border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer dark:border-gray-600 dark:bg-gray-800 dark:checked:bg-blue-500 dark:checked:border-blue-500 transition-colors duration-200"
+                      checked={neuroExamData.proprioception || false}
+                      onChange={(e) =>
+                        setNeuroExamData({
+                          ...neuroExamData,
+                          proprioception: e.target.checked,
+                        })
+                      }
+                    />
+                    <span className="text-base font-semibold text-black hover:text-gray-800 transition-colors duration-200">
+                      Proprioception
+                      <span className="block text-sm font-normal text-gray-500 dark:text-gray-400 mt-1">
+                        Joint position sense assessment
+                      </span>
+                    </span>
+                    <span className="w-3 h-3 rounded-full bg-blue-200 group-hover:bg-blue-300 ml-auto dark:bg-blue-900/40 dark:group-hover:bg-blue-900/60 transition-colors duration-200"></span>
+                  </label>
+                </div>
+
+                {/* Temperature Sensation */}
+                <div className="my-3 group">
+                  <label
+                    htmlFor="temperature_sensation"
+                    className="flex items-center gap-3 cursor-pointer select-none px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/30"
+                  >
+                    <input
+                      id="temperature_sensation"
+                      type="checkbox"
+                      className="w-6 h-6 rounded-lg border-2 border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer dark:border-gray-600 dark:bg-gray-800 dark:checked:bg-blue-500 dark:checked:border-blue-500 transition-colors duration-200"
+                      checked={neuroExamData.temperature_sensation || false}
+                      onChange={(e) =>
+                        setNeuroExamData({
+                          ...neuroExamData,
+                          temperature_sensation: e.target.checked,
+                        })
+                      }
+                    />
+                    <span className="text-base font-semibold text-black hover:text-gray-800 transition-colors duration-200">
+                      Temperature Sensation
+                      <span className="block text-sm font-normal text-gray-500 dark:text-gray-400 mt-1">
+                        Test with warm/cold objects
+                      </span>
+                    </span>
+                    <span className="w-3 h-3 rounded-full bg-blue-200 group-hover:bg-blue-300 ml-auto dark:bg-blue-900/40 dark:group-hover:bg-blue-900/60 transition-colors duration-200"></span>
+                  </label>
+                </div>
+
+                {/* Brudzinski Sign */}
+                <div className="my-3 group">
+                  <label
+                    htmlFor="brudzinski_sign"
+                    className="flex items-center gap-3 cursor-pointer select-none px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/30"
+                  >
+                    <input
+                      id="brudzinski_sign"
+                      type="checkbox"
+                      className="w-6 h-6 rounded-lg border-2 border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer dark:border-gray-600 dark:bg-gray-800 dark:checked:bg-blue-500 dark:checked:border-blue-500 transition-colors duration-200"
+                      checked={neuroExamData.brudzinski_sign || false}
+                      onChange={(e) =>
+                        setNeuroExamData({
+                          ...neuroExamData,
+                          brudzinski_sign: e.target.checked,
+                        })
+                      }
+                    />
+                    <span className="text-base font-semibold text-black hover:text-gray-800 transition-colors duration-200">
+                      Brudzinski Sign
+                      <span className="block text-sm font-normal text-gray-500 dark:text-gray-400 mt-1">
+                        Neck flexion causing hip flexion
+                      </span>
+                    </span>
+                    <span className="w-3 h-3 rounded-full bg-blue-200 group-hover:bg-blue-300 ml-auto dark:bg-blue-900/40 dark:group-hover:bg-blue-900/60 transition-colors duration-200"></span>
+                  </label>
+                </div>
+
+                {/* Kernig Sign */}
+                <div className="my-3 group">
+                  <label
+                    htmlFor="kernig_sign"
+                    className="flex items-center gap-3 cursor-pointer select-none px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/30"
+                  >
+                    <input
+                      id="kernig_sign"
+                      type="checkbox"
+                      className="w-6 h-6 rounded-lg border-2 border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer dark:border-gray-600 dark:bg-gray-800 dark:checked:bg-blue-500 dark:checked:border-blue-500 transition-colors duration-200"
+                      checked={neuroExamData.kernig_sign || false}
+                      onChange={(e) =>
+                        setNeuroExamData({
+                          ...neuroExamData,
+                          kernig_sign: e.target.checked,
+                        })
+                      }
+                    />
+                    <span className="text-base font-semibold text-black hover:text-gray-800 transition-colors duration-200">
+                      Kernig Sign
+                      <span className="block text-sm font-normal text-gray-500 dark:text-gray-400 mt-1">
+                        Hip flexion with knee extension resistance
+                      </span>
+                    </span>
+                    <span className="w-3 h-3 rounded-full bg-blue-200 group-hover:bg-blue-300 ml-auto dark:bg-blue-900/40 dark:group-hover:bg-blue-900/60 transition-colors duration-200"></span>
+                  </label>
+                </div>
+
+                {/* Facial Sensation */}
+                <div className="my-3 group">
+                  <label
+                    htmlFor="facial_sensation"
+                    className="flex items-center gap-3 cursor-pointer select-none px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/30"
+                  >
+                    <input
+                      id="facial_sensation"
+                      type="checkbox"
+                      className="w-6 h-6 rounded-lg border-2 border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer dark:border-gray-600 dark:bg-gray-800 dark:checked:bg-blue-500 dark:checked:border-blue-500 transition-colors duration-200"
+                      checked={neuroExamData.facial_sensation || false}
+                      onChange={(e) =>
+                        setNeuroExamData({
+                          ...neuroExamData,
+                          facial_sensation: e.target.checked,
+                        })
+                      }
+                    />
+                    <span className="text-base font-semibold text-black hover:text-gray-800 transition-colors duration-200">
+                      Facial Sensation
+                      <span className="block text-sm font-normal text-gray-500 dark:text-gray-400 mt-1">
+                        Test all three trigeminal branches
+                      </span>
+                    </span>
+                    <span className="w-3 h-3 rounded-full bg-blue-200 group-hover:bg-blue-300 ml-auto dark:bg-blue-900/40 dark:group-hover:bg-blue-900/60 transition-colors duration-200"></span>
+                  </label>
+                </div>
+
+                {/* Swallowing Function */}
+                <div className="my-3 group">
+                  <label
+                    htmlFor="swallowing_function"
+                    className="flex items-center gap-3 cursor-pointer select-none px-4 py-3 rounded-lg transition-all duration-200 hover:bg-blue-50 dark:hover:bg-blue-900/20 border border-transparent hover:border-blue-100 dark:hover:border-blue-900/30"
+                  >
+                    <input
+                      id="swallowing_function"
+                      type="checkbox"
+                      className="w-6 h-6 rounded-lg border-2 border-gray-300 text-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer dark:border-gray-600 dark:bg-gray-800 dark:checked:bg-blue-500 dark:checked:border-blue-500 transition-colors duration-200"
+                      checked={neuroExamData.swallowing_function || false}
+                      onChange={(e) =>
+                        setNeuroExamData({
+                          ...neuroExamData,
+                          swallowing_function: e.target.checked,
+                        })
+                      }
+                    />
+                    <span className="text-base font-semibold text-black hover:text-gray-800 transition-colors duration-200">
+                      Swallowing Function
+                      <span className="block text-sm font-normal text-black dark:text-gray-400 mt-1">
+                        Assess cranial nerves IX and X
+                      </span>
+                    </span>
+                    <span className="w-3 h-3 rounded-full bg-blue-200 group-hover:bg-blue-300 ml-auto dark:bg-blue-900/40 dark:group-hover:bg-blue-900/60 transition-colors duration-200"></span>
+                  </label>
+                </div>
                 {/* Additional Fields */}
                 <div className="space-y-4 md:col-span-2">
                   <h4 className="font-semibold text-gray-800 border-l-4 border-purple-500 pl-3 py-1.5">
@@ -3279,19 +3342,19 @@ const PatientSearch = () => {
                           },
                         ].find(
                           (option) =>
-                            option.value === neuroExamData.gait_analysis
+                            option.value === neuroExamData.gait_assessment
                         ) ||
-                        (neuroExamData.gait_analysis
+                        (neuroExamData.gait_assessment
                           ? {
-                              value: neuroExamData.gait_analysis,
-                              label: neuroExamData.gait_analysis,
+                              value: neuroExamData.gait_assessment,
+                              label: neuroExamData.gait_assessment,
                             }
                           : null)
                       }
                       onChange={(selectedOption) =>
                         setNeuroExamData((prev) => ({
                           ...prev,
-                          gait_analysis: selectedOption
+                          gait_assessment: selectedOption
                             ? selectedOption.value
                             : "",
                         }))
@@ -3299,7 +3362,7 @@ const PatientSearch = () => {
                       onCreateOption={(inputValue) =>
                         setNeuroExamData((prev) => ({
                           ...prev,
-                          gait_analysis: inputValue, // Allows custom text input
+                          gait_assessment: inputValue,
                         }))
                       }
                       placeholder="Select or type..."
@@ -3659,6 +3722,16 @@ const PatientSearch = () => {
                             { value: "8", label: "8 گولیاں" },
                             { value: "9", label: "9 گولیاں" },
                             { value: "10", label: "10 گولیاں" },
+                            { value: "1tsp", label: "1 teaspoon - ایک چمچ" },
+                            { value: "2tsp", label: "2 teaspoons - دو چمچ" },
+                            { value: "3tsp", label: "3 teaspoons - تین چمچ" },
+                            { value: "4tsp", label: "4 teaspoons - چار چمچ" },
+                            { value: "5tsp", label: "5 teaspoons - پانچ چمچ" },
+                            { value: "6tsp", label: "6 teaspoons - چھ چمچ" },
+                            { value: "7tsp", label: "7 teaspoons - سات چمچ" },
+                            { value: "8tsp", label: "8 teaspoons - آٹھ چمچ" },
+                            { value: "9tsp", label: "9 teaspoons - نو چمچ" },
+                            { value: "10tsp", label: "10 teaspoons - دس چمچ" },
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -3686,18 +3759,46 @@ const PatientSearch = () => {
                         </label>
                         <Select
                           options={[
+                            // Days (1-14)
                             { value: "1_day", label: "1 دن" },
                             { value: "2_days", label: "2 دن" },
                             { value: "3_days", label: "3 دن" },
                             { value: "4_days", label: "4 دن" },
                             { value: "5_days", label: "5 دن" },
                             { value: "6_days", label: "6 دن" },
+                            { value: "7_days", label: "7 دن" },
+                            { value: "8_days", label: "8 دن" },
+                            { value: "9_days", label: "9 دن" },
+                            { value: "10_days", label: "10 دن" },
+                            { value: "11_days", label: "11 دن" },
+                            { value: "12_days", label: "12 دن" },
+                            { value: "13_days", label: "13 دن" },
+                            { value: "14_days", label: "14 دن" },
+
+                            // Weeks (1-4)
                             { value: "1_week", label: "1 ہفتہ" },
                             { value: "2_weeks", label: "2 ہفتے" },
                             { value: "3_weeks", label: "3 ہفتے" },
+                            { value: "4_weeks", label: "4 ہفتے" },
+
+                            // Months (1-12)
                             { value: "1_month", label: "1 مہینہ" },
                             { value: "2_months", label: "2 مہینے" },
                             { value: "3_months", label: "3 مہینے" },
+                            { value: "4_months", label: "4 مہینے" },
+                            { value: "5_months", label: "5 مہینے" },
+                            { value: "6_months", label: "6 مہینے" },
+                            { value: "7_months", label: "7 مہینے" },
+                            { value: "8_months", label: "8 مہینے" },
+                            { value: "9_months", label: "9 مہینے" },
+                            { value: "10_months", label: "10 مہینے" },
+                            { value: "11_months", label: "11 مہینے" },
+                            { value: "12_months", label: "12 مہینے" },
+
+                            // Years (1-2)
+                            { value: "1_year", label: "1 سال" },
+                            { value: "1.5_year", label: "1.5 سال" },
+                            { value: "2_years", label: "2 سال" },
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -3725,10 +3826,57 @@ const PatientSearch = () => {
                         </label>
                         <Select
                           options={[
+                            // Meal-related timings
+                            { value: "with_meal", label: "کھانے کے ساتھ" },
                             { value: "after_meal", label: "کھانے کے بعد" },
                             { value: "before_meal", label: "کھانے سے پہلے" },
+                            { value: "empty_stomach", label: "خالی پیٹ" },
+                            {
+                              value: "between_meals",
+                              label: "کھانوں کے درمیان",
+                            },
+
+                            // Daily frequencies
+                            { value: "morning", label: "صبح کے وقت" },
+                            { value: "afternoon", label: "دوپہر کے وقت" },
+                            { value: "evening", label: "شام کے وقت" },
+                            { value: "night", label: "رات کے وقت" },
+                            { value: "twice_daily", label: "دن میں دو بار" },
+                            { value: "thrice_daily", label: "دن میں تین بار" },
+
+                            // Specific timings
                             { value: "before_sleep", label: "سونے سے پہلے" },
                             { value: "after_waking", label: "جاگنے کے بعد" },
+                            { value: "hourly", label: "ہر گھنٹے بعد" },
+                            { value: "every_4_hours", label: "ہر 4 گھنٹے بعد" },
+                            { value: "every_6_hours", label: "ہر 6 گھنٹے بعد" },
+                            { value: "every_8_hours", label: "ہر 8 گھنٹے بعد" },
+                            {
+                              value: "every_12_hours",
+                              label: "ہر 12 گھنٹے بعد",
+                            },
+
+                            // Special instructions
+                            { value: "as_needed", label: "ضرورت کے مطابق" },
+                            { value: "stat", label: "فوری طور پر" },
+                            { value: "every_other_day", label: "ہر دوسرے دن" },
+                            { value: "weekly", label: "ہفتہ وار" },
+                            { value: "monthly", label: "ماہانہ" },
+                            {
+                              value: "before_activity",
+                              label: "سرگرمی سے پہلے",
+                            },
+                            { value: "after_activity", label: "سرگرمی کے بعد" },
+                            {
+                              value: "at_bedtime",
+                              label: "بستر پر جانے کے وقت",
+                            },
+                            { value: "with_water", label: "پانی کے ساتھ" },
+                            { value: "without_water", label: "بغیر پانی کے" },
+                            {
+                              value: "symptom_onset",
+                              label: "علامات ظاہر ہونے پر",
+                            },
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -3756,14 +3904,18 @@ const PatientSearch = () => {
                         </label>
                         <Select
                           options={[
-                            { value: "mouth", label: "منہ کے ذریعے" },
-                            { value: "injection", label: "انجیکشن" },
+                            // Existing options
+                            { value: "mouth", label: "منہ کے ذریعے (زبانی)" },
+                            { value: "injection", label: "انجیکشن (عام)" },
                             { value: "topical", label: "جلد پر لگانے کی دوا" },
                             {
                               value: "sublingual",
                               label: "زبان کے نیچے رکھنے والی دوا",
                             },
-                            { value: "inhalation", label: "سانس کے ذریعے" },
+                            {
+                              value: "inhalation",
+                              label: "سانس کے ذریعے (نبولائزر)",
+                            },
                             { value: "nasal", label: "ناک میں ڈالنے کی دوا" },
                             {
                               value: "eye_drops",
@@ -3784,11 +3936,11 @@ const PatientSearch = () => {
                             },
                             {
                               value: "intramuscular",
-                              label: "پٹھوں میں انجیکشن",
+                              label: "پٹھوں میں انجیکشن (IM)",
                             },
                             {
                               value: "subcutaneous",
-                              label: "جلد کے نیچے انجیکشن",
+                              label: "جلد کے نیچے انجیکشن (SC)",
                             },
                             {
                               value: "buccal",
@@ -3797,6 +3949,57 @@ const PatientSearch = () => {
                             {
                               value: "transdermal",
                               label: "جلد پر لگانے والا پیچ",
+                            },
+
+                            // New additions
+                            {
+                              value: "intradermal",
+                              label: "جلد کے اندر انجیکشن (ID)",
+                            },
+                            {
+                              value: "intrathecal",
+                              label: "ریڑھ کی ہڈی میں انجیکشن",
+                            },
+                            { value: "epidural", label: "ایپیڈورل انجیکشن" },
+                            {
+                              value: "intraosseous",
+                              label: "ہڈی کے اندر انجیکشن (IO)",
+                            },
+                            {
+                              value: "intraarticular",
+                              label: "جوڑ میں انجیکشن",
+                            },
+                            {
+                              value: "intraperitoneal",
+                              label: "پیٹ کی گہا میں انجیکشن",
+                            },
+                            {
+                              value: "enteral_feeding",
+                              label: "غذائی نلکی کے ذریعے",
+                            },
+                            {
+                              value: "nebulized",
+                              label: "سانس کے ذریعے (بخارات)",
+                            },
+                            {
+                              value: "ophthalmic_ointment",
+                              label: "آنکھوں کی مرہم",
+                            },
+                            { value: "otic_ointment", label: "کان کی مرہم" },
+                            {
+                              value: "urethral",
+                              label: "پیشاب کی نالی کے ذریعے",
+                            },
+                            { value: "intracardiac", label: "دل میں انجیکشن" },
+                            { value: "intranasal_spray", label: "ناک کے سپرے" },
+                            {
+                              value: "subcutaneous_infusion",
+                              label: "جلد کے نیچے مسلسل ادویات",
+                            },
+                            { value: "implant", label: "سرجیکل امپلانٹ" },
+                            {
+                              value: "iontophoresis",
+                              label: "بجلی کے ذریعے جلد پر ادویات",
                             },
                           ]}
                           className="react-select-container"
@@ -3959,28 +4162,27 @@ const PatientSearch = () => {
               )}
             </button>
             <div className="mt-6">
-          <button
-            onClick={handlePrint}
-            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center gap-2 print:hidden"
-            aria-label="Print prescription"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-5 w-5"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
-              <path
-                fillRule="evenodd"
-                d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Print Prescription
-          </button>
-        </div>
+              <button
+                onClick={handlePrint}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center gap-2 print:hidden"
+                aria-label="Print prescription"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
+                >
+                  <path
+                    fillRule="evenodd"
+                    d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Print Prescription
+              </button>
+            </div>
           </div>
-          
         ) : (
           showAddPatient && (
             <AddPatientForm
@@ -3989,8 +4191,6 @@ const PatientSearch = () => {
             />
           )
         )}
-
-        
       </div>
       <ToastContainer />
     </div>
