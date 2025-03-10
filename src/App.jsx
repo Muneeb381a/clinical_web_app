@@ -763,29 +763,31 @@ before:bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.9),_transparen
 before:opacity-50 before:-z-10"
     >
       <div className="mx-auto max-w-6xl rounded-2xl border border-white/30 bg-white/95 backdrop-blur-sm p-8 shadow-2xl shadow-gray-100/30">
-      <button
-  onClick={handleReturnHome}
-  className="
-    bg-gray-50
-    hover:bg-gray-100
-    text-gray-600
-    hover:text-gray-700
-    px-3 py-2
-    rounded-md
-    border border-gray-200
-    text-sm
-    font-medium
-    transition-colors
-    duration-200
-    flex
-    items-center
-    gap-2
-    group
-  "
->
-  <AiOutlineArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
-  <span>Back</span>
-</button>
+      {patient && (
+  <button
+    onClick={handleReturnHome}
+    className="
+      bg-gray-50
+      hover:bg-gray-100
+      text-gray-600
+      hover:text-gray-700
+      px-3 py-2
+      rounded-md
+      border border-gray-200
+      text-sm
+      font-medium
+      transition-colors
+      duration-200
+      flex
+      items-center
+      gap-2
+      group
+    "
+  >
+    <AiOutlineArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
+    <span>Back</span>
+  </button>
+)}
         <h2 className="mb-6 border-b border-gray-200 pb-4 text-2xl font-bold text-gray-900">
           <span className="bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
             Patient Consultation Portal
