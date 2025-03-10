@@ -32,7 +32,7 @@ const PatientSearch = () => {
   const [symptoms, setSymptoms] = useState([]);
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
   const [medicines, setMedicines] = useState([]);
-  const [selectedMedicines, setSelectedMedicines] = useState([]);
+  const [selectedMedicines, setSelectedMedicines] = useState([{}, {}, {}]);
   const [isSearching, setIsSearching] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [consultationData, setConsultationData] = useState(null);
@@ -3582,7 +3582,7 @@ before:opacity-50 before:-z-10"
                               (m) =>
                                 m.value ===
                                 selectedMedicines[index]?.medicine_id
-                            ) || medicines[0] || null
+                            ) || null
                           }
                           onCreateOption={async (inputValue) => {
                             const newId = await handleCreateMedicine(
