@@ -697,8 +697,13 @@ const PatientSearch = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-8 relative overflow-hidden isolate before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.9),_transparent)] before:opacity-50 before:-z-10">
-      <div className="mx-auto max-w-2xl rounded-2xl border border-white/30 bg-white/95 backdrop-blur-sm p-8 shadow-2xl shadow-gray-100/30">
+    <div
+      className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-8 relative 
+overflow-hidden isolate w-[90vw] mx-auto before:absolute before:inset-0 
+before:bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.9),_transparent)] 
+before:opacity-50 before:-z-10"
+    >
+      <div className="mx-auto max-w-6xl rounded-2xl border border-white/30 bg-white/95 backdrop-blur-sm p-8 shadow-2xl shadow-gray-100/30">
         <h2 className="mb-6 border-b border-gray-200 pb-4 text-2xl font-bold text-gray-900">
           <span className="bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
             Patient Consultation Portal
@@ -782,7 +787,7 @@ const PatientSearch = () => {
         {patient ? (
           <div className="space-y-8" id="consultation-content">
             {/* Enhanced Patient Details */}
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm max-w-6xl w-full mx-auto">
               <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
                 <div className="bg-green-700 p-2.5 rounded-lg text-white shadow-sm">
                   <svg
@@ -1030,12 +1035,9 @@ const PatientSearch = () => {
                 Neurological Examination
               </h3>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-4 w-full">
                 {/* Motor Section */}
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-800 border-l-4 border-purple-500 pl-3 py-1.5">
-                    Motor Function
-                  </h4>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-600 mb-1 block">
                       Motor Function
@@ -1329,9 +1331,6 @@ const PatientSearch = () => {
                 </div>
                 {/* Reflexes Section */}
                 <div className="space-y-4">
-                  <h4 className="font-semibold text-gray-800 border-l-4 border-purple-500 pl-3 py-1.5">
-                    Reflexes
-                  </h4>
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-600 mb-1 block">
                       Reflexes
@@ -2834,7 +2833,78 @@ const PatientSearch = () => {
                       }}
                     />
                   </div>
+                </div>
+                <div className="space-y-4">
                   <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-600 mb-1 block">
+                      Fundoscopy (Fundal Examination)
+                    </label>
+                    <CreatableSelect
+                      options={[
+                        { value: "Normal", label: "👁 Normal" },
+                        { value: "Papilledema", label: "🔴 Papilledema" },
+                        { value: "Optic Atrophy", label: "⚪ Optic Atrophy" },
+                        {
+                          value: "Retinal Hemorrhages",
+                          label: "🩸 Retinal Hemorrhages",
+                        },
+                        {
+                          value: "Hypertensive Retinopathy",
+                          label: "⚡ Hypertensive Retinopathy",
+                        },
+                      ]}
+                      isSearchable
+                      isClearable
+                      value={
+                        neuroExamData.fundoscopy
+                          ? {
+                              value: neuroExamData.fundoscopy,
+                              label: neuroExamData.fundoscopy,
+                            }
+                          : null
+                      }
+                      onChange={(selectedOption) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          fundoscopy: selectedOption
+                            ? selectedOption.value
+                            : "",
+                        }))
+                      }
+                      onCreateOption={(inputValue) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          fundoscopy: inputValue, // Allows adding custom text
+                        }))
+                      }
+                      placeholder="Select or type..."
+                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                      classNames={{
+                        control: (state) =>
+                          `p-2 ${
+                            state.isFocused
+                              ? "border-purple-500"
+                              : "border-gray-300"
+                          } bg-white`,
+                        input: () => "text-gray-700",
+                        placeholder: () => "text-gray-400",
+                        menu: () =>
+                          "border border-gray-200 rounded-lg shadow-lg mt-1",
+                        option: (state) =>
+                          `px-4 py-2 ${
+                            state.isFocused
+                              ? "bg-purple-50 text-purple-700"
+                              : "text-gray-700"
+                          }`,
+                        dropdownIndicator: () =>
+                          "text-gray-400 hover:text-gray-500",
+                        clearIndicator: () =>
+                          "text-gray-400 hover:text-red-500",
+                      }}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2">
                     <label className="text-sm font-medium text-gray-600 mb-1 block">
                       Nystagmus
                     </label>
@@ -2917,152 +2987,8 @@ const PatientSearch = () => {
                       }}
                     />
                   </div>
-                </div>
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-600 mb-1 block">
-                      Muscle Wasting
-                    </label>
-                    <CreatableSelect
-                      options={[
-                        { value: "None", label: "None" },
-                        { value: "Mild", label: "Mild" },
-                        { value: "Moderate", label: "Moderate" },
-                        { value: "Severe", label: "Severe" },
-                        { value: "Generalized", label: "Generalized" },
-                        { value: "Localized", label: "Localized" },
-                      ]}
-                      isSearchable
-                      isClearable
-                      value={
-                        [
-                          { value: "None", label: "None" },
-                          { value: "Mild", label: "Mild" },
-                          { value: "Moderate", label: "Moderate" },
-                          { value: "Severe", label: "Severe" },
-                          { value: "Generalized", label: "Generalized" },
-                          { value: "Localized", label: "Localized" },
-                        ].find(
-                          (option) =>
-                            option.value === neuroExamData.muscle_wasting
-                        ) ||
-                        (neuroExamData.muscle_wasting
-                          ? {
-                              value: neuroExamData.muscle_wasting,
-                              label: neuroExamData.muscle_wasting,
-                            }
-                          : null)
-                      }
-                      onChange={(selectedOption) =>
-                        setNeuroExamData((prev) => ({
-                          ...prev,
-                          muscle_wasting: selectedOption
-                            ? selectedOption.value
-                            : "",
-                        }))
-                      }
-                      onCreateOption={(inputValue) =>
-                        setNeuroExamData((prev) => ({
-                          ...prev,
-                          muscle_wasting: inputValue, // Allows custom input
-                        }))
-                      }
-                      placeholder="Select or type..."
-                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
-                      classNames={{
-                        control: (state) =>
-                          `p-2 ${
-                            state.isFocused
-                              ? "border-purple-500"
-                              : "border-gray-300"
-                          } bg-white`,
-                        input: () => "text-gray-700",
-                        placeholder: () => "text-gray-400",
-                        menu: () =>
-                          "border border-gray-200 rounded-lg shadow-lg mt-1",
-                        option: (state) =>
-                          `px-4 py-2 ${
-                            state.isFocused
-                              ? "bg-purple-50 text-purple-700"
-                              : "text-gray-700"
-                          }`,
-                        dropdownIndicator: () =>
-                          "text-gray-400 hover:text-gray-500",
-                        clearIndicator: () =>
-                          "text-gray-400 hover:text-red-500",
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-600 mb-1 block">
-                      Fundoscopy (Fundal Examination)
-                    </label>
-                    <CreatableSelect
-                      options={[
-                        { value: "Normal", label: "👁 Normal" },
-                        { value: "Papilledema", label: "🔴 Papilledema" },
-                        { value: "Optic Atrophy", label: "⚪ Optic Atrophy" },
-                        {
-                          value: "Retinal Hemorrhages",
-                          label: "🩸 Retinal Hemorrhages",
-                        },
-                        {
-                          value: "Hypertensive Retinopathy",
-                          label: "⚡ Hypertensive Retinopathy",
-                        },
-                      ]}
-                      isSearchable
-                      isClearable
-                      value={
-                        neuroExamData.fundoscopy
-                          ? {
-                              value: neuroExamData.fundoscopy,
-                              label: neuroExamData.fundoscopy,
-                            }
-                          : null
-                      }
-                      onChange={(selectedOption) =>
-                        setNeuroExamData((prev) => ({
-                          ...prev,
-                          fundoscopy: selectedOption
-                            ? selectedOption.value
-                            : "",
-                        }))
-                      }
-                      onCreateOption={(inputValue) =>
-                        setNeuroExamData((prev) => ({
-                          ...prev,
-                          fundoscopy: inputValue, // Allows adding custom text
-                        }))
-                      }
-                      placeholder="Select or type..."
-                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
-                      classNames={{
-                        control: (state) =>
-                          `p-2 ${
-                            state.isFocused
-                              ? "border-purple-500"
-                              : "border-gray-300"
-                          } bg-white`,
-                        input: () => "text-gray-700",
-                        placeholder: () => "text-gray-400",
-                        menu: () =>
-                          "border border-gray-200 rounded-lg shadow-lg mt-1",
-                        option: (state) =>
-                          `px-4 py-2 ${
-                            state.isFocused
-                              ? "bg-purple-50 text-purple-700"
-                              : "text-gray-700"
-                          }`,
-                        dropdownIndicator: () =>
-                          "text-gray-400 hover:text-gray-500",
-                        clearIndicator: () =>
-                          "text-gray-400 hover:text-red-500",
-                      }}
-                    />
-                  </div>
-                </div>
                 {/* checkboxes */}
+                <div></div>
                 <div className="my-3 group">
                   <label
                     htmlFor="pain_sensation"
@@ -3326,47 +3252,18 @@ const PatientSearch = () => {
                   </label>
                 </div>
                 {/* Additional Fields */}
-                <div className="space-y-4 md:col-span-2">
+                <div className="flex flex-col md:flex-col gap-4 md:col-span-4 w-full">
                   <h4 className="font-semibold text-gray-800 border-l-4 border-purple-500 pl-3 py-1.5">
                     Additional Observations
                   </h4>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-600 mb-1 block">
-                      Gait Analysis
-                    </label>
-                    <CreatableSelect
-                      options={[
-                        { value: "Normal Gait", label: "Normal Gait" },
-                        {
-                          value: "Ataxic Gait",
-                          label: "Ataxic Gait (Unsteady, Staggering)",
-                        },
-                        {
-                          value: "Shuffling Gait",
-                          label: "Shuffling Gait (Short Steps, Dragging Feet)",
-                        },
-                        {
-                          value: "Hemiplegic Gait",
-                          label:
-                            "Hemiplegic Gait (One-Sided Weakness, Circumduction)",
-                        },
-                        {
-                          value: "Spastic Gait",
-                          label: "Spastic Gait (Stiff, Scissoring Legs)",
-                        },
-                        {
-                          value: "Steppage Gait",
-                          label: "Steppage Gait (High Steps, Foot Drop)",
-                        },
-                        {
-                          value: "Waddling Gait",
-                          label: "Waddling Gait (Hip Weakness)",
-                        },
-                      ]}
-                      isSearchable
-                      isClearable
-                      value={
-                        [
+
+                  <div className="flex flex-col md:flex-row gap-4 w-full">
+                    <div className="flex-1 space-y-2">
+                      <label className="text-sm font-medium text-gray-600 mb-1 block">
+                        Gait Analysis
+                      </label>
+                      <CreatableSelect
+                        options={[
                           { value: "Normal Gait", label: "Normal Gait" },
                           {
                             value: "Ataxic Gait",
@@ -3394,86 +3291,95 @@ const PatientSearch = () => {
                             value: "Waddling Gait",
                             label: "Waddling Gait (Hip Weakness)",
                           },
-                        ].find(
-                          (option) =>
-                            option.value === neuroExamData.gait_assessment
-                        ) ||
-                        (neuroExamData.gait_assessment
-                          ? {
-                              value: neuroExamData.gait_assessment,
-                              label: neuroExamData.gait_assessment,
-                            }
-                          : null)
-                      }
-                      onChange={(selectedOption) =>
-                        setNeuroExamData((prev) => ({
-                          ...prev,
-                          gait_assessment: selectedOption
-                            ? selectedOption.value
-                            : "",
-                        }))
-                      }
-                      onCreateOption={(inputValue) =>
-                        setNeuroExamData((prev) => ({
-                          ...prev,
-                          gait_assessment: inputValue,
-                        }))
-                      }
-                      placeholder="Select or type..."
-                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
-                      classNames={{
-                        control: (state) =>
-                          `p-2 ${
-                            state.isFocused
-                              ? "border-purple-500"
-                              : "border-gray-300"
-                          } bg-white`,
-                        input: () => "text-gray-700",
-                        placeholder: () => "text-gray-400",
-                        menu: () =>
-                          "border border-gray-200 rounded-lg shadow-lg mt-1",
-                        option: (state) =>
-                          `px-4 py-2 ${
-                            state.isFocused
-                              ? "bg-purple-50 text-purple-700"
-                              : "text-gray-700"
-                          }`,
-                        dropdownIndicator: () =>
-                          "text-gray-400 hover:text-gray-500",
-                        clearIndicator: () =>
-                          "text-gray-400 hover:text-red-500",
-                      }}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-600 mb-1 block">
-                      Pupillary Reaction
-                    </label>
-                    <CreatableSelect
-                      options={[
-                        {
-                          value: "Normal",
-                          label: "Normal (Reactive to Light)",
-                        },
-                        { value: "Sluggish", label: "Sluggish Reaction" },
-                        { value: "Non-Reactive", label: "Non-Reactive Pupils" },
-                        {
-                          value: "Unequal",
-                          label: "Unequal Pupils (Anisocoria)",
-                        },
-                        {
-                          value: "Dilation",
-                          label: "Dilated Pupils (Mydriasis)",
-                        },
-                        {
-                          value: "Constriction",
-                          label: "Constricted Pupils (Miosis)",
-                        },
-                      ]}
-                      isSearchable
-                      isClearable
-                      value={
-                        [
+                        ]}
+                        isSearchable
+                        isClearable
+                        value={
+                          [
+                            { value: "Normal Gait", label: "Normal Gait" },
+                            {
+                              value: "Ataxic Gait",
+                              label: "Ataxic Gait (Unsteady, Staggering)",
+                            },
+                            {
+                              value: "Shuffling Gait",
+                              label:
+                                "Shuffling Gait (Short Steps, Dragging Feet)",
+                            },
+                            {
+                              value: "Hemiplegic Gait",
+                              label:
+                                "Hemiplegic Gait (One-Sided Weakness, Circumduction)",
+                            },
+                            {
+                              value: "Spastic Gait",
+                              label: "Spastic Gait (Stiff, Scissoring Legs)",
+                            },
+                            {
+                              value: "Steppage Gait",
+                              label: "Steppage Gait (High Steps, Foot Drop)",
+                            },
+                            {
+                              value: "Waddling Gait",
+                              label: "Waddling Gait (Hip Weakness)",
+                            },
+                          ].find(
+                            (option) =>
+                              option.value === neuroExamData.gait_assessment
+                          ) ||
+                          (neuroExamData.gait_assessment
+                            ? {
+                                value: neuroExamData.gait_assessment,
+                                label: neuroExamData.gait_assessment,
+                              }
+                            : null)
+                        }
+                        onChange={(selectedOption) =>
+                          setNeuroExamData((prev) => ({
+                            ...prev,
+                            gait_assessment: selectedOption
+                              ? selectedOption.value
+                              : "",
+                          }))
+                        }
+                        onCreateOption={(inputValue) =>
+                          setNeuroExamData((prev) => ({
+                            ...prev,
+                            gait_assessment: inputValue,
+                          }))
+                        }
+                        placeholder="Select or type..."
+                        className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                        classNames={{
+                          control: (state) =>
+                            `p-2 ${
+                              state.isFocused
+                                ? "border-purple-500"
+                                : "border-gray-300"
+                            } bg-white`,
+                          input: () => "text-gray-700",
+                          placeholder: () => "text-gray-400",
+                          menu: () =>
+                            "border border-gray-200 rounded-lg shadow-lg mt-1",
+                          option: (state) =>
+                            `px-4 py-2 ${
+                              state.isFocused
+                                ? "bg-purple-50 text-purple-700"
+                                : "text-gray-700"
+                            }`,
+                          dropdownIndicator: () =>
+                            "text-gray-400 hover:text-gray-500",
+                          clearIndicator: () =>
+                            "text-gray-400 hover:text-red-500",
+                        }}
+                      />
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <label className="text-sm font-medium text-gray-600 mb-1 block">
+                        Pupillary Reaction
+                      </label>
+                      <CreatableSelect
+                        options={[
                           {
                             value: "Normal",
                             label: "Normal (Reactive to Light)",
@@ -3495,61 +3401,88 @@ const PatientSearch = () => {
                             value: "Constriction",
                             label: "Constricted Pupils (Miosis)",
                           },
-                        ].find(
-                          (option) =>
-                            option.value === neuroExamData.pupillary_reaction
-                        ) ||
-                        (neuroExamData.pupillary_reaction
-                          ? {
-                              value: neuroExamData.pupillary_reaction,
-                              label: neuroExamData.pupillary_reaction,
-                            }
-                          : null)
-                      }
-                      onChange={(selectedOption) =>
-                        setNeuroExamData((prev) => ({
-                          ...prev,
-                          pupillary_reaction: selectedOption
-                            ? selectedOption.value
-                            : "",
-                        }))
-                      }
-                      onCreateOption={(inputValue) =>
-                        setNeuroExamData((prev) => ({
-                          ...prev,
-                          pupillary_reaction: inputValue, // Allows custom text input
-                        }))
-                      }
-                      placeholder="Select or type..."
-                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
-                      classNames={{
-                        control: (state) =>
-                          `p-2 ${
-                            state.isFocused
-                              ? "border-purple-500"
-                              : "border-gray-300"
-                          } bg-white`,
-                        input: () => "text-gray-700",
-                        placeholder: () => "text-gray-400",
-                        menu: () =>
-                          "border border-gray-200 rounded-lg shadow-lg mt-1",
-                        option: (state) =>
-                          `px-4 py-2 ${
-                            state.isFocused
-                              ? "bg-purple-50 text-purple-700"
-                              : "text-gray-700"
-                          }`,
-                        dropdownIndicator: () =>
-                          "text-gray-400 hover:text-gray-500",
-                        clearIndicator: () =>
-                          "text-gray-400 hover:text-red-500",
-                      }}
-                    />
+                        ]}
+                        isSearchable
+                        isClearable
+                        value={
+                          [
+                            {
+                              value: "Normal",
+                              label: "Normal (Reactive to Light)",
+                            },
+                            { value: "Sluggish", label: "Sluggish Reaction" },
+                            {
+                              value: "Non-Reactive",
+                              label: "Non-Reactive Pupils",
+                            },
+                            {
+                              value: "Unequal",
+                              label: "Unequal Pupils (Anisocoria)",
+                            },
+                            {
+                              value: "Dilation",
+                              label: "Dilated Pupils (Mydriasis)",
+                            },
+                            {
+                              value: "Constriction",
+                              label: "Constricted Pupils (Miosis)",
+                            },
+                          ].find(
+                            (option) =>
+                              option.value === neuroExamData.pupillary_reaction
+                          ) ||
+                          (neuroExamData.pupillary_reaction
+                            ? {
+                                value: neuroExamData.pupillary_reaction,
+                                label: neuroExamData.pupillary_reaction,
+                              }
+                            : null)
+                        }
+                        onChange={(selectedOption) =>
+                          setNeuroExamData((prev) => ({
+                            ...prev,
+                            pupillary_reaction: selectedOption
+                              ? selectedOption.value
+                              : "",
+                          }))
+                        }
+                        onCreateOption={(inputValue) =>
+                          setNeuroExamData((prev) => ({
+                            ...prev,
+                            pupillary_reaction: inputValue, // Allows custom text input
+                          }))
+                        }
+                        placeholder="Select or type..."
+                        className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                        classNames={{
+                          control: (state) =>
+                            `p-2 ${
+                              state.isFocused
+                                ? "border-purple-500"
+                                : "border-gray-300"
+                            } bg-white`,
+                          input: () => "text-gray-700",
+                          placeholder: () => "text-gray-400",
+                          menu: () =>
+                            "border border-gray-200 rounded-lg shadow-lg mt-1",
+                          option: (state) =>
+                            `px-4 py-2 ${
+                              state.isFocused
+                                ? "bg-purple-50 text-purple-700"
+                                : "text-gray-700"
+                            }`,
+                          dropdownIndicator: () =>
+                            "text-gray-400 hover:text-gray-500",
+                          clearIndicator: () =>
+                            "text-gray-400 hover:text-red-500",
+                        }}
+                      />
+                    </div>
                   </div>
                 </div>
 
                 {/* Diagnosis & Treatment */}
-                <div className="md:col-span-2 space-y-4">
+                <div className="md:col-span-4 space-y-4">
                   <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
                     Clinical Decisions
                   </h4>
@@ -3634,7 +3567,7 @@ const PatientSearch = () => {
               <div className="space-y-4">
                 {selectedMedicines.map((med, index) => (
                   <div key={index} className="flex items-center gap-3">
-                    <div className="flex-1 grid grid-cols-3 gap-3">
+                    <div className="flex-1 grid grid-cols-6 gap-3">
                       {/* Medicine Selection */}
                       <div className="space-y-1">
                         <label className="text-sm font-medium text-gray-600">
@@ -3649,7 +3582,7 @@ const PatientSearch = () => {
                               (m) =>
                                 m.value ===
                                 selectedMedicines[index]?.medicine_id
-                            ) || null
+                            ) || medicines[0] || null
                           }
                           onCreateOption={async (inputValue) => {
                             const newId = await handleCreateMedicine(
