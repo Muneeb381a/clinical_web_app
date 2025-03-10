@@ -180,8 +180,8 @@ const PatientSearch = () => {
   
             .patient-info {
               display: grid;
-              grid-template-columns: repeat(3, 1fr);
-              gap: 30mm;
+              grid-template-columns: repeat(4, 1fr);
+              gap: 15mm;
               margin-bottom: 5mm;
               padding: 2mm;
             }
@@ -269,6 +269,7 @@ const PatientSearch = () => {
             <div><strong>Age/Sex:</strong> ${patient?.age || "-"}/${
       patient?.gender || "-"
     }</div>
+    <div><strong>Checkup Date:</strong> ${patient?.checkup_date || "-"}</div>
           </div>
   
           <div class="prescription-container">
