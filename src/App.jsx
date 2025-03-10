@@ -531,7 +531,7 @@ const PatientSearch = () => {
         setPatient(res.data.data);
         setShowAddPatient(false);
   
-        // Update URL with proper path structure
+        // Update URL for existing patient
         window.history.pushState(
           { patientId }, 
           "", 
@@ -541,7 +541,13 @@ const PatientSearch = () => {
         setPatient(null);
         setSearchedMobile(mobile);
         setShowAddPatient(true);
-        window.history.pushState(null, "", "/");
+        
+        // Update URL for new patient registration
+        window.history.pushState(
+          { newPatient: true, mobile },
+          "",
+          `/patients/new?mobile=${encodeURIComponent(mobile)}`
+        );
       }
     } catch (error) {
       console.error("Error fetching patient", error);
@@ -556,11 +562,11 @@ const PatientSearch = () => {
   
   useEffect(() => {
     const loadPatientFromURL = async () => {
-      
       const pathParts = window.location.pathname.split('/');
-      const patientId = pathParts[2]; 
-  
-      if (patientId) {
+      
+      // Handle existing patient prescription page
+      if (pathParts[1] === 'patients' && pathParts[3] === 'add-prescription') {
+        const patientId = pathParts[2];
         try {
           const res = await axios.get(
             `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}`
@@ -571,6 +577,15 @@ const PatientSearch = () => {
           console.error("Error loading patient from URL:", error);
           alert("Invalid patient ID in URL");
           window.history.replaceState(null, "", "/");
+        }
+      }
+      // Handle new patient registration page
+      else if (pathParts[1] === 'patients' && pathParts[2] === 'new') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const mobile = urlParams.get('mobile');
+        if (mobile) {
+          setSearchedMobile(mobile);
+          setShowAddPatient(true);
         }
       }
     };
