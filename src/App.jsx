@@ -278,7 +278,7 @@ const PatientSearch = () => {
         <body>
         <div style="height: 30mm"></div>
           <div class="patient-info">
-            <div><strong>MR#:</strong> ${patient?.mr_no || "-"}</div>
+            <div><strong>Mobile#:</strong> ${patient?.mobile || "-"}</div>
             <div><strong>Name:</strong> ${patient?.name || "-"}</div>
             <div><strong>Age/Sex:</strong> ${patient?.age || "-"}/${
       patient?.gender || "-"
@@ -3572,27 +3572,7 @@ before:opacity-50 before:-z-10"
                 classNamePrefix="react-select"
               />
             </div>
-            <div className="md:col-span-4 space-y-4">
-              <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
-                Clinical Decisions
-              </h4>
-              <div className="space-y-2">
-                <label className="text-sm font-medium text-gray-700">
-                  Diagnosis *
-                </label>
-                <textarea
-                  value={neuroExamData.diagnosis || ""}
-                  onChange={(e) =>
-                    setNeuroExamData((prev) => ({
-                      ...prev,
-                      diagnosis: e.target.value,
-                    }))
-                  }
-                  className="w-full rounded-lg border-2 border-gray-100 p-3 h-32"
-                  required
-                />
-              </div>
-            </div>
+
             {/* Enhanced Medicines Section */}
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
               <div className="flex items-center gap-3 mb-5">
@@ -4267,7 +4247,27 @@ before:opacity-50 before:-z-10"
                 </button>
               </div>
             </div>
-
+            <div className="md:col-span-4 space-y-4">
+              <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
+                Clinical Decisions
+              </h4>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Diagnosis *
+                </label>
+                <textarea
+                  value={neuroExamData.diagnosis || ""}
+                  onChange={(e) =>
+                    setNeuroExamData((prev) => ({
+                      ...prev,
+                      diagnosis: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border-2 border-gray-100 p-3 h-32"
+                  required
+                />
+              </div>
+            </div>
             {/* followup */}
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm mt-6">
               <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
