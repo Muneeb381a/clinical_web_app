@@ -74,7 +74,7 @@ const PatientSearch = () => {
   const [prescriptions, setPrescriptions] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
 
-  const [selectedMedicines, setSelectedMedicines] = useState([{}, {}]);
+  const [selectedMedicines, setSelectedMedicines] = useState([{}, {}, {}]);
 
   const handleReturnHome = () => {
     setPatient(null);
@@ -3654,9 +3654,36 @@ before:opacity-50 before:-z-10"
                         <Select
                           options={[
                             { value: "morning", label: "صبح (Morning)" },
+                            { value: "afternoon", label: "دوپہر (Afternoon)" },
+                            { value: "evening", label: "شام (Evening)" },
+                            { value: "night", label: "رات (Night)" },
+                            { value: "morning_evening", label: "صبح، شام (Morning & Evening)" },
+                            { value: "morning_night", label: "صبح، رات (Morning & Night)" },
+                            { value: "afternoon_evening", label: "دوپہر، شام (Afternoon & Evening)" },
+                            { value: "afternoon_night", label: "دوپہر، رات (Afternoon & Night)" },
+                            { value: "morning_evening_night", label: "صبح، شام، رات (Morning, Evening & Night)" },
+                            { value: "morning_afternoon_evening", label: "صبح، دوپہر، شام (Morning, Afternoon & Evening)" },
+                            { value: "morning_afternoon_night", label: "صبح، دوپہر، رات (Morning, Afternoon & Night)" },
+                            { value: "afternoon_evening_night", label: "دوپہر، شام، رات (Afternoon, Evening & Night)" },
+                            { value: "early_morning", label: "صبح سویرے (Early Morning)" },
+                            { value: "late_morning", label: "دیر صبح (Late Morning)" },
+                            { value: "late_afternoon", label: "دیر دوپہر (Late Afternoon)" },
+                            { value: "sunset", label: "غروب آفتاب (Sunset)" },
+                            { value: "midnight", label: "آدھی رات (Midnight)" },
+                            { value: "late_night", label: "رات دیر گئے (Late Night)" },
+                            { value: "morning_afternoon", label: "صبح، دوپہر (Morning & Afternoon)" },
+                            { value: "evening_night", label: "شام، رات (Evening & Night)" },
+                            { value: "early_morning_night", label: "صبح سویرے، رات (Early Morning & Night)" },
+                            { value: "morning_late_afternoon", label: "صبح، دیر دوپہر (Morning & Late Afternoon)" },
+                            { value: "afternoon_sunset", label: "دوپہر، غروب آفتاب (Afternoon & Sunset)" },
+                            { value: "all_day", label: "پورا دن (All Day)" },
+                            { value: "all_night", label: "پوری رات (All Night)" },
+                            { value: "24_hours", label: "چوبیس گھنٹے (24 Hours)" }
                           ]}
+                          
                           className="react-select-container"
                           classNamePrefix="react-select"
+                          defaultValue={{ value: "morning", label: "صبح (Morning)" }}
                           onChange={(e) => {
                             setSelectedMedicines((prev) =>
                               prev.map((item, i) =>
@@ -3681,13 +3708,75 @@ before:opacity-50 before:-z-10"
                         </label>
                         <Select
                           options={[
-                            {
-                              value: "0.25",
-                              label: "ایک چوتھائی گولی (1/4 گولی)",
-                            },
+                            // Tablet Dosages (Fractions & Whole)
+                            { value: "0.25", label: "ایک چوتھائی گولی (1/4 گولی)" },
+                            { value: "0.5", label: "آدھی گولی (1/2 گولی)" },
+                            { value: "0.75", label: "تین چوتھائی گولی (3/4 گولی)" },
+                            { value: "1", label: "ایک گولی (1 گولی)" },
+                            { value: "1.5", label: "ڈیڑھ گولی (1.5 گولی)" },
+                            { value: "2", label: "دو گولیاں (2 گولیاں)" },
+                            { value: "2.5", label: "ڈھائی گولیاں (2.5 گولیاں)" },
+                            { value: "3", label: "تین گولیاں (3 گولیاں)" },
+                            { value: "3.5", label: "ساڑھے تین گولیاں (3.5 گولیاں)" },
+                            { value: "4", label: "چار گولیاں (4 گولیاں)" },
+                            { value: "5", label: "پانچ گولیاں (5 گولیاں)" },
+                            { value: "6", label: "چھ گولیاں (6 گولیاں)" },
+                            { value: "7", label: "سات گولیاں (7 گولیاں)" },
+                            { value: "8", label: "آٹھ گولیاں (8 گولیاں)" },
+                            { value: "10", label: "دس گولیاں (10 گولیاں)" },
+                          
+                            // Spoon Dosages
+                            { value: "half_spoon", label: "آدھا چمچ (1/2 چمچ)" },
+                            { value: "one_spoon", label: "ایک چمچ (1 چمچ)" },
+                            { value: "one_and_half_spoon", label: "ڈیڑھ چمچ (1.5 چمچ)" },
+                            { value: "two_spoons", label: "دو چمچ (2 چمچ)" },
+                            { value: "three_spoons", label: "تین چمچ (3 چمچ)" },
+                          
+                            // Liquid Dosages (Milliliters)
+                            { value: "2.5_ml", label: "ڈھائی ملی لیٹر (2.5 ml)" },
+                            { value: "5_ml", label: "پانچ ملی لیٹر (5 ml)" },
+                            { value: "7.5_ml", label: "ساڑھے سات ملی لیٹر (7.5 ml)" },
+                            { value: "10_ml", label: "دس ملی لیٹر (10 ml)" },
+                            { value: "15_ml", label: "پندرہ ملی لیٹر (15 ml)" },
+                            { value: "20_ml", label: "بیس ملی لیٹر (20 ml)" },
+                            { value: "25_ml", label: "پچیس ملی لیٹر (25 ml)" },
+                            { value: "30_ml", label: "تیس ملی لیٹر (30 ml)" },
+                          
+                            // Droplet Dosages
+                            { value: "one_droplet", label: "ایک قطرہ (1 قطرہ)" },
+                            { value: "two_droplets", label: "دو قطرے (2 قطرے)" },
+                            { value: "three_droplets", label: "تین قطرے (3 قطرے)" },
+                            { value: "five_droplets", label: "پانچ قطرے (5 قطرے)" },
+                            { value: "ten_droplets", label: "دس قطرے (10 قطرے)" },
+                          
+                            // Injection Dosages
+                            { value: "half_injection", label: "آدھا ٹیکہ (1/2 ٹیکہ)" },
+                            { value: "one_injection", label: "ایک ٹیکہ (1 ٹیکہ)" },
+                            { value: "two_injections", label: "دو ٹیکے (2 ٹیکے)" },
+                            { value: "three_injections", label: "تین ٹیکے (3 ٹیکے)" },
+                          
+                            // Sachet Dosages
+                            { value: "half_sachet", label: "آدھا ساشے (1/2 ساشے)" },
+                            { value: "one_sachet", label: "ایک ساشے (1 ساشے)" },
+                            { value: "two_sachets", label: "دو ساشے (2 ساشے)" },
+                            { value: "three_sachets", label: "تین ساشے (3 ساشے)" },
+                          
+                            // Special Cases
+                            { value: "as_needed", label: "ضرورت کے مطابق (As Needed)" },
+                            { value: "before_meal", label: "کھانے سے پہلے (Before Meal)" },
+                            { value: "after_meal", label: "کھانے کے بعد (After Meal)" },
+                            { value: "every_6_hours", label: "ہر 6 گھنٹے بعد (Every 6 Hours)" },
+                            { value: "every_8_hours", label: "ہر 8 گھنٹے بعد (Every 8 Hours)" },
+                            { value: "every_12_hours", label: "ہر 12 گھنٹے بعد (Every 12 Hours)" },
+                            { value: "once_a_day", label: "دن میں ایک بار (Once a Day)" },
+                            { value: "twice_a_day", label: "دن میں دو بار (Twice a Day)" },
+                            { value: "three_times_a_day", label: "دن میں تین بار (Three Times a Day)" },
+                            { value: "four_times_a_day", label: "دن میں چار بار (Four Times a Day)" }
                           ]}
+                          
                           className="react-select-container"
                           classNamePrefix="react-select"
+                          defaultValue={{ value: "1", label: "ایک گولی (1 گولی)" }}
                           onChange={(e) => {
                             setSelectedMedicines((prev) =>
                               prev.map((item, i) =>
@@ -3712,11 +3801,55 @@ before:opacity-50 before:-z-10"
                         </label>
                         <Select
                           options={[
-                            // Days (1-14)
+                            // Days (1-30)
                             { value: "1_day", label: "1 دن" },
+                            { value: "2_days", label: "2 دن" },
+                            { value: "3_days", label: "3 دن" },
+                            { value: "4_days", label: "4 دن" },
+                            { value: "5_days", label: "5 دن" },
+                            { value: "6_days", label: "6 دن" },
+                            { value: "7_days", label: "7 دن (1 ہفتہ)" },
+                            { value: "8_days", label: "8 دن" },
+                            { value: "9_days", label: "9 دن" },
+                            { value: "10_days", label: "10 دن" },
+                            { value: "11_days", label: "11 دن" },
+                            { value: "12_days", label: "12 دن" },
+                            { value: "13_days", label: "13 دن" },
+                            { value: "14_days", label: "14 دن (2 ہفتے)" },
+                            { value: "15_days", label: "15 دن" },
+                            { value: "20_days", label: "20 دن" },
+                            { value: "25_days", label: "25 دن" },
+                            { value: "30_days", label: "30 دن (1 مہینہ)" },
+                          
+                            // Weeks (1-12)
+                            { value: "1_week", label: "1 ہفتہ" },
+                            { value: "2_weeks", label: "2 ہفتے" },
+                            { value: "3_weeks", label: "3 ہفتے" },
+                            { value: "4_weeks", label: "4 ہفتے (1 مہینہ)" },
+                            { value: "6_weeks", label: "6 ہفتے" },
+                            { value: "8_weeks", label: "8 ہفتے (2 مہینے)" },
+                            { value: "10_weeks", label: "10 ہفتے" },
+                            { value: "12_weeks", label: "12 ہفتے (3 مہینے)" },
+                          
+                            // Months (1-12)
+                            { value: "1_month", label: "1 مہینہ" },
+                            { value: "2_months", label: "2 مہینے" },
+                            { value: "3_months", label: "3 مہینے" },
+                            { value: "4_months", label: "4 مہینے" },
+                            { value: "5_months", label: "5 مہینے" },
+                            { value: "6_months", label: "6 مہینے (نصف سال)" },
+                            { value: "9_months", label: "9 مہینے" },
+                            { value: "12_months", label: "12 مہینے (1 سال)" },
+                          
+                            // Special Cases
+                            { value: "as_needed", label: "ضرورت کے مطابق" },
+                            { value: "long_term", label: "طویل مدتی علاج" },
+                            { value: "short_term", label: "مختصر مدتی علاج" }
                           ]}
+                          
                           className="react-select-container"
                           classNamePrefix="react-select"
+                          defaultValue={{ value: "7_days", label: "7 دن (1 ہفتہ)" }}
                           onChange={(e) => {
                             setSelectedMedicines((prev) =>
                               prev.map((item, i) =>
@@ -3742,10 +3875,33 @@ before:opacity-50 before:-z-10"
                         <Select
                           options={[
                             // Meal-related timings
+                            { value: "before_meal", label: "کھانے سے پہلے" },
                             { value: "with_meal", label: "کھانے کے ساتھ" },
+                            { value: "after_meal", label: "کھانے کے بعد" },
+                            { value: "empty_stomach", label: "خالی پیٹ" },
+                            { value: "before_breakfast", label: "ناشتے سے پہلے" },
+                            { value: "after_breakfast", label: "ناشتے کے بعد" },
+                            { value: "before_lunch", label: "دوپہر کے کھانے سے پہلے" },
+                            { value: "after_lunch", label: "دوپہر کے کھانے کے بعد" },
+                            { value: "before_dinner", label: "رات کے کھانے سے پہلے" },
+                            { value: "after_dinner", label: "رات کے کھانے کے بعد" },
+                            { value: "with_milk", label: "دودھ کے ساتھ" },
+                            { value: "before_tea", label: "چائے سے پہلے" },
+                            { value: "after_tea", label: "چائے کے بعد" },
+                          
+                            // Special cases
+                            { value: "only_if_needed", label: "ضرورت کے مطابق" },
+                            { value: "with_water", label: "پانی کے ساتھ" },
+                            { value: "with_juice", label: "جوس کے ساتھ" },
+                            { value: "with_yogurt", label: "دہی کے ساتھ" },
+                            { value: "with_fatty_foods", label: "چکنائی والے کھانے کے ساتھ" },
+                            { value: "without_dairy", label: "ڈیری مصنوعات کے بغیر" },
+                            { value: "avoid_caffeine", label: "کیفین سے بچیں" }
                           ]}
+                          
                           className="react-select-container"
                           classNamePrefix="react-select"
+                          defaultValue={{ value: "with_meal", label: "کھانے کے ساتھ" }}
                           onChange={(e) => {
                             setSelectedMedicines((prev) =>
                               prev.map((item, i) =>
@@ -3770,11 +3926,56 @@ before:opacity-50 before:-z-10"
                         </label>
                         <Select
                           options={[
-                            // Existing options
+                            // Oral (Mouth)
                             { value: "mouth", label: "منہ کے ذریعے (زبانی)" },
+                            { value: "sublingual", label: "زبان کے نیچے" },
+                            { value: "buccal", label: "گال کے اندر" },
+                          
+                            // Injection (Injections)
+                            { value: "intravenous", label: "نس میں (IV - Intravenous)" },
+                            { value: "intramuscular", label: "پٹھوں میں (IM - Intramuscular)" },
+                            { value: "subcutaneous", label: "جلد کے نیچے (SC - Subcutaneous)" },
+                            { value: "intradermal", label: "جلد کے اندر (ID - Intradermal)" },
+                          
+                            // Topical (Skin)
+                            { value: "topical", label: "جلد پر لگانے کے لیے (Topical)" },
+                            { value: "transdermal", label: "جلد پر چسپاں کرنے کے لیے (Transdermal Patch)" },
+                            { value: "ointment", label: "مرہم یا کریم" },
+                            { value: "gel", label: "جل" },
+                          
+                            // Eye (Ophthalmic)
+                            { value: "eye_drops", label: "آنکھ میں ڈالنے کے لیے (Eye Drops)" },
+                            { value: "eye_ointment", label: "آنکھ کے لیے مرہم (Eye Ointment)" },
+                          
+                            // Ear (Otic)
+                            { value: "ear_drops", label: "کان میں ڈالنے کے لیے (Ear Drops)" },
+                          
+                            // Nasal (Nose)
+                            { value: "nasal_spray", label: "ناک کے ذریعے (Nasal Spray)" },
+                            { value: "nasal_drops", label: "ناک میں ڈالنے کے لیے (Nasal Drops)" },
+                          
+                            // Inhalation (Respiratory)
+                            { value: "inhalation", label: "سانس کے ذریعے (Inhalation)" },
+                            { value: "nebulizer", label: "نبولائزر کے ذریعے (Nebulizer)" },
+                            { value: "inhaler", label: "انہیلر کے ذریعے (Inhaler)" },
+                          
+                            // Rectal (Anus)
+                            { value: "rectal_suppository", label: "مقعد کے ذریعے (Suppository)" },
+                            { value: "rectal_cream", label: "مقعد کے لیے کریم" },
+                          
+                            // Vaginal (Female)
+                            { value: "vaginal_suppository", label: "اندام نہانی کے ذریعے (Suppository)" },
+                            { value: "vaginal_cream", label: "اندام نہانی کے لیے کریم" },
+                            { value: "vaginal_gel", label: "اندام نہانی کے لیے جیل" },
+                          
+                            // Other Specialized Routes
+                            { value: "surgical_implant", label: "جسم میں نصب شدہ (Surgical Implant)" },
+                            { value: "infusion", label: "انفیوژن (Intravenous Infusion)" }
                           ]}
+                          
                           className="react-select-container"
                           classNamePrefix="react-select"
+                          defaultValue={{ value: "mouth", label: "منہ کے ذریعے (زبانی)" }}
                           onChange={(e) => {
                             setSelectedMedicines((prev) =>
                               prev.map((item, i) =>
