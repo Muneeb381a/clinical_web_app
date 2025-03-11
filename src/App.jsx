@@ -17,7 +17,19 @@ import {
   AiOutlinePrinter,
   AiOutlineDownload,
   AiOutlineCloseCircle,
+  AiOutlineHome,
   AiOutlineArrowLeft,
+  AiOutlineCalendar,
+  AiOutlineMan,
+  AiOutlineMobile,
+  AiOutlineIdcard,
+  AiOutlineUser,
+  AiOutlineSearch,
+  AiOutlineHistory,
+  AiOutlineFileText,
+  AiOutlineClose,
+  AiOutlineFolderOpen,
+  AiOutlineMedicineBox,
 } from "react-icons/ai";
 import AddPatientForm from "./pages/AddPatientForm";
 import { urduDate } from "./utils/dateUtils";
@@ -27,13 +39,22 @@ const searchSchema = z.object({
   mobile: z.string().min(10, "Enter a valid mobile number"),
 });
 
+const PrescriptionDetail = ({ label, en, urdu }) => (
+  <div className="flex justify-between items-start">
+    <span className="font-medium text-gray-600">{label}:</span>
+    <div className="text-right">
+      <p className="text-gray-800">{en}</p>
+      <p className="text-gray-500 text-sm">{urdu}</p>
+    </div>
+  </div>
+);
+
 const PatientSearch = () => {
   const [patient, setPatient] = useState(null);
   const [showAddPatient, setShowAddPatient] = useState(false);
   const [symptoms, setSymptoms] = useState([]);
   const [selectedSymptoms, setSelectedSymptoms] = useState([]);
   const [medicines, setMedicines] = useState([]);
-  const [selectedMedicines, setSelectedMedicines] = useState([{}, {}, {}]);
   const [isSearching, setIsSearching] = useState(false);
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
   const [consultationData, setConsultationData] = useState(null);
@@ -53,15 +74,17 @@ const PatientSearch = () => {
   const [prescriptions, setPrescriptions] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
 
-  const handleNewPatient = (newPatient) => {
-    setPatients([...patients, newPatient]); // Update patient list
-  };
+  const [selectedMedicines, setSelectedMedicines] = useState([{}, {}]);
 
   const handleReturnHome = () => {
     setPatient(null);
     setShowAddPatient(false);
     setSearchedMobile("");
     window.history.pushState({}, "", "/");
+  };
+
+  const handleNewPatient = (newPatient) => {
+    setPatients([...patients, newPatient]); // Update patient list
   };
 
   useEffect(() => {
@@ -109,15 +132,6 @@ const PatientSearch = () => {
       setIsCreating(false);
     }
   };
-
-  // const [vitalSigns, setVitalSigns] = useState({
-  //   temperature: "",
-  //   bloodPressure: "",
-  //   heartRate: "",
-  //   respiratoryRate: "",
-  //   oxygenSaturation: "",
-  //   weight: "",
-  // });
 
   const customSelectStyles = {
     control: (base) => ({
@@ -269,7 +283,9 @@ const PatientSearch = () => {
             <div><strong>Age/Sex:</strong> ${patient?.age || "-"}/${
       patient?.gender || "-"
     }</div>
-    <div><strong>Checkup Date:</strong> ${patient?.checkup_date || "-"}</div>
+            <div><strong>Checkup Date:</strong> ${
+              patient?.checkup_date || "-"
+            }</div>
           </div>
   
           <div class="prescription-container">
@@ -508,41 +524,43 @@ const PatientSearch = () => {
       alert("Please enter a valid mobile number.");
       return;
     }
-  
+
     const mobile = data.mobile.trim();
     const startTime = Date.now();
     setIsSearching(true);
-  
+
     try {
       const res = await axios.get(
-        `https://patient-management-backend-nine.vercel.app/api/patients/search?mobile=${encodeURIComponent(mobile)}`
+        `https://patient-management-backend-nine.vercel.app/api/patients/search?mobile=${encodeURIComponent(
+          mobile
+        )}`
       );
-  
+
       const elapsed = Date.now() - startTime;
       if (elapsed < 500) {
         await new Promise((resolve) => setTimeout(resolve, 500 - elapsed));
       }
-  
+
       if (res.data?.exists) {
         if (!res.data.data?.id && !res.data.data?._id) {
           throw new Error("Patient ID not found in API response");
         }
-  
+
         const patientId = res.data.data.id || res.data.data._id;
         setPatient(res.data.data);
         setShowAddPatient(false);
-  
+
         // Update URL for existing patient
         window.history.pushState(
-          { patientId }, 
-          "", 
+          { patientId },
+          "",
           `/patients/${patientId}/add-prescription`
         );
       } else {
         setPatient(null);
         setSearchedMobile(mobile);
         setShowAddPatient(true);
-        
+
         // Update URL for new patient registration
         window.history.pushState(
           { newPatient: true, mobile },
@@ -560,13 +578,13 @@ const PatientSearch = () => {
       setIsSearching(false);
     }
   };
-  
+
   useEffect(() => {
     const loadPatientFromURL = async () => {
-      const pathParts = window.location.pathname.split('/');
-      
+      const pathParts = window.location.pathname.split("/");
+
       // Handle existing patient prescription page
-      if (pathParts[1] === 'patients' && pathParts[3] === 'add-prescription') {
+      if (pathParts[1] === "patients" && pathParts[3] === "add-prescription") {
         const patientId = pathParts[2];
         try {
           const res = await axios.get(
@@ -581,20 +599,21 @@ const PatientSearch = () => {
         }
       }
       // Handle new patient registration page
-      else if (pathParts[1] === 'patients' && pathParts[2] === 'new') {
+      else if (pathParts[1] === "patients" && pathParts[2] === "new") {
         const urlParams = new URLSearchParams(window.location.search);
-        const mobile = urlParams.get('mobile');
+        const mobile = urlParams.get("mobile");
         if (mobile) {
           setSearchedMobile(mobile);
           setShowAddPatient(true);
         }
       }
     };
-  
+
     loadPatientFromURL();
   }, []);
+
   const handleNewPatientAdded = () => {
-    
+    // Re-trigger the search with the same mobile number
     onSearch({ mobile: searchedMobile });
   };
 
@@ -764,292 +783,222 @@ before:bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.9),_transparen
 before:opacity-50 before:-z-10"
     >
       <div className="mx-auto max-w-6xl rounded-2xl border border-white/30 bg-white/95 backdrop-blur-sm p-8 shadow-2xl shadow-gray-100/30">
-      {patient && (
-  <button
-    onClick={handleReturnHome}
-    className="
-      bg-gray-50
-      hover:bg-gray-100
-      text-gray-600
-      hover:text-gray-700
-      px-3 py-2
-      rounded-md
-      border border-gray-200
-      text-sm
-      font-medium
-      transition-colors
-      duration-200
-      flex
-      items-center
-      gap-2
-      group
-    "
-  >
-    <AiOutlineArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-0.5" />
-    <span>Back</span>
-  </button>
-)}
         <h2 className="mb-6 border-b border-gray-200 pb-4 text-2xl font-bold text-gray-900">
           <span className="bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
             Patient Consultation Portal
           </span>
         </h2>
-        {/* Enhanced Search Section */}
-        <div className="mb-8 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-blue-700 p-2.5 rounded-lg text-white shadow-sm">
-              <svg
-                className="w-6 h-6"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+        {patient && (
+          <div className="mb-8 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            {/* Header Section */}
+            <div className="flex items-center justify-between mb-6">
+              <button
+                onClick={handleReturnHome}
+                className="bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-700 px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium transition-colors flex items-center gap-2 group"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                ></path>
-              </svg>
-            </div>
-            <div>
-              <h3 className="text-lg font-semibold text-gray-800">
-                Patient Lookup
-              </h3>
-              <p className="text-sm text-gray-600">
-                Search existing patient records by mobile number
-              </p>
-            </div>
-          </div>
+                <AiOutlineArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+                Back to Search
+              </button>
 
-          <form onSubmit={handleSearchSubmit(onSearch)} className="space-y-4">
-            <div className="space-y-2">
-              <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
-                Mobile Number
-                <span className="text-red-500">*</span>
-              </label>
-              <div className="flex gap-3">
-                <input
-                  {...registerSearch("mobile")}
-                  placeholder="0300 1234567"
-                  className="w-full rounded-xl border-2 border-gray-200 bg-white p-3.5 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
-                />
+              <div className="flex items-center gap-4">
                 <button
-                  type="submit"
-                  disabled={isSearching}
-                  className="self-stretch px-8 bg-blue-700 text-white font-semibold rounded-xl shadow-md hover:bg-blue-800 transition-colors flex items-center justify-center"
+                  onClick={() => fetchPrescriptions(patient.id)}
+                  className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all flex items-center gap-2 shadow-md hover:shadow-lg"
                 >
-                  {isSearching ? (
-                    <div className="flex items-center gap-2">
-                      <span className="animate-spin">🌀</span>
-                      Searching...
-                    </div>
-                  ) : (
-                    "Find Patient"
-                  )}
+                  <AiOutlineHistory className="w-5 h-5" />
+                  Show Previous Prescriptions
                 </button>
               </div>
             </div>
 
-            {searchErrors.mobile && (
-              <div className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-2.5 rounded-lg">
-                <svg
-                  className="w-5 h-5 flex-shrink-0"
-                  fill="currentColor"
-                  viewBox="0 0 20 20"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-                    clipRule="evenodd"
-                  ></path>
-                </svg>
-                <span className="text-sm">{searchErrors.mobile.message}</span>
-              </div>
-            )}
-          </form>
-        </div>
-        {patient ? (
-          <div className="space-y-8" id="consultation-content">
-            {/* Enhanced Patient Details */}
-            <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm max-w-6xl w-full mx-auto">
-              <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
-                <div className="bg-green-700 p-2.5 rounded-lg text-white shadow-sm">
-                  <svg
-                    className="w-6 h-6"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    ></path>
-                  </svg>
+            {/* Patient Info Header */}
+            <div className="bg-gray-50 p-4 rounded-lg mb-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-purple-100 p-2 rounded-lg">
+                  <AiOutlineUser className="w-6 h-6 text-purple-600" />
                 </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    Patient Demographics
-                  </h3>
-                  <p className="text-sm text-gray-600">
-                    Core patient information and medical history
-                  </p>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    {patient.name}
+                  </h2>
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <span>ID: {patient.id}</span>
+                    <span className="text-gray-400">|</span>
+                    <span>{patient.mobile}</span>
+                  </div>
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { label: "Mr-No", value: patient.mr_no, icon: "user" },
-                  { label: "Full Name", value: patient.name, icon: "user" },
-                  { label: "Age", value: patient.age, icon: "calendar" },
-                  { label: "Gender", value: patient.gender, icon: "gender" },
-                  {
-                    label: "Last Visit",
-                    value: patient.checkup_date || "N/A",
-                    icon: "clock",
-                  },
-                ].map((field) => (
-                  <div key={field.label} className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700 flex items-center gap-2">
-                      <svg className="w-4 h-4 text-gray-500">
-                        {/* Icon path */}
-                      </svg>
-                      {field.label}
-                    </label>
-                    <div className="rounded-lg bg-gray-50 p-3 font-medium text-gray-800 border border-gray-200">
-                      {field.value || "-"}
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
-            {/* presciption details */}
-            <div className="border border-red-500 rounded-xl p-4">
-              {/* Button to fetch and show prescriptions */}
-              {patient && (
-                <button
-                  onClick={() => {
-                    fetchPrescriptions(patient.id);
-                  }}
-                  className="mt-4 px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-300 shadow-md hover:shadow-lg font-medium focus:outline-none focus:ring-4 focus:ring-blue-300"
-                >
-                  View Previous Prescriptions
-                </button>
-              )}
 
-              {/* Conditional rendering of the popup */}
-              {showPopup && (
-                <div className="fixed inset-0 bg-black/30 backdrop-blur-md z-50 overflow-y-auto">
-                  <div className="min-h-screen flex items-start justify-center p-4 pt-20 pb-8">
-                    <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border border-gray-200">
-                      <div className="flex justify-between items-center mb-4 pb-2 border-b">
-                        <h2 className="text-2xl font-bold text-gray-800">
-                          📋 Previous Prescriptions
-                        </h2>
-                        <button
-                          onClick={() => setShowPopup(false)}
-                          className="p-2 hover:bg-gray-100 rounded-full transition-colors"
-                        >
-                          <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className="h-6 w-6 text-gray-600"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
-                      </div>
+            {/* Prescriptions Popup */}
+            {showPopup && (
+              <div className="fixed inset-0 bg-black/30 backdrop-blur-md z-50 overflow-y-auto">
+                <div className="min-h-screen flex items-start justify-center p-4 pt-20 pb-8">
+                  <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border border-gray-200">
+                    {/* Popup Header */}
+                    <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+                      <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <AiOutlineFileText className="text-blue-600" />
+                        Treatment History
+                      </h2>
+                      <button
+                        onClick={() => setShowPopup(false)}
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                      >
+                        <AiOutlineClose className="w-6 h-6 text-gray-600" />
+                      </button>
+                    </div>
 
-                      {/* Prescription list */}
+                    {/* Prescriptions List */}
+                    <div className="space-y-6">
                       {prescriptions.length > 0 ? (
-                        <div className="space-y-4">
-                          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                            {prescriptions.map((prescription) => (
-                              <div
-                                key={prescription.id}
-                                className="bg-gray-50 p-4 rounded-xl hover:bg-gray-100 transition-colors border border-gray-200"
-                              >
-                                <div className="space-y-2">
-                                  <h3 className="text-lg font-medium text-gray-800">
+                        <div className="grid gap-6 md:grid-cols-2">
+                          {prescriptions.map((prescription) => (
+                            <div
+                              key={prescription.id}
+                              className="bg-gray-50 p-5 rounded-xl border border-gray-200 hover:border-blue-200 transition-colors"
+                            >
+                              <div className="flex items-start gap-4">
+                                <div className="bg-blue-100 p-2 rounded-lg">
+                                  <AiOutlineMedicineBox className="w-6 h-6 text-blue-600" />
+                                </div>
+                                <div className="flex-1">
+                                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
                                     {prescription.brand_name}
-                                    <span className="block text-sm text-gray-500">
+                                    <span className="block text-sm text-gray-500 mt-1">
                                       {prescription.urdu_name}
                                     </span>
                                   </h3>
-                                  <div className="space-y-1 text-sm">
-                                    <p className="text-gray-600">
-                                      <span className="font-medium">
-                                        Dosage:
-                                      </span>{" "}
-                                      {prescription.dosage}
-                                    </p>
-                                    <p className="text-gray-600">
-                                      <span className="font-medium">
-                                        Frequency:
-                                      </span>{" "}
-                                      {prescription.frequency_en}
-                                      <span className="text-gray-500">
-                                        {" "}
-                                        ({prescription.frequency_urdu})
-                                      </span>
-                                    </p>
-                                    <p className="text-gray-600">
-                                      <span className="font-medium">
-                                        Duration:
-                                      </span>{" "}
-                                      {prescription.duration_en}
-                                      <span className="text-gray-500">
-                                        {" "}
-                                        ({prescription.duration_urdu})
-                                      </span>
-                                    </p>
-                                    <p className="text-gray-600">
-                                      <span className="font-medium">
-                                        Instructions:
-                                      </span>{" "}
-                                      {prescription.instructions_en}
-                                      <span className="text-gray-500">
-                                        {" "}
-                                        ({prescription.instructions_urdu})
-                                      </span>
-                                    </p>
+
+                                  <div className="space-y-2 text-sm">
+                                    <PrescriptionDetail
+                                      label="Dosage"
+                                      en={prescription.dosage_en}
+                                      urdu={prescription.dosage_urdu}
+                                    />
+                                    <PrescriptionDetail
+                                      label="Frequency"
+                                      en={prescription.frequency_en}
+                                      urdu={prescription.frequency_urdu}
+                                    />
+                                    <PrescriptionDetail
+                                      label="Duration"
+                                      en={prescription.duration_en}
+                                      urdu={prescription.duration_urdu}
+                                    />
+                                    <PrescriptionDetail
+                                      label="Instructions"
+                                      en={prescription.instructions_en}
+                                      urdu={prescription.instructions_urdu}
+                                    />
                                   </div>
                                 </div>
                               </div>
-                            ))}
-                          </div>
+                            </div>
+                          ))}
                         </div>
                       ) : (
                         <div className="text-center py-8">
+                          <AiOutlineFolderOpen className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                           <p className="text-gray-500 italic">
-                            No previous prescriptions found.
+                            No previous treatment records found
                           </p>
                         </div>
                       )}
+                    </div>
 
-                      {/* Sticky Close Button for mobile */}
-                      <div className="sticky bottom-0 bg-white pt-4 border-t mt-6 md:hidden">
-                        <button
-                          onClick={() => setShowPopup(false)}
-                          className="w-full py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                        >
-                          Close
-                        </button>
-                      </div>
+                    {/* Mobile Close Button */}
+                    <div className="sticky bottom-0 bg-white pt-6 mt-6 border-t md:hidden">
+                      <button
+                        onClick={() => setShowPopup(false)}
+                        className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                      >
+                        Close
+                      </button>
                     </div>
                   </div>
                 </div>
-              )}
+              </div>
+            )}
+          </div>
+        )}
+        {/* Enhanced Search Section */}
+        {!patient && (
+          <div className="mb-8 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-blue-700 p-2.5 rounded-lg text-white shadow-sm">
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  ></path>
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Patient Lookup
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Search existing patient records by mobile number
+                </p>
+              </div>
             </div>
+
+            <form onSubmit={handleSearchSubmit(onSearch)} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  Mobile Number <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    {...registerSearch("mobile")}
+                    placeholder="0300 1234567"
+                    className="w-full rounded-xl border-2 border-gray-200 bg-white p-3.5 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSearching}
+                    className="self-stretch px-8 bg-blue-700 text-white font-semibold rounded-xl shadow-md hover:bg-blue-800 transition-colors flex items-center justify-center"
+                  >
+                    {isSearching ? (
+                      <div className="flex items-center gap-2">
+                        <span className="animate-spin">🌀</span> Searching...
+                      </div>
+                    ) : (
+                      "Find Patient"
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {searchErrors.mobile && (
+                <div className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-2.5 rounded-lg">
+                  <svg
+                    className="w-5 h-5 flex-shrink-0"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    ></path>
+                  </svg>
+                  <span className="text-sm">{searchErrors.mobile.message}</span>
+                </div>
+              )}
+            </form>
+          </div>
+        )}
+        {patient ? (
+          <div className="space-y-8" id="consultation-content">
             {/* Symptoms Section */}
             <div className="bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
               <div className="flex items-center gap-3 mb-5 border-b border-gray-200 pb-4">
@@ -2990,88 +2939,87 @@ before:opacity-50 before:-z-10"
                   </div>
                 </div>
                 <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-600 mb-1 block">
-                      Nystagmus
-                    </label>
-                    <CreatableSelect
-                      options={[
+                  <label className="text-sm font-medium text-gray-600 mb-1 block">
+                    Nystagmus
+                  </label>
+                  <CreatableSelect
+                    options={[
+                      { value: "Absent", label: "Absent (Normal)" },
+                      { value: "Horizontal", label: "Horizontal Nystagmus" },
+                      { value: "Vertical", label: "Vertical Nystagmus" },
+                      { value: "Rotatory", label: "Rotatory Nystagmus" },
+                      {
+                        value: "Gaze-Evoked",
+                        label: "Gaze-Evoked Nystagmus",
+                      },
+                      { value: "Positional", label: "Positional Nystagmus" },
+                    ]}
+                    isSearchable
+                    isClearable
+                    value={
+                      [
                         { value: "Absent", label: "Absent (Normal)" },
-                        { value: "Horizontal", label: "Horizontal Nystagmus" },
+                        {
+                          value: "Horizontal",
+                          label: "Horizontal Nystagmus",
+                        },
                         { value: "Vertical", label: "Vertical Nystagmus" },
                         { value: "Rotatory", label: "Rotatory Nystagmus" },
                         {
                           value: "Gaze-Evoked",
                           label: "Gaze-Evoked Nystagmus",
                         },
-                        { value: "Positional", label: "Positional Nystagmus" },
-                      ]}
-                      isSearchable
-                      isClearable
-                      value={
-                        [
-                          { value: "Absent", label: "Absent (Normal)" },
-                          {
-                            value: "Horizontal",
-                            label: "Horizontal Nystagmus",
-                          },
-                          { value: "Vertical", label: "Vertical Nystagmus" },
-                          { value: "Rotatory", label: "Rotatory Nystagmus" },
-                          {
-                            value: "Gaze-Evoked",
-                            label: "Gaze-Evoked Nystagmus",
-                          },
-                          {
-                            value: "Positional",
-                            label: "Positional Nystagmus",
-                          },
-                        ].find(
-                          (option) => option.value === neuroExamData.nystagmus
-                        ) ||
-                        (neuroExamData.nystagmus
-                          ? {
-                              value: neuroExamData.nystagmus,
-                              label: neuroExamData.nystagmus,
-                            }
-                          : null)
-                      }
-                      onChange={(selectedOption) =>
-                        setNeuroExamData((prev) => ({
-                          ...prev,
-                          nystagmus: selectedOption ? selectedOption.value : "",
-                        }))
-                      }
-                      onCreateOption={(inputValue) =>
-                        setNeuroExamData((prev) => ({
-                          ...prev,
-                          nystagmus: inputValue, // Allows custom input
-                        }))
-                      }
-                      placeholder="Select or type..."
-                      className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
-                      classNames={{
-                        control: (state) =>
-                          `p-2 ${
-                            state.isFocused
-                              ? "border-purple-500"
-                              : "border-gray-300"
-                          } bg-white`,
-                        input: () => "text-gray-700",
-                        placeholder: () => "text-gray-400",
-                        menu: () =>
-                          "border border-gray-200 rounded-lg shadow-lg mt-1",
-                        option: (state) =>
-                          `px-4 py-2 ${
-                            state.isFocused
-                              ? "bg-purple-50 text-purple-700"
-                              : "text-gray-700"
-                          }`,
-                        dropdownIndicator: () =>
-                          "text-gray-400 hover:text-gray-500",
-                        clearIndicator: () =>
-                          "text-gray-400 hover:text-red-500",
-                      }}
-                    />
-                  </div>
+                        {
+                          value: "Positional",
+                          label: "Positional Nystagmus",
+                        },
+                      ].find(
+                        (option) => option.value === neuroExamData.nystagmus
+                      ) ||
+                      (neuroExamData.nystagmus
+                        ? {
+                            value: neuroExamData.nystagmus,
+                            label: neuroExamData.nystagmus,
+                          }
+                        : null)
+                    }
+                    onChange={(selectedOption) =>
+                      setNeuroExamData((prev) => ({
+                        ...prev,
+                        nystagmus: selectedOption ? selectedOption.value : "",
+                      }))
+                    }
+                    onCreateOption={(inputValue) =>
+                      setNeuroExamData((prev) => ({
+                        ...prev,
+                        nystagmus: inputValue, // Allows custom input
+                      }))
+                    }
+                    placeholder="Select or type..."
+                    className="w-full text-sm rounded-lg border border-gray-300 focus:border-purple-500 focus:ring-2 focus:ring-purple-200 hover:border-gray-400 transition-colors"
+                    classNames={{
+                      control: (state) =>
+                        `p-2 ${
+                          state.isFocused
+                            ? "border-purple-500"
+                            : "border-gray-300"
+                        } bg-white`,
+                      input: () => "text-gray-700",
+                      placeholder: () => "text-gray-400",
+                      menu: () =>
+                        "border border-gray-200 rounded-lg shadow-lg mt-1",
+                      option: (state) =>
+                        `px-4 py-2 ${
+                          state.isFocused
+                            ? "bg-purple-50 text-purple-700"
+                            : "text-gray-700"
+                        }`,
+                      dropdownIndicator: () =>
+                        "text-gray-400 hover:text-gray-500",
+                      clearIndicator: () => "text-gray-400 hover:text-red-500",
+                    }}
+                  />
+                </div>
                 {/* checkboxes */}
                 <div></div>
                 <div className="my-3 group">
@@ -3707,41 +3655,6 @@ before:opacity-50 before:-z-10"
                         <Select
                           options={[
                             { value: "morning", label: "صبح (Morning)" },
-                            { value: "noon", label: "دوپہر (Noon)" },
-                            { value: "evening", label: "شام (Evening)" },
-                            { value: "night", label: "رات (Night)" },
-                            {
-                              value: "morning_noon",
-                              label: "صبح اور دوپہر (Morning & Noon)",
-                            },
-                            {
-                              value: "morning_evening",
-                              label: "صبح اور شام (Morning & Evening)",
-                            },
-                            {
-                              value: "noon_evening",
-                              label: "دوپہر اور شام (Noon & Evening)",
-                            },
-                            {
-                              value: "evening_night",
-                              label: "شام اور رات (Evening & Night)",
-                            },
-                            {
-                              value: "morning_noon_evening",
-                              label: "صبح، دوپہر، شام (Morning, Noon, Evening)",
-                            },
-                            {
-                              value: "noon_evening_night",
-                              label: "دوپہر، شام، رات (Noon, Evening, Night)",
-                            },
-                            {
-                              value: "all_day",
-                              label: "صبح، دوپہر، شام، رات (All Day)",
-                            },
-                            {
-                              value: "as_needed",
-                              label: "ضرورت کے مطابق (As Needed)",
-                            },
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -3773,37 +3686,6 @@ before:opacity-50 before:-z-10"
                               value: "0.25",
                               label: "ایک چوتھائی گولی (1/4 گولی)",
                             },
-                            { value: "0.5", label: "آدھی گولی (1/2 گولی)" },
-                            {
-                              value: "0.75",
-                              label: "تین چوتھائی گولی (3/4 گولی)",
-                            },
-                            { value: "1", label: "1 گولی" },
-                            { value: "1.25", label: "سوا گولی (1 1/4 گولی)" },
-                            { value: "1.5", label: "ڈیڑھ گولی (1 1/2 گولی)" },
-                            {
-                              value: "1.75",
-                              label: "پونے دو گولی (1 3/4 گولی)",
-                            },
-                            { value: "2", label: "2 گولیاں" },
-                            { value: "3", label: "3 گولیاں" },
-                            { value: "4", label: "4 گولیاں" },
-                            { value: "5", label: "5 گولیاں" },
-                            { value: "6", label: "6 گولیاں" },
-                            { value: "7", label: "7 گولیاں" },
-                            { value: "8", label: "8 گولیاں" },
-                            { value: "9", label: "9 گولیاں" },
-                            { value: "10", label: "10 گولیاں" },
-                            { value: "1tsp", label: "1 teaspoon - ایک چمچ" },
-                            { value: "2tsp", label: "2 teaspoons - دو چمچ" },
-                            { value: "3tsp", label: "3 teaspoons - تین چمچ" },
-                            { value: "4tsp", label: "4 teaspoons - چار چمچ" },
-                            { value: "5tsp", label: "5 teaspoons - پانچ چمچ" },
-                            { value: "6tsp", label: "6 teaspoons - چھ چمچ" },
-                            { value: "7tsp", label: "7 teaspoons - سات چمچ" },
-                            { value: "8tsp", label: "8 teaspoons - آٹھ چمچ" },
-                            { value: "9tsp", label: "9 teaspoons - نو چمچ" },
-                            { value: "10tsp", label: "10 teaspoons - دس چمچ" },
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -3833,44 +3715,6 @@ before:opacity-50 before:-z-10"
                           options={[
                             // Days (1-14)
                             { value: "1_day", label: "1 دن" },
-                            { value: "2_days", label: "2 دن" },
-                            { value: "3_days", label: "3 دن" },
-                            { value: "4_days", label: "4 دن" },
-                            { value: "5_days", label: "5 دن" },
-                            { value: "6_days", label: "6 دن" },
-                            { value: "7_days", label: "7 دن" },
-                            { value: "8_days", label: "8 دن" },
-                            { value: "9_days", label: "9 دن" },
-                            { value: "10_days", label: "10 دن" },
-                            { value: "11_days", label: "11 دن" },
-                            { value: "12_days", label: "12 دن" },
-                            { value: "13_days", label: "13 دن" },
-                            { value: "14_days", label: "14 دن" },
-
-                            // Weeks (1-4)
-                            { value: "1_week", label: "1 ہفتہ" },
-                            { value: "2_weeks", label: "2 ہفتے" },
-                            { value: "3_weeks", label: "3 ہفتے" },
-                            { value: "4_weeks", label: "4 ہفتے" },
-
-                            // Months (1-12)
-                            { value: "1_month", label: "1 مہینہ" },
-                            { value: "2_months", label: "2 مہینے" },
-                            { value: "3_months", label: "3 مہینے" },
-                            { value: "4_months", label: "4 مہینے" },
-                            { value: "5_months", label: "5 مہینے" },
-                            { value: "6_months", label: "6 مہینے" },
-                            { value: "7_months", label: "7 مہینے" },
-                            { value: "8_months", label: "8 مہینے" },
-                            { value: "9_months", label: "9 مہینے" },
-                            { value: "10_months", label: "10 مہینے" },
-                            { value: "11_months", label: "11 مہینے" },
-                            { value: "12_months", label: "12 مہینے" },
-
-                            // Years (1-2)
-                            { value: "1_year", label: "1 سال" },
-                            { value: "1.5_year", label: "1.5 سال" },
-                            { value: "2_years", label: "2 سال" },
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -3900,55 +3744,6 @@ before:opacity-50 before:-z-10"
                           options={[
                             // Meal-related timings
                             { value: "with_meal", label: "کھانے کے ساتھ" },
-                            { value: "after_meal", label: "کھانے کے بعد" },
-                            { value: "before_meal", label: "کھانے سے پہلے" },
-                            { value: "empty_stomach", label: "خالی پیٹ" },
-                            {
-                              value: "between_meals",
-                              label: "کھانوں کے درمیان",
-                            },
-
-                            // Daily frequencies
-                            { value: "morning", label: "صبح کے وقت" },
-                            { value: "afternoon", label: "دوپہر کے وقت" },
-                            { value: "evening", label: "شام کے وقت" },
-                            { value: "night", label: "رات کے وقت" },
-                            { value: "twice_daily", label: "دن میں دو بار" },
-                            { value: "thrice_daily", label: "دن میں تین بار" },
-
-                            // Specific timings
-                            { value: "before_sleep", label: "سونے سے پہلے" },
-                            { value: "after_waking", label: "جاگنے کے بعد" },
-                            { value: "hourly", label: "ہر گھنٹے بعد" },
-                            { value: "every_4_hours", label: "ہر 4 گھنٹے بعد" },
-                            { value: "every_6_hours", label: "ہر 6 گھنٹے بعد" },
-                            { value: "every_8_hours", label: "ہر 8 گھنٹے بعد" },
-                            {
-                              value: "every_12_hours",
-                              label: "ہر 12 گھنٹے بعد",
-                            },
-
-                            // Special instructions
-                            { value: "as_needed", label: "ضرورت کے مطابق" },
-                            { value: "stat", label: "فوری طور پر" },
-                            { value: "every_other_day", label: "ہر دوسرے دن" },
-                            { value: "weekly", label: "ہفتہ وار" },
-                            { value: "monthly", label: "ماہانہ" },
-                            {
-                              value: "before_activity",
-                              label: "سرگرمی سے پہلے",
-                            },
-                            { value: "after_activity", label: "سرگرمی کے بعد" },
-                            {
-                              value: "at_bedtime",
-                              label: "بستر پر جانے کے وقت",
-                            },
-                            { value: "with_water", label: "پانی کے ساتھ" },
-                            { value: "without_water", label: "بغیر پانی کے" },
-                            {
-                              value: "symptom_onset",
-                              label: "علامات ظاہر ہونے پر",
-                            },
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -3978,101 +3773,6 @@ before:opacity-50 before:-z-10"
                           options={[
                             // Existing options
                             { value: "mouth", label: "منہ کے ذریعے (زبانی)" },
-                            { value: "injection", label: "انجیکشن (عام)" },
-                            { value: "topical", label: "جلد پر لگانے کی دوا" },
-                            {
-                              value: "sublingual",
-                              label: "زبان کے نیچے رکھنے والی دوا",
-                            },
-                            {
-                              value: "inhalation",
-                              label: "سانس کے ذریعے (نبولائزر)",
-                            },
-                            { value: "nasal", label: "ناک میں ڈالنے کی دوا" },
-                            {
-                              value: "eye_drops",
-                              label: "آنکھوں میں ڈالنے کی دوا",
-                            },
-                            {
-                              value: "ear_drops",
-                              label: "کان میں ڈالنے کی دوا",
-                            },
-                            {
-                              value: "rectal",
-                              label: "مقعد کے ذریعے (سپوزٹری)",
-                            },
-                            { value: "vaginal", label: "اندام نہانی کے ذریعے" },
-                            {
-                              value: "intravenous",
-                              label: "ورید کے ذریعے (IV)",
-                            },
-                            {
-                              value: "intramuscular",
-                              label: "پٹھوں میں انجیکشن (IM)",
-                            },
-                            {
-                              value: "subcutaneous",
-                              label: "جلد کے نیچے انجیکشن (SC)",
-                            },
-                            {
-                              value: "buccal",
-                              label: "گال کے اندر جذب ہونے والی دوا",
-                            },
-                            {
-                              value: "transdermal",
-                              label: "جلد پر لگانے والا پیچ",
-                            },
-
-                            // New additions
-                            {
-                              value: "intradermal",
-                              label: "جلد کے اندر انجیکشن (ID)",
-                            },
-                            {
-                              value: "intrathecal",
-                              label: "ریڑھ کی ہڈی میں انجیکشن",
-                            },
-                            { value: "epidural", label: "ایپیڈورل انجیکشن" },
-                            {
-                              value: "intraosseous",
-                              label: "ہڈی کے اندر انجیکشن (IO)",
-                            },
-                            {
-                              value: "intraarticular",
-                              label: "جوڑ میں انجیکشن",
-                            },
-                            {
-                              value: "intraperitoneal",
-                              label: "پیٹ کی گہا میں انجیکشن",
-                            },
-                            {
-                              value: "enteral_feeding",
-                              label: "غذائی نلکی کے ذریعے",
-                            },
-                            {
-                              value: "nebulized",
-                              label: "سانس کے ذریعے (بخارات)",
-                            },
-                            {
-                              value: "ophthalmic_ointment",
-                              label: "آنکھوں کی مرہم",
-                            },
-                            { value: "otic_ointment", label: "کان کی مرہم" },
-                            {
-                              value: "urethral",
-                              label: "پیشاب کی نالی کے ذریعے",
-                            },
-                            { value: "intracardiac", label: "دل میں انجیکشن" },
-                            { value: "intranasal_spray", label: "ناک کے سپرے" },
-                            {
-                              value: "subcutaneous_infusion",
-                              label: "جلد کے نیچے مسلسل ادویات",
-                            },
-                            { value: "implant", label: "سرجیکل امپلانٹ" },
-                            {
-                              value: "iontophoresis",
-                              label: "بجلی کے ذریعے جلد پر ادویات",
-                            },
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
