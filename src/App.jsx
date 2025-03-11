@@ -3290,27 +3290,7 @@ before:opacity-50 before:-z-10"
                   </label>
                 </div>
                 {/* Diagnosis & Treatment */}
-                <div className="md:col-span-4 space-y-4">
-                  <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
-                    Clinical Decisions
-                  </h4>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      Diagnosis *
-                    </label>
-                    <textarea
-                      value={neuroExamData.diagnosis || ""}
-                      onChange={(e) =>
-                        setNeuroExamData((prev) => ({
-                          ...prev,
-                          diagnosis: e.target.value,
-                        }))
-                      }
-                      className="w-full rounded-lg border-2 border-gray-100 p-3 h-32"
-                      required
-                    />
-                  </div>
-                </div>
+                
                 {/* Additional Fields */}
                 <div className="flex flex-col md:flex-col gap-4 md:col-span-4 w-full">
                   <h4 className="font-semibold text-gray-800 border-l-4 border-purple-500 pl-3 py-1.5">
@@ -3591,6 +3571,27 @@ before:opacity-50 before:-z-10"
                 classNamePrefix="react-select"
               />
             </div>
+            <div className="md:col-span-4 space-y-4">
+                  <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
+                    Clinical Decisions
+                  </h4>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium text-gray-700">
+                      Diagnosis *
+                    </label>
+                    <textarea
+                      value={neuroExamData.diagnosis || ""}
+                      onChange={(e) =>
+                        setNeuroExamData((prev) => ({
+                          ...prev,
+                          diagnosis: e.target.value,
+                        }))
+                      }
+                      className="w-full rounded-lg border-2 border-gray-100 p-3 h-32"
+                      required
+                    />
+                  </div>
+                </div>
             {/* Enhanced Medicines Section */}
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
               <div className="flex items-center gap-3 mb-5">
