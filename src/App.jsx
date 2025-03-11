@@ -283,9 +283,14 @@ const PatientSearch = () => {
             <div><strong>Age/Sex:</strong> ${patient?.age || "-"}/${
       patient?.gender || "-"
     }</div>
-            <div><strong>Checkup Date:</strong> ${
-              patient?.checkup_date || "-"
-            }</div>
+            <div>
+  <strong>Checkup Date:</strong> ${
+    patient?.checkup_date
+      ? new Date(patient.checkup_date).toLocaleDateString("en-UK")
+      : "-"
+  }
+</div>
+
           </div>
   
           <div class="prescription-container">
@@ -3683,7 +3688,10 @@ before:opacity-50 before:-z-10"
                           
                           className="react-select-container"
                           classNamePrefix="react-select"
-                          defaultValue={{ value: "morning", label: "صبح (Morning)" }}
+                          value={selectedMedicines[index]?.frequency_en ? 
+                            { value: selectedMedicines[index].frequency_en, label: selectedMedicines[index].frequency_urdu } : 
+                            { value: "morning", label: "صبح (Morning)" } 
+                          }
                           onChange={(e) => {
                             setSelectedMedicines((prev) =>
                               prev.map((item, i) =>
@@ -3776,7 +3784,10 @@ before:opacity-50 before:-z-10"
                           
                           className="react-select-container"
                           classNamePrefix="react-select"
-                          defaultValue={{ value: "1", label: "ایک گولی (1 گولی)" }}
+                          value={selectedMedicines[index]?.dosage_en 
+                            ? { value: selectedMedicines[index].dosage_en, label: selectedMedicines[index].dosage_urdu } 
+                            : { value: "1", label: "ایک گولی (1 گولی)" } 
+                          }
                           onChange={(e) => {
                             setSelectedMedicines((prev) =>
                               prev.map((item, i) =>
@@ -3849,7 +3860,10 @@ before:opacity-50 before:-z-10"
                           
                           className="react-select-container"
                           classNamePrefix="react-select"
-                          defaultValue={{ value: "7_days", label: "7 دن (1 ہفتہ)" }}
+                          value={selectedMedicines[index]?.duration_en
+                            ? { value: selectedMedicines[index].duration_en, label: selectedMedicines[index].duration_urdu }
+                            : { value: "7_days", label: "7 دن (1 ہفتہ)" } // Default option
+                          }
                           onChange={(e) => {
                             setSelectedMedicines((prev) =>
                               prev.map((item, i) =>
@@ -3901,7 +3915,10 @@ before:opacity-50 before:-z-10"
                           
                           className="react-select-container"
                           classNamePrefix="react-select"
-                          defaultValue={{ value: "with_meal", label: "کھانے کے ساتھ" }}
+                          value={selectedMedicines[index]?.instructions_en
+                            ? { value: selectedMedicines[index].instructions_en, label: selectedMedicines[index].instructions_urdu }
+                            : { value: "with_meal", label: "کھانے کے ساتھ" } // Default option
+                          }
                           onChange={(e) => {
                             setSelectedMedicines((prev) =>
                               prev.map((item, i) =>
@@ -3975,7 +3992,10 @@ before:opacity-50 before:-z-10"
                           
                           className="react-select-container"
                           classNamePrefix="react-select"
-                          defaultValue={{ value: "mouth", label: "منہ کے ذریعے (زبانی)" }}
+                          value={selectedMedicines[index]?.how_to_take_en
+                            ? { value: selectedMedicines[index].how_to_take_en, label: selectedMedicines[index].how_to_take_urdu }
+                            : { value: "mouth", label: "منہ کے ذریعے (زبانی)" } 
+                          }
                           onChange={(e) => {
                             setSelectedMedicines((prev) =>
                               prev.map((item, i) =>
