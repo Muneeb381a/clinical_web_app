@@ -33,6 +33,8 @@ import {
 } from "react-icons/ai";
 import AddPatientForm from "./pages/AddPatientForm";
 import { urduDate } from "./utils/dateUtils";
+import PatientHistoryModal from "./components/PatientHistoryModal";
+import PatientHistory from "./components/PatientHistoryModal";
 
 // Schema for searching patients by mobile
 const searchSchema = z.object({
@@ -73,6 +75,7 @@ const PatientSearch = () => {
   const [isCreating, setIsCreating] = useState(false);
   const [prescriptions, setPrescriptions] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
+  const [selectedPatientId, setSelectedPatientId] = useState(null);
 
   const [selectedMedicines, setSelectedMedicines] = useState([]);
 
@@ -632,6 +635,10 @@ const PatientSearch = () => {
     onSearch({ mobile: searchedMobile });
   };
 
+  const handlePatientSelection = (selectedPatient) => {
+    setPatient(selectedPatient); // Set the selected patient
+  };
+
   // Submit symptoms & medicines for a patient
   const submitConsultation = async () => {
     if (!patient) {
@@ -806,26 +813,38 @@ before:opacity-50 before:-z-10"
         {patient && (
           <div className="mb-8 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
             {/* Header Section */}
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-8 px-6 py-4 bg-gradient-to-r from-gray-50 to-white shadow-md rounded-2xl">
+              {/* Back to Search Button */}
               <button
                 onClick={handleReturnHome}
-                className="bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-700 px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium transition-colors flex items-center gap-2 group"
+                className="group flex items-center gap-2 px-4 py-2 bg-white text-gray-600 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 rounded-xl font-medium text-sm shadow-sm hover:shadow-md transition-all duration-200"
               >
-                <AiOutlineArrowLeft className="w-5 h-5 transition-transform group-hover:-translate-x-1" />
+                <AiOutlineArrowLeft className="w-5 h-5 transition-transform duration-200 group-hover:-translate-x-1" />
                 Back to Search
               </button>
 
-              {prescriptions.length > 0 && (
-                <div className="flex items-center gap-4">
+              {/* Right Side Actions */}
+              <div className="flex items-center gap-6">
+                {/* Show Previous Prescriptions Button */}
+                {Array.isArray(prescriptions) && prescriptions.length > 0 && (
                   <button
                     onClick={() => setShowPopup(true)}
-                    className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-all flex items-center gap-2 shadow-md hover:shadow-lg"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all duration-300"
                   >
                     <AiOutlineHistory className="w-5 h-5" />
-                    Show Previous Prescriptions
+                    Previous Prescriptions
                   </button>
-                </div>
-              )}
+                )}
+
+                {/* Patient History or No Patient Message */}
+                {patient?.id ? (
+                  <PatientHistory patientId={patient.id} />
+                ) : (
+                  <p className="text-gray-500 italic text-sm">
+                    No patient selected
+                  </p>
+                )}
+              </div>
             </div>
 
             {/* Patient Info Header */}
@@ -3572,7 +3591,7 @@ before:opacity-50 before:-z-10"
                 classNamePrefix="react-select"
               />
             </div>
-           
+
             {/* Enhanced Medicines Section */}
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
               <div className="flex items-center gap-3 mb-5">
