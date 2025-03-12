@@ -11,6 +11,7 @@ import { toast } from "react-toastify";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import { FaArrowUp, FaArrowDown, FaBan, FaReply } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 import {
   AiOutlinePlus,
@@ -76,6 +77,7 @@ const PatientSearch = () => {
   const [prescriptions, setPrescriptions] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
   const [selectedPatientId, setSelectedPatientId] = useState(null);
+  const navigate = useNavigate();
 
   const [selectedMedicines, setSelectedMedicines] = useState([]);
 
@@ -572,7 +574,7 @@ const PatientSearch = () => {
         window.history.pushState(
           { patientId },
           "",
-          `/patients/${patientId}/add-prescription`
+          `/patients/${patientId}/consultation`
         );
       } else {
         setPatient(null);
@@ -600,20 +602,23 @@ const PatientSearch = () => {
   useEffect(() => {
     const loadPatientFromURL = async () => {
       const pathParts = window.location.pathname.split("/");
-
-      // Handle existing patient prescription page
-      if (pathParts[1] === "patients" && pathParts[3] === "add-prescription") {
+  
+      // Handle existing patient consultation page
+      if (pathParts[1] === "patients" && pathParts.length >= 3) {
         const patientId = pathParts[2];
-        try {
-          const res = await axios.get(
-            `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}`
-          );
-          setPatient(res.data);
-          setShowAddPatient(false);
-        } catch (error) {
-          console.error("Error loading patient from URL:", error);
-          alert("Invalid patient ID in URL");
-          window.history.replaceState(null, "", "/");
+  
+        if (pathParts[3] === "consultation" || pathParts[3] === "add-prescription") {
+          try {
+            const res = await axios.get(
+              `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}`
+            );
+            setPatient(res.data);
+            setShowAddPatient(false);
+          } catch (error) {
+            console.error("Error loading patient from URL:", error);
+            alert("Invalid patient ID in URL");
+            window.history.replaceState(null, "", "/");
+          }
         }
       }
       // Handle new patient registration page
@@ -626,9 +631,10 @@ const PatientSearch = () => {
         }
       }
     };
-
+  
     loadPatientFromURL();
   }, []);
+  
 
   const handleNewPatientAdded = () => {
     // Re-trigger the search with the same mobile number
@@ -645,6 +651,7 @@ const PatientSearch = () => {
       alert("Please search for a patient first.");
       return;
     }
+    
     setLoading(true);
     try {
       // Step 1: Create a consultation entry
