@@ -293,6 +293,7 @@ const PatientHistory = ({ patientId }) => {
                               record.vibration_sense ||
                               record.romberg_test ||
                               record.gait_assessment ||
+                              record.diagnosis ||
                               record.tremors ||
                               record.speech_assessment) && (
                               <div className="mt-6 pt-4 border-t border-gray-100">
@@ -321,6 +322,16 @@ const PatientHistory = ({ patientId }) => {
                                             </span>
                                             <span className="font-medium text-gray-800">
                                               {record.cranial_nerves}
+                                            </span>
+                                          </div>
+                                        )}
+                                        {record.diagnosis && (
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">
+                                              Diagnosis:
+                                            </span>
+                                            <span className="font-medium text-gray-800">
+                                              {record.diagnosis}
                                             </span>
                                           </div>
                                         )}

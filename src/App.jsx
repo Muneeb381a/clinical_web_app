@@ -334,7 +334,6 @@ const PatientSearch = () => {
                     <th style="width: 15%">Dosage</th>
                     <th style="width: 20%">Duration</th>
                     <th style="width: 20%">Instructions</th>
-                    <th style="width: 20%">Route</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -350,7 +349,6 @@ const PatientSearch = () => {
                           <td>${med.dosage_urdu || "-"}</td>
                           <td>${med.duration_urdu || "-"}</td>
                           <td>${med.instructions_urdu || "-"}</td>
-                          <td>${med.how_to_take_urdu || "-"}</td>
                         </tr>
                       `;
                     })
@@ -602,12 +600,15 @@ const PatientSearch = () => {
   useEffect(() => {
     const loadPatientFromURL = async () => {
       const pathParts = window.location.pathname.split("/");
-  
+
       // Handle existing patient consultation page
       if (pathParts[1] === "patients" && pathParts.length >= 3) {
         const patientId = pathParts[2];
-  
-        if (pathParts[3] === "consultation" || pathParts[3] === "add-prescription") {
+
+        if (
+          pathParts[3] === "consultation" ||
+          pathParts[3] === "add-prescription"
+        ) {
           try {
             const res = await axios.get(
               `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}`
@@ -631,10 +632,9 @@ const PatientSearch = () => {
         }
       }
     };
-  
+
     loadPatientFromURL();
   }, []);
-  
 
   const handleNewPatientAdded = () => {
     // Re-trigger the search with the same mobile number
@@ -646,159 +646,300 @@ const PatientSearch = () => {
   };
 
   // Submit symptoms & medicines for a patient
+  // const issubmitConsultation = async () => {
+  //   if (!patient) {
+  //     alert("Please search for a patient first.");
+  //     return;
+  //   }
+
+  //   setLoading(true);
+  //   try {
+  //     // Step 1: Create Consultation
+  //     const consultationRes = await axios.post(
+  //       "https://patient-management-backend-nine.vercel.app/api/consultations",
+  //       { patient_id: patient.id, doctor_name: "Dr. Abdul Rauf" }
+  //     );
+  //     const consultationId = consultationRes.data.id;
+
+  //     // Step 2: Parallel API Calls
+  //     await Promise.all([
+  //       // Submit Symptoms
+  //       axios.post(
+  //         `https://patient-management-backend-nine.vercel.app/api/consultations/${consultationId}/symptoms`,
+  //         {
+  //           patient_id: patient.id,
+  //           symptom_ids: selectedSymptoms.map((s) => s.value),
+  //         }
+  //       ),
+
+  //       // Submit Medicines
+  //       axios.post(
+  //         "https://patient-management-backend-nine.vercel.app/api/prescriptions",
+  //         {
+  //           consultation_id: consultationId,
+  //           patient_id: patient.id,
+  //           medicines: selectedMedicines.map((med) => ({
+  //             medicine_id: med.medicine_id,
+  //             dosage_en: med.dosage_en,
+  //             dosage_urdu: med.dosage_urdu,
+  //             frequency_en: med.frequency_en,
+  //             frequency_urdu: med.frequency_urdu,
+  //             duration_en: med.duration_en,
+  //             duration_urdu: med.duration_urdu,
+  //             instructions_en: med.instructions_en,
+  //             instructions_urdu: med.instructions_urdu,
+  //           })),
+  //         },
+  //         { headers: { "Content-Type": "application/json" } }
+  //       ),
+
+  //       // Submit Examination
+  //       axios.post(
+  //         "https://patient-management-backend-nine.vercel.app/api/examination",
+  //         {
+  //           consultation_id: consultationId,
+  //           patient_id: patient.id,
+  //           motor_function: neuroExamData.motor_function || "",
+  //           muscle_tone: neuroExamData.muscle_tone || "",
+  //           muscle_strength: neuroExamData.muscle_strength || "",
+  //           straight_leg_raise_test: neuroExamData.straight_leg_raise_test,
+  //           deep_tendon_reflexes: neuroExamData.deep_tendon_reflexes || "",
+  //           plantar_reflex: neuroExamData.plantar_reflex || "",
+  //           pupillary_reaction: neuroExamData.pupillary_reaction || "",
+  //           speech_assessment: neuroExamData.speech_assessment || "",
+  //           gait_assessment: neuroExamData.gait_assessment || "",
+  //           coordination: neuroExamData.coordination || "",
+  //           sensory_examination: neuroExamData.sensory_examination || "",
+  //           cranial_nerves: neuroExamData.cranial_nerves || "",
+  //           mental_status: neuroExamData.mental_status || "",
+  //           cerebellar_function: neuroExamData.cerebellar_function || "",
+  //           muscle_wasting: neuroExamData.muscle_wasting || "",
+  //           abnormal_movements: neuroExamData.abnormal_movements || "",
+  //           romberg_test: neuroExamData.romberg_test || "",
+  //           nystagmus: neuroExamData.nystagmus || "",
+  //           fundoscopy: neuroExamData.fundoscopy || "",
+  //           diagnosis: neuroExamData.diagnosis || "",
+  //           pain_sensation: !!neuroExamData.pain_sensation,
+  //           vibration_sense: !!neuroExamData.vibration_sense,
+  //           proprioception: !!neuroExamData.proprioception,
+  //           temperature_sensation: !!neuroExamData.temperature_sensation,
+  //           brudzinski_sign: !!neuroExamData.brudzinski_sign,
+  //           kernig_sign: !!neuroExamData.kernig_sign,
+  //           facial_sensation: !!neuroExamData.facial_sensation,
+  //           swallowing_function: !!neuroExamData.swallowing_function,
+  //         },
+  //         { headers: { "Content-Type": "application/json" } }
+  //       ),
+  //     ]);
+
+  //     // Step 3: Submit Tests in Parallel
+  //     const testPromises = selectedTests.map(async (testName) => {
+  //       let test = tests.find((t) => t.test_name === testName);
+  //       if (!test) {
+  //         const testResponse = await axios.post(
+  //           "https://patient-management-backend-nine.vercel.app/api/tests",
+  //           { test_name: testName, test_notes: "Optional test notes" }
+  //         );
+  //         test = testResponse.data;
+  //         setTests((prevTests) => [...prevTests, test]);
+  //       }
+
+  //       return axios.post(
+  //         "https://patient-management-backend-nine.vercel.app/api/tests/assign",
+  //         { test_id: test.id, consultation_id: consultationId }
+  //       );
+  //     });
+
+  //     await Promise.all(testPromises);
+
+  //     // Step 4: Follow-Up
+  //     if (!selectedDuration) {
+  //       alert("براہ کرم ایک مدت منتخب کریں");
+  //       return;
+  //     }
+
+  //     await axios.post(
+  //       `https://patient-management-backend-nine.vercel.app/api/followups/consultations/${consultationId}/followups`,
+  //       {
+  //         follow_up_date: followUpDate.toISOString().split("T")[0],
+  //         notes: followUpNotes || "عام چیک اپ",
+  //         duration_days: selectedDuration,
+  //       }
+  //     );
+
+  //     toast.success("Consultation added successfully! 🎉", {
+  //       position: "top-right",
+  //       autoClose: 3000,
+  //     });
+
+  //     alert("Consultation saved successfully.");
+
+  //     // Reset state
+  //     setFollowUpDate(null);
+  //     setFollowUpNotes("");
+  //     setSelectedDuration(null);
+
+  //     // Print and Navigate to Home
+  //     setTimeout(() => {
+  //       handlePrint();
+  //       navigate("/"); // Redirect to Home Page
+  //     }, 500);
+  //   } catch (error) {
+  //     console.error("Error submitting consultation", error.response?.data || error.message);
+  //     alert("An error occurred while saving the consultation.");
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const submitConsultation = async () => {
     if (!patient) {
       alert("Please search for a patient first.");
       return;
     }
-    
+
     setLoading(true);
     try {
-      // Step 1: Create a consultation entry
+      // Step 1: Create Consultation
       const consultationRes = await axios.post(
         "https://patient-management-backend-nine.vercel.app/api/consultations",
         { patient_id: patient.id, doctor_name: "Dr. Abdul Rauf" }
       );
-
       const consultationId = consultationRes.data.id;
 
-      // Step 2: Submit symptoms
-      await axios.post(
-        `https://patient-management-backend-nine.vercel.app/api/consultations/${consultationRes.data.id}/symptoms`,
-        {
-          patient_id: patient.id,
-          symptom_ids: selectedSymptoms.map((s) => s.value),
-        }
-      );
-
-      // Step 3: Submit medicines
-      await axios.post(
-        "https://patient-management-backend-nine.vercel.app/api/prescriptions",
-        {
-          consultation_id: consultationId,
-          patient_id: patient.id,
-          medicines: selectedMedicines.map((med) => ({
-            medicine_id: med.medicine_id,
-            dosage_en: med.dosage_en,
-            dosage_urdu: med.dosage_urdu,
-            frequency_en: med.frequency_en,
-            frequency_urdu: med.frequency_urdu,
-            duration_en: med.duration_en,
-            duration_urdu: med.duration_urdu,
-            instructions_en: med.instructions_en,
-            instructions_urdu: med.instructions_urdu,
-            how_to_take_en: med.how_to_take_en,
-            how_to_take_urdu: med.how_to_take_urdu,
-          })),
-        },
-        {
-          headers: { "Content-Type": "application/json" },
-        }
-      );
-
-      // Step 5: Submit tests
-      for (const testName of selectedTests) {
-        try {
-          let test = tests.find((t) => t.test_name === testName);
-
-          // If test does not exist, create a new one
-          if (!test) {
-            const testResponse = await axios.post(
-              "https://patient-management-backend-nine.vercel.app/api/tests",
-              { test_name: testName, test_notes: "Optional test notes" }
-            );
-            test = testResponse.data; // Assign the created test
-            setTests((prevTests) => [...prevTests, test]); // Update the test list
-          }
-
-          // Assign test to consultation
-          await axios.post(
-            "https://patient-management-backend-nine.vercel.app/api/tests/assign",
-            {
-              test_id: test.id,
-              consultation_id: consultationId,
-            }
-          );
-        } catch (error) {
-          console.error("Error adding/assigning test:", error);
-        }
-      }
-
-      await axios.post(
-        "https://patient-management-backend-nine.vercel.app/api/examination",
-        {
-          consultation_id: consultationId,
-          patient_id: patient.id,
-          motor_function: neuroExamData.motor_function || "",
-          muscle_tone: neuroExamData.muscle_tone || "",
-          muscle_strength: neuroExamData.muscle_strength || "",
-          straight_leg_raise_test: neuroExamData.straight_leg_raise_test,
-          deep_tendon_reflexes: neuroExamData.deep_tendon_reflexes || "",
-          plantar_reflex: neuroExamData.plantar_reflex || "",
-          pupillary_reaction: neuroExamData.pupillary_reaction || "",
-          speech_assessment: neuroExamData.speech_assessment || "",
-          gait_assessment: neuroExamData.gait_assessment || "",
-          coordination: neuroExamData.coordination || "",
-          sensory_examination: neuroExamData.sensory_examination || "",
-          cranial_nerves: neuroExamData.cranial_nerves || "",
-          mental_status: neuroExamData.mental_status || "",
-          cerebellar_function: neuroExamData.cerebellar_function || "",
-          muscle_wasting: neuroExamData.muscle_wasting || "",
-          abnormal_movements: neuroExamData.abnormal_movements || "",
-          romberg_test: neuroExamData.romberg_test || "",
-          nystagmus: neuroExamData.nystagmus || "",
-          fundoscopy: neuroExamData.fundoscopy || "",
-          diagnosis: neuroExamData.diagnosis || "",
-          pain_sensation: !!neuroExamData.pain_sensation,
-          vibration_sense: !!neuroExamData.vibration_sense,
-          proprioception: !!neuroExamData.proprioception,
-          temperature_sensation: !!neuroExamData.temperature_sensation,
-          brudzinski_sign: !!neuroExamData.brudzinski_sign,
-          kernig_sign: !!neuroExamData.kernig_sign,
-          facial_sensation: !!neuroExamData.facial_sensation,
-          swallowing_function: !!neuroExamData.swallowing_function,
-        },
-        { headers: { "Content-Type": "application/json" } }
-      );
-
-      if (!selectedDuration) {
-        alert("براہ کرم ایک مدت منتخب کریں");
-        return;
-      }
-
-      try {
-        await axios.post(
-          `https://patient-management-backend-nine.vercel.app/api/followups/consultations/${consultationId}/followups`,
+      // Step 2: Execute All API Calls in Parallel
+      const apiCalls = [
+        // Submit Symptoms
+        axios.post(
+          `https://patient-management-backend-nine.vercel.app/api/consultations/${consultationId}/symptoms`,
           {
-            follow_up_date: followUpDate.toISOString().split("T")[0],
-            notes: followUpNotes || "عام چیک اپ", // Default Urdu note
-            duration_days: selectedDuration,
+            patient_id: patient.id,
+            symptom_ids: selectedSymptoms.map((s) => s.value),
           }
-        );
+        ),
 
-        alert("فالو اپ کامیابی سے شیڈول ہو گیا!");
-        setSelectedDuration(null);
-        setFollowUpNotes("");
-      } catch (error) {
-        console.error("فالو اپ شیڈولنگ میں خرابی:", error);
-        alert("فالو اپ شیڈول کرنے میں ناکامی۔ براہ کرم دوبارہ کوشش کریں۔");
+        // Submit Medicines
+        axios.post(
+          "https://patient-management-backend-nine.vercel.app/api/prescriptions",
+          {
+            consultation_id: consultationId,
+            patient_id: patient.id,
+            medicines: selectedMedicines.map((med) => ({
+              medicine_id: med.medicine_id,
+              dosage_en: med.dosage_en,
+              dosage_urdu: med.dosage_urdu,
+              frequency_en: med.frequency_en,
+              frequency_urdu: med.frequency_urdu,
+              duration_en: med.duration_en,
+              duration_urdu: med.duration_urdu,
+              instructions_en: med.instructions_en,
+              instructions_urdu: med.instructions_urdu,
+            })),
+          }
+        ),
+
+        // Submit Examination
+        axios.post(
+          "https://patient-management-backend-nine.vercel.app/api/examination",
+          {
+            consultation_id: consultationId,
+            patient_id: patient.id,
+            motor_function: neuroExamData.motor_function || "",
+            muscle_tone: neuroExamData.muscle_tone || "",
+            muscle_strength: neuroExamData.muscle_strength || "",
+            straight_leg_raise_test: neuroExamData.straight_leg_raise_test,
+            deep_tendon_reflexes: neuroExamData.deep_tendon_reflexes || "",
+            plantar_reflex: neuroExamData.plantar_reflex || "",
+            pupillary_reaction: neuroExamData.pupillary_reaction || "",
+            speech_assessment: neuroExamData.speech_assessment || "",
+            gait_assessment: neuroExamData.gait_assessment || "",
+            coordination: neuroExamData.coordination || "",
+            sensory_examination: neuroExamData.sensory_examination || "",
+            cranial_nerves: neuroExamData.cranial_nerves || "",
+            mental_status: neuroExamData.mental_status || "",
+            cerebellar_function: neuroExamData.cerebellar_function || "",
+            muscle_wasting: neuroExamData.muscle_wasting || "",
+            abnormal_movements: neuroExamData.abnormal_movements || "",
+            romberg_test: neuroExamData.romberg_test || "",
+            nystagmus: neuroExamData.nystagmus || "",
+            fundoscopy: neuroExamData.fundoscopy || "",
+            diagnosis: neuroExamData.diagnosis || "",
+            pain_sensation: !!neuroExamData.pain_sensation,
+            vibration_sense: !!neuroExamData.vibration_sense,
+            proprioception: !!neuroExamData.proprioception,
+            temperature_sensation: !!neuroExamData.temperature_sensation,
+            brudzinski_sign: !!neuroExamData.brudzinski_sign,
+            kernig_sign: !!neuroExamData.kernig_sign,
+            facial_sensation: !!neuroExamData.facial_sensation,
+            swallowing_function: !!neuroExamData.swallowing_function,
+          }
+        ),
+      ];
+
+      // Submit Tests in Parallel
+      const testPromises = selectedTests.map(async (testName) => {
+        let test = tests.find((t) => t.test_name === testName);
+        if (!test) {
+          const testResponse = await axios.post(
+            "https://patient-management-backend-nine.vercel.app/api/tests",
+            { test_name: testName, test_notes: "Optional test notes" }
+          );
+          test = testResponse.data;
+          setTests((prevTests) => [...prevTests, test]);
+        }
+
+        return axios.post(
+          "https://patient-management-backend-nine.vercel.app/api/tests/assign",
+          { test_id: test.id, consultation_id: consultationId }
+        );
+      });
+
+      // Add test requests to API call list
+      apiCalls.push(...testPromises);
+
+      // Submit Follow-Up
+      if (selectedDuration) {
+        apiCalls.push(
+          axios.post(
+            `https://patient-management-backend-nine.vercel.app/api/followups/consultations/${consultationId}/followups`,
+            {
+              follow_up_date: followUpDate.toISOString().split("T")[0],
+              notes: followUpNotes || "عام چیک اپ",
+              duration_days: selectedDuration,
+            }
+          )
+        );
       }
 
+      // Execute all API calls in parallel
+      await Promise.allSettled(apiCalls);
+
+      // Show success message
       toast.success("Consultation added successfully! 🎉", {
         position: "top-right",
-        autoClose: 3000,
+        autoClose: 2000,
       });
-      alert("Consultation saved successfully.");
+
+      // Reset state
       setFollowUpDate(null);
       setFollowUpNotes("");
+      setSelectedDuration(null);
+
       setTimeout(() => {
-        handlePrint();
+        handlePrint();  // Open print dialog first
       }, 500);
+  
+      // Step 8: **Navigate to Home Page After Printing**
+      setTimeout(() => {
+        navigate("/");
+        window.location.reload(); // Ensures page updates
+      }, 3000);
     } catch (error) {
       console.error(
         "Error submitting consultation",
         error.response?.data || error.message
       );
+      alert("An error occurred while saving the consultation.");
     } finally {
       setLoading(false);
     }
@@ -3612,7 +3753,7 @@ before:opacity-50 before:-z-10"
               <div className="space-y-4">
                 {selectedMedicines.map((med, index) => (
                   <div key={index} className="flex items-center gap-3">
-                    <div className="flex-1 grid grid-cols-6 gap-3">
+                    <div className="flex-1 grid grid-cols-5 gap-3">
                       {/* Medicine Selection */}
                       <div className="space-y-1">
                         <label className="text-sm font-medium text-gray-600">
@@ -4087,142 +4228,6 @@ before:opacity-50 before:-z-10"
                                       ...item,
                                       instructions_en: e.value,
                                       instructions_urdu: e.label,
-                                    }
-                                  : item
-                              )
-                            );
-                          }}
-                          styles={customSelectStyles}
-                        />
-                      </div>
-
-                      {/* How to Take (By mouth, Injection) */}
-                      <div className="space-y-1">
-                        <label className="text-sm font-medium text-gray-600">
-                          How to Take
-                        </label>
-                        <Select
-                          options={[
-                            // Oral (Mouth)
-                            { value: "mouth", label: "منہ کے ذریعے (زبانی)" },
-                            { value: "sublingual", label: "زبان کے نیچے" },
-                            { value: "buccal", label: "گال کے اندر" },
-
-                            // Injection (Injections)
-                            {
-                              value: "intravenous",
-                              label: "نس میں (IV - Intravenous)",
-                            },
-                            {
-                              value: "intramuscular",
-                              label: "پٹھوں میں (IM - Intramuscular)",
-                            },
-                            {
-                              value: "subcutaneous",
-                              label: "جلد کے نیچے (SC - Subcutaneous)",
-                            },
-                            {
-                              value: "intradermal",
-                              label: "جلد کے اندر (ID - Intradermal)",
-                            },
-
-                            // Topical (Skin)
-                            {
-                              value: "topical",
-                              label: "جلد پر لگانے کے لیے (Topical)",
-                            },
-                            {
-                              value: "transdermal",
-                              label:
-                                "جلد پر چسپاں کرنے کے لیے (Transdermal Patch)",
-                            },
-                            { value: "ointment", label: "مرہم یا کریم" },
-                            { value: "gel", label: "جل" },
-
-                            // Eye (Ophthalmic)
-                            {
-                              value: "eye_drops",
-                              label: "آنکھ میں ڈالنے کے لیے (Eye Drops)",
-                            },
-                            {
-                              value: "eye_ointment",
-                              label: "آنکھ کے لیے مرہم (Eye Ointment)",
-                            },
-
-                            // Ear (Otic)
-                            {
-                              value: "ear_drops",
-                              label: "کان میں ڈالنے کے لیے (Ear Drops)",
-                            },
-
-                            // Nasal (Nose)
-                            {
-                              value: "nasal_spray",
-                              label: "ناک کے ذریعے (Nasal Spray)",
-                            },
-                            {
-                              value: "nasal_drops",
-                              label: "ناک میں ڈالنے کے لیے (Nasal Drops)",
-                            },
-
-                            // Inhalation (Respiratory)
-                            {
-                              value: "inhalation",
-                              label: "سانس کے ذریعے (Inhalation)",
-                            },
-                            {
-                              value: "nebulizer",
-                              label: "نبولائزر کے ذریعے (Nebulizer)",
-                            },
-                            {
-                              value: "inhaler",
-                              label: "انہیلر کے ذریعے (Inhaler)",
-                            },
-
-                            // Rectal (Anus)
-                            {
-                              value: "rectal_suppository",
-                              label: "مقعد کے ذریعے (Suppository)",
-                            },
-                            {
-                              value: "rectal_cream",
-                              label: "مقعد کے لیے کریم",
-                            },
-
-                            // Vaginal (Female)
-                            {
-                              value: "vaginal_suppository",
-                              label: "اندام نہانی کے ذریعے (Suppository)",
-                            },
-                            {
-                              value: "vaginal_cream",
-                              label: "اندام نہانی کے لیے کریم",
-                            },
-                            {
-                              value: "vaginal_gel",
-                              label: "اندام نہانی کے لیے جیل",
-                            },
-
-                            // Other Specialized Routes
-                            {
-                              value: "surgical_implant",
-                              label: "جسم میں نصب شدہ (Surgical Implant)",
-                            },
-                            {
-                              value: "infusion",
-                              label: "انفیوژن (Intravenous Infusion)",
-                            },
-                          ]}
-                          className="react-select-container"
-                          classNamePrefix="react-select"
-                          onChange={(e) => {
-                            setSelectedMedicines((prev) =>
-                              prev.map((item, i) =>
-                                i === index
-                                  ? {
-                                      ...item,
-                                      how_to_take_en: e.value,
-                                      how_to_take_urdu: e.label,
                                     }
                                   : item
                               )
