@@ -3572,7 +3572,7 @@ before:opacity-50 before:-z-10"
                 classNamePrefix="react-select"
               />
             </div>
-
+           
             {/* Enhanced Medicines Section */}
             <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
               <div className="flex items-center gap-3 mb-5">
