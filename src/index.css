@@ -40,3 +40,11 @@
       animation: fade-in 0.2s ease-out;
     }
   }
+
+  .badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    display: inline-block;
+  }
