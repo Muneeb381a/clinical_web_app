@@ -274,14 +274,24 @@ const PatientSearch = () => {
               color: #4b5563;
             }
   
-            @media print {
-              body {
-                margin: 15mm 10mm 10mm 10mm;
-              }
-              .section-title {
+            
+              @media print {
+                @page {
+                  margin: 0 !important; /* Remove browser defaults */
+                }
+  
+                body {
+                  margin: 30mm 5mm !important;
+                }
+  
+                .print-container {
+                  margin: 0;
+                  width: 100vw !important;
+                }
+                  .section-title {
                 color: #1e3a8a !important;
               }
-            }
+              }
           </style>
         </head>
         <body>
