@@ -798,6 +798,18 @@ const PatientSearch = () => {
     }
   };
 
+  const MEDICINE_DEFAULTS = {
+    Tablet: {
+      dosage_en: "1",
+      dosage_urdu: "ایک گولی (1 Tablet)",
+      frequency_en: "morning_evening",
+      frequency_urdu: "صبح، شام (Morning & Evening)",
+      duration_en: "5_days",
+      duration_urdu: "5 دن (5 Days)",
+      instructions_en: "after_meal",
+      instructions_urdu: "کھانے کے بعد (After Meal)"
+    }
+  };
   return (
     <div
       className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-8 relative 
@@ -3748,6 +3760,10 @@ before:opacity-50 before:-z-10"
                               label: "چوبیس گھنٹے (24 Hours)",
                             },
                           ]}
+                          value={{
+                            value: med.frequency_en,
+                            label: med.frequency_urdu
+                          }}
                           className="react-select-container"
                           classNamePrefix="react-select"
                           onChange={(e) => {
@@ -3928,6 +3944,12 @@ before:opacity-50 before:-z-10"
                           ]}
                           className="react-select-container"
                           classNamePrefix="react-select"
+                          value={{
+                            value: selectedMedicines[index]?.dosage_en || "1",
+                            label:
+                              selectedMedicines[index]?.dosage_urdu ||
+                              "ایک گولی (1 گولی)",
+                          }}
                           onChange={(e) => {
                             setSelectedMedicines((prev) =>
                               prev.map((item, i) =>
@@ -3997,6 +4019,10 @@ before:opacity-50 before:-z-10"
                             { value: "long_term", label: "طویل مدتی علاج" },
                             { value: "short_term", label: "مختصر مدتی علاج" },
                           ]}
+                          value={{
+                            value: med.duration_en,
+                            label: med.duration_urdu
+                          }}
                           className="react-select-container"
                           classNamePrefix="react-select"
                           onChange={(e) => {
@@ -4071,6 +4097,10 @@ before:opacity-50 before:-z-10"
                             },
                             { value: "avoid_caffeine", label: "کیفین سے بچیں" },
                           ]}
+                          value={{
+                            value: med.instructions_en,
+                            label: med.instructions_urdu
+                          }}
                           className="react-select-container"
                           classNamePrefix="react-select"
                           onChange={(e) => {
@@ -4112,15 +4142,16 @@ before:opacity-50 before:-z-10"
                       ...prev,
                       {
                         medicine_id: "",
-                        dosage: "",
-                        frequency_en: "",
-                        frequency_urdu: "",
-                        duration_en: "",
-                        duration_urdu: "",
-                        instructions_en: "",
-                        instructions_urdu: "",
-                        how_to_take_en: "",
-                        how_to_take_urdu: "",
+                        form: "Tablet",
+                        ...MEDICINE_DEFAULTS.Tablet,
+                        dosage_en: MEDICINE_DEFAULTS.Tablet.dosage_en,
+                        dosage_urdu: MEDICINE_DEFAULTS.Tablet.dosage_urdu,
+                        frequency_en: MEDICINE_DEFAULTS.Tablet.frequency_en,
+                        frequency_urdu: MEDICINE_DEFAULTS.Tablet.frequency_urdu,
+                        duration_en: MEDICINE_DEFAULTS.Tablet.duration_en,
+                        duration_urdu: MEDICINE_DEFAULTS.Tablet.duration_urdu,
+                        instructions_en: MEDICINE_DEFAULTS.Tablet.instructions_en,
+                        instructions_urdu: MEDICINE_DEFAULTS.Tablet.instructions_urdu
                       },
                     ])
                   }
