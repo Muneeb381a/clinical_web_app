@@ -179,7 +179,7 @@ const PatientSearch = () => {
             @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu&display=swap');
             body {
               font-family: 'Inter', sans-serif;
-              margin: 20mm 15mm 15mm 15mm;
+              margin: 20mm 8mm 15mm 12mm;
               color: #374151;
               font-size: 11px;
               line-height: 1.4;
@@ -187,7 +187,10 @@ const PatientSearch = () => {
   
             .prescription-container {
               display: grid;
-              grid-template-columns: 1fr 1.5fr 1fr;
+              grid-template-columns: 
+                minmax(30mm, 1fr) 
+               minmax(40mm, 2.5fr) 
+                minmax(30mm, 1fr);
               gap: 6mm;
               margin-top: 5mm;
             }
@@ -230,6 +233,7 @@ const PatientSearch = () => {
               padding: 2mm 1mm;
               border-bottom: 1px solid #e5e7eb;
               font-size: 10px;
+              font-family: 'Noto Nastaliq Urdu', serif;
             }
   
             .test-list {
@@ -429,7 +433,15 @@ const PatientSearch = () => {
                 <div><strong>Date:</strong> ${new Date(
                   followUpDate
                 ).toLocaleDateString()}</div>
-                <div class="urdu-date">${urduDate(followUpDate)}</div>
+                <div class="urdu-date text-right bg-rose-50 p-3 rounded-lg border border-rose-100 shadow-sm">
+                  <span class="text-rose-800 font-medium text-lg">
+                    برائے مہربانی 
+                    <span class="text-rose-600 font-semibold mx-2">
+                     ${urduDate(followUpDate)}
+                   </span>
+                   کو دوبارہ تشریف لائیں
+                 </span>
+                </div>
                 <div><strong>Notes:</strong> ${followUpNotes || "-"}</div>
               </div>
             </div>
@@ -779,9 +791,9 @@ const PatientSearch = () => {
       setSelectedDuration(null);
 
       setTimeout(() => {
-        handlePrint();  // Open print dialog first
+        handlePrint(); // Open print dialog first
       }, 500);
-  
+
       // Step 8: **Navigate to Home Page After Printing**
       setTimeout(() => {
         navigate("/");
@@ -807,8 +819,8 @@ const PatientSearch = () => {
       duration_en: "5_days",
       duration_urdu: "5 دن (5 Days)",
       instructions_en: "after_meal",
-      instructions_urdu: "کھانے کے بعد (After Meal)"
-    }
+      instructions_urdu: "کھانے کے بعد (After Meal)",
+    },
   };
   return (
     <div
@@ -3762,7 +3774,7 @@ before:opacity-50 before:-z-10"
                           ]}
                           value={{
                             value: med.frequency_en,
-                            label: med.frequency_urdu
+                            label: med.frequency_urdu,
                           }}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -4021,7 +4033,7 @@ before:opacity-50 before:-z-10"
                           ]}
                           value={{
                             value: med.duration_en,
-                            label: med.duration_urdu
+                            label: med.duration_urdu,
                           }}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -4099,7 +4111,7 @@ before:opacity-50 before:-z-10"
                           ]}
                           value={{
                             value: med.instructions_en,
-                            label: med.instructions_urdu
+                            label: med.instructions_urdu,
                           }}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -4150,8 +4162,10 @@ before:opacity-50 before:-z-10"
                         frequency_urdu: MEDICINE_DEFAULTS.Tablet.frequency_urdu,
                         duration_en: MEDICINE_DEFAULTS.Tablet.duration_en,
                         duration_urdu: MEDICINE_DEFAULTS.Tablet.duration_urdu,
-                        instructions_en: MEDICINE_DEFAULTS.Tablet.instructions_en,
-                        instructions_urdu: MEDICINE_DEFAULTS.Tablet.instructions_urdu
+                        instructions_en:
+                          MEDICINE_DEFAULTS.Tablet.instructions_en,
+                        instructions_urdu:
+                          MEDICINE_DEFAULTS.Tablet.instructions_urdu,
                       },
                     ])
                   }
