@@ -32,6 +32,7 @@ import {
   AiOutlineFolderOpen,
   AiOutlineMedicineBox,
 } from "react-icons/ai";
+import { FiDroplet, FiClock, FiCalendar, FiInfo } from 'react-icons/fi';
 import AddPatientForm from "./pages/AddPatientForm";
 import { urduDate } from "./utils/dateUtils";
 import PatientHistoryModal from "./components/PatientHistoryModal";
@@ -903,20 +904,29 @@ before:opacity-50 before:-z-10"
 
             {/* Prescriptions Popup */}
             {showPopup && (
-              <div className="fixed inset-0 bg-black/30 backdrop-blur-md z-50 overflow-y-auto">
-                <div className="min-h-screen flex items-start justify-center p-4 pt-20 pb-8">
-                  <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border border-gray-200">
+              <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 overflow-y-auto">
+                <div className="min-h-screen flex items-start justify-center p-4 pt-16 pb-8">
+                  <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border border-gray-100 relative">
                     {/* Popup Header */}
-                    <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
-                      <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
-                        <AiOutlineFileText className="text-blue-600" />
-                        Treatment History
-                      </h2>
+                    <div className="flex justify-between items-start mb-8 pb-6 border-b border-gray-100">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-blue-100 p-3 rounded-xl shadow-sm">
+                          <AiOutlineFileText className="w-8 h-8 text-blue-600" />
+                        </div>
+                        <div>
+                          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+                            Treatment History
+                          </h2>
+                          <p className="text-sm text-gray-500 mt-1">
+                            Previous prescriptions 
+                          </p>
+                        </div>
+                      </div>
                       <button
                         onClick={() => setShowPopup(false)}
-                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
+                        className="p-2 hover:bg-gray-50 rounded-lg transition-all duration-200"
                       >
-                        <AiOutlineClose className="w-6 h-6 text-gray-600" />
+                        <AiOutlineClose className="w-6 h-6 text-gray-500 hover:text-gray-700" />
                       </button>
                     </div>
 
@@ -925,40 +935,54 @@ before:opacity-50 before:-z-10"
                       {prescriptions.map((prescription) => (
                         <div
                           key={prescription.id}
-                          className="bg-gray-50 p-5 rounded-xl border border-gray-200 hover:border-blue-200 transition-colors"
+                          className="group bg-gradient-to-br from-white to-blue-50 p-6 rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-300 shadow-sm hover:shadow-md"
                         >
-                          <div className="flex items-start gap-4">
-                            <div className="bg-blue-100 p-2 rounded-lg">
-                              <AiOutlineMedicineBox className="w-6 h-6 text-blue-600" />
+                          <div className="flex items-start gap-5">
+                            <div className="bg-blue-100 p-2.5 rounded-lg shadow-inner mt-1">
+                              <AiOutlineMedicineBox className="w-6 h-6 text-blue-600/90" />
                             </div>
                             <div className="flex-1">
-                              <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                                {prescription.brand_name}
-                                <span className="block text-sm text-gray-500 mt-1">
-                                  {prescription.urdu_name}
+                              <div className="flex items-baseline gap-3 mb-3">
+                                <h3 className="text-xl font-semibold text-gray-900">
+                                  {prescription.brand_name}
+                                </h3>
+                                <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                                  #{prescription.id}
                                 </span>
-                              </h3>
+                              </div>
 
-                              <div className="space-y-2 text-sm">
+                              {prescription.urdu_name && (
+                                <div className="mb-4">
+                                  <p className="text-lg font-medium text-gray-600 urdu-font border-l-4 border-blue-200 pl-3">
+                                    {prescription.urdu_name}
+                                  </p>
+                                </div>
+                              )}
+
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <PrescriptionDetail
                                   label="Dosage"
                                   en={prescription.dosage_en}
                                   urdu={prescription.dosage_urdu}
+                                  icon={<FiDroplet className="w-5 h-5" />}
                                 />
                                 <PrescriptionDetail
                                   label="Frequency"
                                   en={prescription.frequency_en}
                                   urdu={prescription.frequency_urdu}
+                                  icon={<FiClock className="w-5 h-5" />}
                                 />
                                 <PrescriptionDetail
                                   label="Duration"
                                   en={prescription.duration_en}
                                   urdu={prescription.duration_urdu}
+                                  icon={<FiCalendar className="w-5 h-5" />}
                                 />
                                 <PrescriptionDetail
                                   label="Instructions"
                                   en={prescription.instructions_en}
                                   urdu={prescription.instructions_urdu}
+                                  icon={<FiInfo className="w-5 h-5" />}
                                 />
                               </div>
                             </div>
@@ -967,13 +991,14 @@ before:opacity-50 before:-z-10"
                       ))}
                     </div>
 
-                    {/* Mobile Close Button */}
-                    <div className="sticky bottom-0 bg-white pt-6 mt-6 border-t md:hidden">
+                    {/* Enhanced Close Button */}
+                    <div className="sticky bottom-0 bg-gradient-to-t from-white via-white/90 pt-8 mt-8">
                       <button
                         onClick={() => setShowPopup(false)}
-                        className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
+                        className="w-full md:w-auto px-8 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-md flex items-center justify-center gap-2"
                       >
-                        Close
+                        <AiOutlineClose className="w-5 h-5" />
+                        Close Overview
                       </button>
                     </div>
                   </div>
