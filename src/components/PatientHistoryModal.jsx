@@ -108,7 +108,8 @@ const PatientHistory = ({ patientId }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            div className="fixed inset-0 z-1000 flex justify-center items-start pt-20 backdrop-blur-md bg-opacity-50"
+            div
+            className="fixed inset-0 z-1000 flex justify-center items-start pt-20 backdrop-blur-md bg-opacity-50"
           >
             <motion.div
               initial={{ y: -20, scale: 0.95 }}
@@ -242,7 +243,40 @@ const PatientHistory = ({ patientId }) => {
                                 </div>
                               </div>
                             </div>
+                            <div className="bg-white border-2 border-gray-200 p-6 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+                              <div className="flex flex-col md:gap-4">
+                                {/* Title with icon */}
+                                <div className="inline-flex items-center gap-2 mb-2 md:mb-0">
+                                  <FaFlask className="w-5 h-5 text-blue-600" />{" "}
+                                  {/* Add your preferred icon */}
+                                  <span className="text-base font-semibold text-gray-700">
+                                    Prescribed Tests
+                                  </span>
+                                </div>
 
+                                {/* Tests list */}
+                                <div className="flex-1">
+                                  <p className="text-gray-800 font-medium leading-relaxed">
+                                    {record.tests?.length > 0 ? (
+                                      <span className="inline-flex flex-wrap gap-2">
+                                        {record.tests.map((test) => (
+                                          <span
+                                            key={test.test_id}
+                                            className="px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-sm"
+                                          >
+                                            {test.test_name}
+                                          </span>
+                                        ))}
+                                      </span>
+                                    ) : (
+                                      <span className="text-gray-500 italic">
+                                        No tests prescribed
+                                      </span>
+                                    )}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
                             {record.prescriptions.length > 0 && (
                               <div>
                                 <div className="flex items-center gap-2 mb-3">
