@@ -38,7 +38,7 @@ import { urduDate } from "./utils/dateUtils";
 import PatientHistoryModal from "./components/PatientHistoryModal";
 import PatientHistory from "./components/PatientHistoryModal";
 
-// Schema for searching patients by mobile
+
 const searchSchema = z.object({
   mobile: z.string().min(10, "Enter a valid mobile number"),
 });
