@@ -32,13 +32,12 @@ import {
   AiOutlineFolderOpen,
   AiOutlineMedicineBox,
 } from "react-icons/ai";
-import { FiDroplet, FiClock, FiCalendar, FiInfo } from 'react-icons/fi';
 import AddPatientForm from "./pages/AddPatientForm";
 import { urduDate } from "./utils/dateUtils";
 import PatientHistoryModal from "./components/PatientHistoryModal";
 import PatientHistory from "./components/PatientHistoryModal";
 
-
+// Schema for searching patients by mobile
 const searchSchema = z.object({
   mobile: z.string().min(10, "Enter a valid mobile number"),
 });
@@ -180,7 +179,7 @@ const PatientSearch = () => {
             @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu&display=swap');
             body {
               font-family: 'Inter', sans-serif;
-              margin: 20mm 8mm 15mm 12mm;
+              margin: 20mm 15mm 15mm 15mm;
               color: #374151;
               font-size: 11px;
               line-height: 1.4;
@@ -188,10 +187,7 @@ const PatientSearch = () => {
   
             .prescription-container {
               display: grid;
-              grid-template-columns: 
-                minmax(30mm, 1fr) 
-               minmax(40mm, 2.5fr) 
-                minmax(30mm, 1fr);
+              grid-template-columns: 1fr 1.5fr 1fr;
               gap: 6mm;
               margin-top: 5mm;
             }
@@ -234,7 +230,6 @@ const PatientSearch = () => {
               padding: 2mm 1mm;
               border-bottom: 1px solid #e5e7eb;
               font-size: 10px;
-              font-family: 'Noto Nastaliq Urdu', serif;
             }
   
             .test-list {
@@ -275,24 +270,14 @@ const PatientSearch = () => {
               color: #4b5563;
             }
   
-            
-              @media print {
-                @page {
-                  margin: 0 !important; /* Remove browser defaults */
-                }
-  
-                body {
-                  margin: 30mm 5mm !important;
-                }
-  
-                .print-container {
-                  margin: 0;
-                  width: 100vw !important;
-                }
-                  .section-title {
+            @media print {
+              body {
+                margin: 15mm 10mm 10mm 10mm;
+              }
+              .section-title {
                 color: #1e3a8a !important;
               }
-              }
+            }
           </style>
         </head>
         <body>
@@ -444,15 +429,7 @@ const PatientSearch = () => {
                 <div><strong>Date:</strong> ${new Date(
                   followUpDate
                 ).toLocaleDateString()}</div>
-                <div class="urdu-date text-right bg-rose-50 p-3 rounded-lg border border-rose-100 shadow-sm">
-                  <span class="text-rose-800 font-medium text-lg">
-                    برائے مہربانی 
-                    <span class="text-rose-600 font-semibold mx-2">
-                     ${urduDate(followUpDate)}
-                   </span>
-                   کو دوبارہ تشریف لائیں
-                 </span>
-                </div>
+                <div class="urdu-date">${urduDate(followUpDate)}</div>
                 <div><strong>Notes:</strong> ${followUpNotes || "-"}</div>
               </div>
             </div>
@@ -825,14 +802,15 @@ const PatientSearch = () => {
     Tablet: {
       dosage_en: "1",
       dosage_urdu: "ایک گولی (1 Tablet)",
-      frequency_en: "morning_evening",
-      frequency_urdu: "صبح، شام (Morning & Evening)",
+      frequency_en: "twice_daily",
+      frequency_urdu: "دن میں دو بار (Twice Daily)",
       duration_en: "5_days",
       duration_urdu: "5 دن (5 Days)",
       instructions_en: "after_meal",
-      instructions_urdu: "کھانے کے بعد (After Meal)",
-    },
+      instructions_urdu: "کھانے کے بعد (After Meal)"
+    }
   };
+
   return (
     <div
       className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 p-8 relative 
@@ -904,29 +882,20 @@ before:opacity-50 before:-z-10"
 
             {/* Prescriptions Popup */}
             {showPopup && (
-              <div className="fixed inset-0 bg-black/30 backdrop-blur-sm z-50 overflow-y-auto">
-                <div className="min-h-screen flex items-start justify-center p-4 pt-16 pb-8">
-                  <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border border-gray-100 relative">
+              <div className="fixed inset-0 bg-black/30 backdrop-blur-md z-50 overflow-y-auto">
+                <div className="min-h-screen flex items-start justify-center p-4 pt-20 pb-8">
+                  <div className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border border-gray-200">
                     {/* Popup Header */}
-                    <div className="flex justify-between items-start mb-8 pb-6 border-b border-gray-100">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-blue-100 p-3 rounded-xl shadow-sm">
-                          <AiOutlineFileText className="w-8 h-8 text-blue-600" />
-                        </div>
-                        <div>
-                          <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
-                            Treatment History
-                          </h2>
-                          <p className="text-sm text-gray-500 mt-1">
-                            Previous prescriptions 
-                          </p>
-                        </div>
-                      </div>
+                    <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-200">
+                      <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+                        <AiOutlineFileText className="text-blue-600" />
+                        Treatment History
+                      </h2>
                       <button
                         onClick={() => setShowPopup(false)}
-                        className="p-2 hover:bg-gray-50 rounded-lg transition-all duration-200"
+                        className="p-2 hover:bg-gray-100 rounded-full transition-colors"
                       >
-                        <AiOutlineClose className="w-6 h-6 text-gray-500 hover:text-gray-700" />
+                        <AiOutlineClose className="w-6 h-6 text-gray-600" />
                       </button>
                     </div>
 
@@ -935,54 +904,40 @@ before:opacity-50 before:-z-10"
                       {prescriptions.map((prescription) => (
                         <div
                           key={prescription.id}
-                          className="group bg-gradient-to-br from-white to-blue-50 p-6 rounded-xl border border-gray-200 hover:border-blue-300 transition-all duration-300 shadow-sm hover:shadow-md"
+                          className="bg-gray-50 p-5 rounded-xl border border-gray-200 hover:border-blue-200 transition-colors"
                         >
-                          <div className="flex items-start gap-5">
-                            <div className="bg-blue-100 p-2.5 rounded-lg shadow-inner mt-1">
-                              <AiOutlineMedicineBox className="w-6 h-6 text-blue-600/90" />
+                          <div className="flex items-start gap-4">
+                            <div className="bg-blue-100 p-2 rounded-lg">
+                              <AiOutlineMedicineBox className="w-6 h-6 text-blue-600" />
                             </div>
                             <div className="flex-1">
-                              <div className="flex items-baseline gap-3 mb-3">
-                                <h3 className="text-xl font-semibold text-gray-900">
-                                  {prescription.brand_name}
-                                </h3>
-                                <span className="text-sm text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
-                                  #{prescription.id}
+                              <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                                {prescription.brand_name}
+                                <span className="block text-sm text-gray-500 mt-1">
+                                  {prescription.urdu_name}
                                 </span>
-                              </div>
+                              </h3>
 
-                              {prescription.urdu_name && (
-                                <div className="mb-4">
-                                  <p className="text-lg font-medium text-gray-600 urdu-font border-l-4 border-blue-200 pl-3">
-                                    {prescription.urdu_name}
-                                  </p>
-                                </div>
-                              )}
-
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-2 text-sm">
                                 <PrescriptionDetail
                                   label="Dosage"
                                   en={prescription.dosage_en}
                                   urdu={prescription.dosage_urdu}
-                                  icon={<FiDroplet className="w-5 h-5" />}
                                 />
                                 <PrescriptionDetail
                                   label="Frequency"
                                   en={prescription.frequency_en}
                                   urdu={prescription.frequency_urdu}
-                                  icon={<FiClock className="w-5 h-5" />}
                                 />
                                 <PrescriptionDetail
                                   label="Duration"
                                   en={prescription.duration_en}
                                   urdu={prescription.duration_urdu}
-                                  icon={<FiCalendar className="w-5 h-5" />}
                                 />
                                 <PrescriptionDetail
                                   label="Instructions"
                                   en={prescription.instructions_en}
                                   urdu={prescription.instructions_urdu}
-                                  icon={<FiInfo className="w-5 h-5" />}
                                 />
                               </div>
                             </div>
@@ -991,14 +946,13 @@ before:opacity-50 before:-z-10"
                       ))}
                     </div>
 
-                    {/* Enhanced Close Button */}
-                    <div className="sticky bottom-0 bg-gradient-to-t from-white via-white/90 pt-8 mt-8">
+                    {/* Mobile Close Button */}
+                    <div className="sticky bottom-0 bg-white pt-6 mt-6 border-t md:hidden">
                       <button
                         onClick={() => setShowPopup(false)}
-                        className="w-full md:w-auto px-8 py-3 bg-gray-900 hover:bg-gray-800 text-white rounded-xl transition-all duration-300 shadow-lg hover:shadow-md flex items-center justify-center gap-2"
+                        className="w-full py-3 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg transition-colors"
                       >
-                        <AiOutlineClose className="w-5 h-5" />
-                        Close Overview
+                        Close
                       </button>
                     </div>
                   </div>
@@ -3719,278 +3673,65 @@ before:opacity-50 before:-z-10"
                         </label>
                         <Select
                           options={[
+                            // Frequency-specific options
                             { value: "morning", label: "صبح (Morning)" },
                             { value: "afternoon", label: "دوپہر (Afternoon)" },
                             { value: "evening", label: "شام (Evening)" },
                             { value: "night", label: "رات (Night)" },
                             {
-                              value: "morning_evening",
-                              label: "صبح، شام (Morning & Evening)",
+                              value: "twice_daily",
+                              label: "دن میں دو بار (Twice Daily)",
                             },
                             {
-                              value: "morning_night",
-                              label: "صبح، رات (Morning & Night)",
-                            },
-                            {
-                              value: "afternoon_evening",
-                              label: "دوپہر، شام (Afternoon & Evening)",
-                            },
-                            {
-                              value: "afternoon_night",
-                              label: "دوپہر، رات (Afternoon & Night)",
-                            },
-                            {
-                              value: "morning_evening_night",
-                              label: "صبح، شام، رات (Morning, Evening & Night)",
-                            },
-                            {
-                              value: "morning_afternoon_evening",
-                              label:
-                                "صبح، دوپہر، شام (Morning, Afternoon & Evening)",
-                            },
-                            {
-                              value: "morning_afternoon_night",
-                              label:
-                                "صبح، دوپہر، رات (Morning, Afternoon & Night)",
-                            },
-                            {
-                              value: "afternoon_evening_night",
-                              label:
-                                "دوپہر، شام، رات (Afternoon, Evening & Night)",
-                            },
-                            {
-                              value: "early_morning",
-                              label: "صبح سویرے (Early Morning)",
-                            },
-                            {
-                              value: "late_morning",
-                              label: "دیر صبح (Late Morning)",
-                            },
-                            {
-                              value: "late_afternoon",
-                              label: "دیر دوپہر (Late Afternoon)",
-                            },
-                            { value: "sunset", label: "غروب آفتاب (Sunset)" },
-                            { value: "midnight", label: "آدھی رات (Midnight)" },
-                            {
-                              value: "late_night",
-                              label: "رات دیر گئے (Late Night)",
-                            },
-                            {
-                              value: "morning_afternoon",
-                              label: "صبح، دوپہر (Morning & Afternoon)",
-                            },
-                            {
-                              value: "evening_night",
-                              label: "شام، رات (Evening & Night)",
-                            },
-                            {
-                              value: "early_morning_night",
-                              label: "صبح سویرے، رات (Early Morning & Night)",
-                            },
-                            {
-                              value: "morning_late_afternoon",
-                              label:
-                                "صبح، دیر دوپہر (Morning & Late Afternoon)",
-                            },
-                            {
-                              value: "afternoon_sunset",
-                              label: "دوپہر، غروب آفتاب (Afternoon & Sunset)",
-                            },
-                            { value: "all_day", label: "پورا دن (All Day)" },
-                            {
-                              value: "all_night",
-                              label: "پوری رات (All Night)",
-                            },
-                            {
-                              value: "24_hours",
-                              label: "چوبیس گھنٹے (24 Hours)",
+                              value: "thrice_daily",
+                              label: "دن میں تین بار (Thrice Daily)",
                             },
                           ]}
                           value={{
                             value: med.frequency_en,
-                            label: med.frequency_urdu,
+                            label: med.frequency_urdu
+                          }}
+                          onChange={(e) => {
+                            setSelectedMedicines(prev => prev.map((item, i) => 
+                              i === index ? {
+                                ...item,
+                                frequency_en: e.value,
+                                frequency_urdu: e.label
+                              } : item
+                            ));
                           }}
                           className="react-select-container"
                           classNamePrefix="react-select"
-                          onChange={(e) => {
-                            setSelectedMedicines((prev) =>
-                              prev.map((item, i) =>
-                                i === index
-                                  ? {
-                                      ...item,
-                                      frequency_en: e.value,
-                                      frequency_urdu: e.label,
-                                    }
-                                  : item
-                              )
-                            );
+                          styles={{
+                            option: (provided, state) => ({
+                              ...provided,
+                              backgroundColor: state.isSelected
+                                ? "#f3f4f6"
+                                : "white",
+                              color:
+                                state.data.value === "twice_daily"
+                                  ? "#3b82f6"
+                                  : "#1f2937",
+                            }),
                           }}
-                          styles={customSelectStyles}
                         />
                       </div>
 
-                      {/* Dosage (1 pill, 2 pills) */}
+                      {/* Dosage Selector (Separate Component) */}
                       <div className="space-y-1">
                         <label className="text-sm font-medium text-gray-600">
                           Dosage
                         </label>
                         <Select
                           options={[
-                            // Tablet Dosages (Fractions & Whole)
+                            // Dosage-specific options
                             {
                               value: "0.25",
                               label: "ایک چوتھائی گولی (1/4 گولی)",
                             },
                             { value: "0.5", label: "آدھی گولی (1/2 گولی)" },
-                            {
-                              value: "0.75",
-                              label: "تین چوتھائی گولی (3/4 گولی)",
-                            },
                             { value: "1", label: "ایک گولی (1 گولی)" },
-                            { value: "1.5", label: "ڈیڑھ گولی (1.5 گولی)" },
-                            { value: "2", label: "دو گولیاں (2 گولیاں)" },
-                            {
-                              value: "2.5",
-                              label: "ڈھائی گولیاں (2.5 گولیاں)",
-                            },
-                            { value: "3", label: "تین گولیاں (3 گولیاں)" },
-                            {
-                              value: "3.5",
-                              label: "ساڑھے تین گولیاں (3.5 گولیاں)",
-                            },
-                            { value: "4", label: "چار گولیاں (4 گولیاں)" },
-                            { value: "5", label: "پانچ گولیاں (5 گولیاں)" },
-                            { value: "6", label: "چھ گولیاں (6 گولیاں)" },
-                            { value: "7", label: "سات گولیاں (7 گولیاں)" },
-                            { value: "8", label: "آٹھ گولیاں (8 گولیاں)" },
-                            { value: "10", label: "دس گولیاں (10 گولیاں)" },
-
-                            // Spoon Dosages
-                            {
-                              value: "half_spoon",
-                              label: "آدھا چمچ (1/2 چمچ)",
-                            },
-                            { value: "one_spoon", label: "ایک چمچ (1 چمچ)" },
-                            {
-                              value: "one_and_half_spoon",
-                              label: "ڈیڑھ چمچ (1.5 چمچ)",
-                            },
-                            { value: "two_spoons", label: "دو چمچ (2 چمچ)" },
-                            { value: "three_spoons", label: "تین چمچ (3 چمچ)" },
-
-                            // Liquid Dosages (Milliliters)
-                            {
-                              value: "2.5_ml",
-                              label: "ڈھائی ملی لیٹر (2.5 ml)",
-                            },
-                            { value: "5_ml", label: "پانچ ملی لیٹر (5 ml)" },
-                            {
-                              value: "7.5_ml",
-                              label: "ساڑھے سات ملی لیٹر (7.5 ml)",
-                            },
-                            { value: "10_ml", label: "دس ملی لیٹر (10 ml)" },
-                            { value: "15_ml", label: "پندرہ ملی لیٹر (15 ml)" },
-                            { value: "20_ml", label: "بیس ملی لیٹر (20 ml)" },
-                            { value: "25_ml", label: "پچیس ملی لیٹر (25 ml)" },
-                            { value: "30_ml", label: "تیس ملی لیٹر (30 ml)" },
-
-                            // Droplet Dosages
-                            {
-                              value: "one_droplet",
-                              label: "ایک قطرہ (1 قطرہ)",
-                            },
-                            {
-                              value: "two_droplets",
-                              label: "دو قطرے (2 قطرے)",
-                            },
-                            {
-                              value: "three_droplets",
-                              label: "تین قطرے (3 قطرے)",
-                            },
-                            {
-                              value: "five_droplets",
-                              label: "پانچ قطرے (5 قطرے)",
-                            },
-                            {
-                              value: "ten_droplets",
-                              label: "دس قطرے (10 قطرے)",
-                            },
-
-                            // Injection Dosages
-                            {
-                              value: "half_injection",
-                              label: "آدھا ٹیکہ (1/2 ٹیکہ)",
-                            },
-                            {
-                              value: "one_injection",
-                              label: "ایک ٹیکہ (1 ٹیکہ)",
-                            },
-                            {
-                              value: "two_injections",
-                              label: "دو ٹیکے (2 ٹیکے)",
-                            },
-                            {
-                              value: "three_injections",
-                              label: "تین ٹیکے (3 ٹیکے)",
-                            },
-
-                            // Sachet Dosages
-                            {
-                              value: "half_sachet",
-                              label: "آدھا ساشے (1/2 ساشے)",
-                            },
-                            { value: "one_sachet", label: "ایک ساشے (1 ساشے)" },
-                            { value: "two_sachets", label: "دو ساشے (2 ساشے)" },
-                            {
-                              value: "three_sachets",
-                              label: "تین ساشے (3 ساشے)",
-                            },
-
-                            // Special Cases
-                            {
-                              value: "as_needed",
-                              label: "ضرورت کے مطابق (As Needed)",
-                            },
-                            {
-                              value: "before_meal",
-                              label: "کھانے سے پہلے (Before Meal)",
-                            },
-                            {
-                              value: "after_meal",
-                              label: "کھانے کے بعد (After Meal)",
-                            },
-                            {
-                              value: "every_6_hours",
-                              label: "ہر 6 گھنٹے بعد (Every 6 Hours)",
-                            },
-                            {
-                              value: "every_8_hours",
-                              label: "ہر 8 گھنٹے بعد (Every 8 Hours)",
-                            },
-                            {
-                              value: "every_12_hours",
-                              label: "ہر 12 گھنٹے بعد (Every 12 Hours)",
-                            },
-                            {
-                              value: "once_a_day",
-                              label: "دن میں ایک بار (Once a Day)",
-                            },
-                            {
-                              value: "twice_a_day",
-                              label: "دن میں دو بار (Twice a Day)",
-                            },
-                            {
-                              value: "three_times_a_day",
-                              label: "دن میں تین بار (Three Times a Day)",
-                            },
-                            {
-                              value: "four_times_a_day",
-                              label: "دن میں چار بار (Four Times a Day)",
-                            },
                           ]}
-                          className="react-select-container"
-                          classNamePrefix="react-select"
                           value={{
                             value: selectedMedicines[index]?.dosage_en || "1",
                             label:
@@ -4010,7 +3751,8 @@ before:opacity-50 before:-z-10"
                               )
                             );
                           }}
-                          styles={customSelectStyles}
+                          className="react-select-container"
+                          classNamePrefix="react-select"
                         />
                       </div>
 
@@ -4068,7 +3810,7 @@ before:opacity-50 before:-z-10"
                           ]}
                           value={{
                             value: med.duration_en,
-                            label: med.duration_urdu,
+                            label: med.duration_urdu
                           }}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -4146,7 +3888,7 @@ before:opacity-50 before:-z-10"
                           ]}
                           value={{
                             value: med.instructions_en,
-                            label: med.instructions_urdu,
+                            label: med.instructions_urdu
                           }}
                           className="react-select-container"
                           classNamePrefix="react-select"
@@ -4197,10 +3939,8 @@ before:opacity-50 before:-z-10"
                         frequency_urdu: MEDICINE_DEFAULTS.Tablet.frequency_urdu,
                         duration_en: MEDICINE_DEFAULTS.Tablet.duration_en,
                         duration_urdu: MEDICINE_DEFAULTS.Tablet.duration_urdu,
-                        instructions_en:
-                          MEDICINE_DEFAULTS.Tablet.instructions_en,
-                        instructions_urdu:
-                          MEDICINE_DEFAULTS.Tablet.instructions_urdu,
+                        instructions_en: MEDICINE_DEFAULTS.Tablet.instructions_en,
+                        instructions_urdu: MEDICINE_DEFAULTS.Tablet.instructions_urdu
                       },
                     ])
                   }
