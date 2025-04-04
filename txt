@@ -1,439 +1,1232 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { useReactToPrint } from 'react-to-print';
-import "./App.css";
+import React, { useState, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import axios from "axios";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { toast } from "react-toastify";
+import "react-datepicker/dist/react-datepicker.css";
+import { motion } from "framer-motion";
+import { useNavigate } from "react-router-dom";
 
-const ClinicSystem = () => {
-  // State management
-  const [step, setStep] = useState(1);
-  const [mobile, setMobile] = useState('');
+import {
+  AiOutlineArrowLeft,
+  AiOutlineCalendar,
+  AiOutlineUser,
+  AiOutlineHistory,
+  AiOutlineFileText,
+  AiOutlineClose,
+  AiOutlineMedicineBox,
+  AiOutlineClockCircle,
+} from "react-icons/ai";
+import { FiDroplet, FiClock, FiCalendar, FiInfo } from "react-icons/fi";
+import AddPatientForm from "./pages/AddPatientForm";
+import { urduDate } from "./utils/dateUtils";
+import PatientHistory from "./components/PatientHistoryModal";
+import DiagnosticTestsSection from "./components/DiagnosisTestSection";
+import SymptomAnalysisSection from "./components/SymptomAnalysisSection";
+import PrescriptionManagementSection from "./components/PrescriptionManagementSection";
+import NeurologicalExamSection from "./components/NeurologicalExamSection";
+import printConsultation from "./utils/printConsultation";
+import VitalSignsSection from "./components/VitalSignsSection";
+import FollowUpSection from "./components/FollowUpSection";
+
+const searchSchema = z.object({
+  mobile: z.string().min(10, "Enter a valid mobile number"),
+});
+
+const neuroExamFields = [
+  "motor_function",
+  "muscle_tone",
+  "muscle_strength",
+  "straight_leg_raise_left",
+  "straight_leg_raise_right",
+  "deep_tendon_reflexes",
+  "plantar_reflex",
+  "pupillary_reaction",
+  "speech_assessment",
+  "gait_assessment",
+  "coordination",
+  "sensory_examination",
+  "cranial_nerves",
+  "mental_status",
+  "cerebellar_function",
+  "muscle_wasting",
+  "abnormal_movements",
+  "romberg_test",
+  "nystagmus",
+  "fundoscopy",
+];
+
+const PatientSearch = () => {
   const [patient, setPatient] = useState(null);
-  const [symptoms, setSymptoms] = useState([]);
-  const [allSymptoms, setAllSymptoms] = useState([]);
-  const [allMeds, setAllMeds] = useState([]);
-  const [newPatient, setNewPatient] = useState({
-    name: '',
-    age: '',
-    gender: 'Male',
-    weight: '',
-    height: ''
-  });
+  const [showAddPatient, setShowAddPatient] = useState(false);
+  const [selectedSymptoms, setSelectedSymptoms] = useState([]);
+  const [medicines, setMedicines] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [tests, setTests] = useState([]);
+  const [selectedTests, setSelectedTests] = useState([]);
+  const [neuroExamData, setNeuroExamData] = useState([]);
+  const [followUpDate, setFollowUpDate] = useState(null);
+  const [followUpNotes, setFollowUpNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [retryCount, setRetryCount] = useState(0);
-  const printRef = useRef();
+  const [selectedDuration, setSelectedDuration] = useState(null);
+  const [patients, setPatients] = useState([]);
+  const [searchedMobile, setSearchedMobile] = useState("");
+  const [prescriptions, setPrescriptions] = useState([]);
+  const [showPopup, setShowPopup] = useState(false);
+  const navigate = useNavigate();
 
-  // Data fetching
+  const [selectedMedicines, setSelectedMedicines] = useState([]);
+
+  const [vitalSigns, setVitalSigns] = useState({
+    pulseRate: "",
+    bloodPressure: "",
+    temperature: "",
+    spo2: "",
+    nihss: "",
+    fall_assessment: "Done",
+  });
+
+  const handleReturnHome = () => {
+    setPatient(null);
+    setShowAddPatient(false);
+    setSearchedMobile("");
+    window.history.pushState({}, "", "/");
+  };
+
+  const handleNewPatient = (newPatient) => {
+    setPatients([...patients, newPatient]); // Update patient list
+  };
+
+  // examinations field change
+  const handleFieldChange = (field, value) => {
+    setNeuroExamData((prev) => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const customSelectStyles = {
+    control: (base) => ({
+      ...base,
+      borderColor: "#ccc",
+      boxShadow: "none",
+      padding: "2px 2px",
+      minHeight: "45px",
+      display: "flex",
+      alignItems: "center", // Vertically center text
+      "&:hover": { borderColor: "#888" },
+    }),
+    option: (provided, state) => ({
+      ...provided,
+      padding: "12px 15px",
+      display: "flex",
+      alignItems: "center", // Vertically center text in dropdown
+      backgroundColor: state.isSelected ? "#4CAF50" : "#fff",
+      color: state.isSelected ? "#fff" : "#333",
+      "&:hover": {
+        backgroundColor: "#f1f1f1",
+      },
+    }),
+  };
+  // fetching medicines
   useEffect(() => {
-    if (retryCount >= 3) return;
-
-    const fetchInitialData = async () => {
+    const fetchData = async () => {
       try {
-        setError('');
-        const [symptomsRes, medsRes] = await Promise.all([
-          fetch('/api/symptoms'),
-          fetch('/api/medicines')
+        const [medicinesResponse] = await Promise.all([
+          axios.get(
+            "https://patient-management-backend-nine.vercel.app/api/medicines"
+          ),
         ]);
+        setMedicines(
+          medicinesResponse.data.map((med) => ({
+            value: med.id, // Assuming id is the medicine_id
+            label: `${med.form} ${med.brand_name}${
+              med.strength ? ` (${med.strength})` : ""
+            }`,
+          }))
+        );
+      } catch (error) {
+        console.error("Error fetching data:", error);
+        toast.error("Failed to load initial data");
+      }
+    };
+    fetchData();
+  }, []);
 
-        if (!symptomsRes.ok || !medsRes.ok) {
-          throw new Error('Failed to load initial data');
+  useEffect(() => {
+    if (patient?.id) {
+      const fetchPrescriptions = async () => {
+        try {
+          const response = await axios.get(
+            `https://patient-management-backend-nine.vercel.app/api/prescriptions/patient/${patient.id}`
+          );
+          setPrescriptions(response.data || []);
+        } catch (error) {
+          console.error("Error fetching prescriptions:", error);
+
+          // ✅ If the API returns 404, set prescriptions to an empty array
+          if (error.response && error.response.status === 404) {
+            setPrescriptions([]);
+          }
+        }
+      };
+
+      fetchPrescriptions();
+    }
+  }, [patient?.id]); // ✅ Fetch prescriptions when patient.id changes
+
+  const handlePrint = () => {
+    printConsultation({
+      patient,
+      selectedMedicines,
+      medicines,
+      vitalSigns,
+      selectedSymptoms,
+      selectedTests,
+      neuroExamData,
+      followUpDate,
+      followUpNotes,
+    });
+  };
+
+  // Form for searching patients
+  const {
+    register: registerSearch,
+    handleSubmit: handleSearchSubmit,
+    formState: { errors: searchErrors },
+  } = useForm({ resolver: zodResolver(searchSchema) });
+
+  // Search for patient by mobile
+  const onSearch = async (data) => {
+    if (!data.mobile.trim()) {
+      alert("Please enter a valid mobile number.");
+      return;
+    }
+
+    const mobile = data.mobile.trim();
+    const startTime = Date.now();
+    setIsSearching(true);
+
+    try {
+      const res = await axios.get(
+        `https://patient-management-backend-nine.vercel.app/api/patients/search?mobile=${encodeURIComponent(
+          mobile
+        )}`
+      );
+
+      const elapsed = Date.now() - startTime;
+      if (elapsed < 500) {
+        await new Promise((resolve) => setTimeout(resolve, 500 - elapsed));
+      }
+
+      if (res.data?.exists) {
+        if (!res.data.data?.id && !res.data.data?._id) {
+          throw new Error("Patient ID not found in API response");
         }
 
-        const [symptomsData, medsData] = await Promise.all([
-          symptomsRes.json(),
-          medsRes.json()
-        ]);
+        const patientId = res.data.data.id || res.data.data._id;
+        setPatient(res.data.data);
+        setShowAddPatient(false);
 
-        setAllSymptoms(Array.isArray(symptomsData) ? symptomsData : []);
-        setAllMeds(Array.isArray(medsData) ? medsData : []);
-      } catch (error) {
-        console.error('Data fetch error:', error);
-        setError(error.message);
-        setTimeout(() => setRetryCount(prev => prev + 1), 2000);
+        // Update URL for existing patient
+        window.history.pushState(
+          { patientId },
+          "",
+          `/patients/${patientId}/consultation`
+        );
+      } else {
+        setPatient(null);
+        setSearchedMobile(mobile);
+        setShowAddPatient(true);
+
+        // Update URL for new patient registration
+        window.history.pushState(
+          { newPatient: true, mobile },
+          "",
+          `/patients/new?mobile=${encodeURIComponent(mobile)}`
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching patient", error);
+      setPatient(null);
+      setShowAddPatient(false);
+      alert(error.message || "Failed to fetch patient. Please try again.");
+      window.history.replaceState(null, "", "/");
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  useEffect(() => {
+    const loadPatientFromURL = async () => {
+      const pathParts = window.location.pathname.split("/");
+
+      // Handle existing patient consultation page
+      if (pathParts[1] === "patients" && pathParts.length >= 3) {
+        const patientId = pathParts[2];
+
+        if (
+          pathParts[3] === "consultation" ||
+          pathParts[3] === "add-prescription"
+        ) {
+          try {
+            const res = await axios.get(
+              `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}`
+            );
+            setPatient(res.data);
+            setShowAddPatient(false);
+          } catch (error) {
+            console.error("Error loading patient from URL:", error);
+            alert("Invalid patient ID in URL");
+            window.history.replaceState(null, "", "/");
+          }
+        }
+      }
+      // Handle new patient registration page
+      else if (pathParts[1] === "patients" && pathParts[2] === "new") {
+        const urlParams = new URLSearchParams(window.location.search);
+        const mobile = urlParams.get("mobile");
+        if (mobile) {
+          setSearchedMobile(mobile);
+          setShowAddPatient(true);
+        }
       }
     };
 
-    fetchInitialData();
-  }, [retryCount]);
+    loadPatientFromURL();
+  }, []);
 
-  // Patient search
-  const handleSearch = async () => {
-    try {
-        setLoading(true);
-        setError(''); // Clear previous errors
-        setPatient(null); // Reset previous patient data
+  const handleNewPatientAdded = () => {
+    // Re-trigger the search with the same mobile number
+    onSearch({ mobile: searchedMobile });
+  };
 
-        const response = await fetch(`http://localhost:4500/api/patients/search?mobile=${encodeURIComponent(mobile)}`);
+  const handlePatientSelection = (selectedPatient) => {
+    setPatient(selectedPatient); // Set the selected patient
+  };
 
-        if (!response.ok) throw new Error('Patient search failed');
-
-        const data = await response.json();
-        
-        if (!data.exists) {
-            setStep(3);
-            return;
-        }
-
-        setPatient(data.data);
-        setStep(2);
-    } catch (err) {
-        setError(err.message);
-    } finally {
-        setLoading(false);
+  useEffect(() => {
+    if (neuroExamData.mmse_score) {
+      const score = parseInt(neuroExamData.mmse_score.split("/")[0]);
+      if (score > 30) {
+        setNeuroExamData((prev) => ({ ...prev, mmse_score: "30/30" }));
+      }
     }
-};
 
-  
-  // Create new patient
-  const createPatient = async () => {
+    if (neuroExamData.gcs_score) {
+      const score = parseInt(neuroExamData.gcs_score.split("/")[0]);
+      if (score < 3) {
+        setNeuroExamData((prev) => ({ ...prev, gcs_score: "3/15" }));
+      } else if (score > 15) {
+        setNeuroExamData((prev) => ({ ...prev, gcs_score: "15/15" }));
+      }
+    }
+  }, [neuroExamData.mmse_score, neuroExamData.gcs_score]);
+
+  const submitConsultation = async () => {
+    if (!patient) {
+      alert("Please search for a patient first.");
+      return;
+    }
+
+    setLoading(true);
     try {
-      setLoading(true);
-      const response = await fetch('/api/patients', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          ...newPatient, 
-          mobile: mobile.replace(/[^\d+]/g, '') 
-        })
-      });
+      // Step 1: Create Consultation
+      const consultationRes = await axios.post(
+        "https://patient-management-backend-nine.vercel.app/api/consultations",
+        { patient_id: patient.id, doctor_name: "Dr. Abdul Rauf" }
+      );
+      const consultationId = consultationRes.data.id;
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Patient creation failed');
+      // Step 2: Fetch All Tests to Map IDs (if not already fetched)
+      let allTests = [];
+      if (!allTests.length) {
+        // Only fetch if not already in state
+        const testsResponse = await axios.get(
+          "https://patient-management-backend-nine.vercel.app/api/tests"
+        );
+        allTests = testsResponse.data; // Expecting [{ id, test_name, ... }]
       }
 
-      const patientData = await response.json();
-      setPatient(patientData);
-      setStep(4);
-      setError('');
+      // Map selected test names to their IDs
+      const testIds = selectedTests
+        .map((name) => {
+          const test = allTests.find((t) => t.test_name === name);
+          if (!test) {
+            console.warn(`Test not found in database: ${name}`);
+          }
+          return test?.id;
+        })
+        .filter(Boolean);
+
+      const testAssignmentPromises = testIds.map((testId) =>
+        axios.post(
+          "https://patient-management-backend-nine.vercel.app/api/tests/assign",
+          {
+            test_id: testId,
+            consultation_id: consultationId,
+          }
+        )
+      );
+
+      // Step 3: Prepare API Calls
+      const apiCalls = [];
+
+      // Vitals
+      const hasVitalValues = Object.values({
+        pulse_rate: vitalSigns.pulseRate,
+        blood_pressure: vitalSigns.bloodPressure,
+        temperature: vitalSigns.temperature,
+        spo2_level: vitalSigns.spo2,
+        nihss_score: vitalSigns.nihss,
+      }).some((v) => v);
+
+      if (hasVitalValues) {
+        apiCalls.push(
+          axios.post(
+            "https://patient-management-backend-nine.vercel.app/api/vitals",
+            {
+              consultation_id: consultationId,
+              patient_id: patient.id,
+              pulse_rate: Number(vitalSigns.pulseRate) || null,
+              blood_pressure: vitalSigns.bloodPressure || null,
+              temperature: Number(vitalSigns.temperature) || null,
+              spo2_level: Number(vitalSigns.spo2) || null,
+              nihss_score: Number(vitalSigns.nihss) || null,
+              fall_assessment: vitalSigns.fall_assessment || "Done",
+            }
+          )
+        );
+      }
+
+      // Symptoms
+      if (selectedSymptoms.length > 0) {
+        apiCalls.push(
+          axios.post(
+            `https://patient-management-backend-nine.vercel.app/api/consultations/${consultationId}/symptoms`,
+            {
+              patient_id: patient.id,
+              symptom_ids: selectedSymptoms.map((s) => s.value),
+            }
+          )
+        );
+      }
+
+      // Medicines
+      if (selectedMedicines.length > 0) {
+        apiCalls.push(
+          axios.post(
+            "https://patient-management-backend-nine.vercel.app/api/prescriptions",
+            {
+              consultation_id: consultationId,
+              patient_id: patient.id,
+              medicines: selectedMedicines.map((med) => ({
+                medicine_id: med.medicine_id,
+                dosage_en: med.dosage_en,
+                dosage_urdu: med.dosage_urdu,
+                frequency_en: med.frequency_en,
+                frequency_urdu: med.frequency_urdu,
+                duration_en: med.duration_en,
+                duration_urdu: med.duration_urdu,
+                instructions_en: med.instructions_en,
+                instructions_urdu: med.instructions_urdu,
+              })),
+            }
+          )
+        );
+      }
+
+      // Neuro Exam
+      const neuroData = neuroExamFields.reduce((acc, key) => {
+        if (neuroExamData[key]?.trim()) acc[key] = neuroExamData[key];
+        return acc;
+      }, {});
+
+      const hasNeuroData = Object.keys(neuroData).length > 0;
+
+      if (
+        hasNeuroData ||
+        neuroExamData.diagnosis ||
+        neuroExamData.treatment_plan
+      ) {
+        apiCalls.push(
+          axios.post(
+            "https://patient-management-backend-nine.vercel.app/api/examination",
+            {
+              consultation_id: consultationId,
+              patient_id: patient.id,
+              ...neuroData,
+              diagnosis: neuroExamData.diagnosis || "",
+              treatment_plan: neuroExamData.treatment_plan || "",
+              pain_sensation: !!neuroExamData.pain_sensation,
+              vibration_sense: !!neuroExamData.vibration_sense,
+              proprioception: !!neuroExamData.proprioception,
+              temperature_sensation: !!neuroExamData.temperature_sensation,
+              brudzinski_sign: !!neuroExamData.brudzinski_sign,
+              kernig_sign: !!neuroExamData.kernig_sign,
+              facial_sensation: !!neuroExamData.facial_sensation,
+              swallowing_function: !!neuroExamData.swallowing_function,
+              mmse_score: neuroExamData.mmse_score || "",
+              gcs_score: neuroExamData.gcs_score || "",
+            }
+          )
+        );
+      }
+
+      // Follow-Up
+      if (selectedDuration && followUpDate) {
+        apiCalls.push(
+          axios.post(
+            `https://patient-management-backend-nine.vercel.app/api/followups/consultations/${consultationId}/followups`,
+            {
+              follow_up_date: followUpDate.toISOString().split("T")[0],
+              notes: followUpNotes || "عام چیک اپ",
+              duration_days: selectedDuration,
+            }
+          )
+        );
+      }
+
+      // Add Test Assignments to API Calls
+      apiCalls.push(...testAssignmentPromises);
+
+      // Step 4: Execute All API Calls
+      const results = await Promise.allSettled(apiCalls);
+      const failedCalls = results.filter((r) => r.status === "rejected");
+
+      if (failedCalls.length > 0) {
+        console.error(
+          "Some API calls failed:",
+          failedCalls.map((r) => r.reason.response?.data || r.reason.message)
+        );
+        throw new Error("Some parts of the form could not be submitted.");
+      }
+
+      // Step 5: Success Handling
+      toast.success("Consultation added successfully! 🎉", {
+        position: "top-right",
+        autoClose: 2000,
+      });
+
+      // Reset state
+      setVitalSigns({
+        pulseRate: "",
+        bloodPressure: "",
+        temperature: "",
+        spo2: "",
+        nihss: "",
+        fall_assessment: "Done",
+      });
+      setFollowUpDate(null);
+      setFollowUpNotes("");
+      setSelectedDuration(null);
+
+      // Step 6: Print and navigate
+      handlePrint();
+      setTimeout(() => {
+        navigate("/");
+        window.location.reload();
+      }, 1000);
     } catch (error) {
-      setError(error.message);
+      console.error(
+        "❌ Error submitting consultation:",
+        error.response?.data || error.message
+      );
+      alert("An error occurred while saving the consultation.");
     } finally {
       setLoading(false);
     }
   };
 
-  // Symptom management
-  const addSymptom = async (symptomName) => {
-    try {
-      setLoading(true);
-      const consultationRes = await fetch('/api/consultations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ patient_id: patient.id })
-      });
-
-      if (!consultationRes.ok) throw new Error('Consultation creation failed');
-      const consultation = await consultationRes.json();
-
-      let symptom = allSymptoms.find(s => s.name === symptomName);
-      if (!symptom) {
-        const symptomRes = await fetch('/api/symptoms', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: symptomName, is_custom: true })
-        });
-        if (!symptomRes.ok) throw new Error('Symptom creation failed');
-        symptom = await symptomRes.json();
-        setAllSymptoms(prev => [...prev, symptom]);
-      }
-
-      const linkRes = await fetch('/api/symptoms/consultations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          consultation_id: consultation.id,
-          symptom_id: symptom.id
-        })
-      });
-      if (!linkRes.ok) throw new Error('Failed to link symptom');
-
-      setSymptoms(prev => [...prev, symptom.name]);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Prescription printing
-  const handlePrint = useReactToPrint({
-    content: () => printRef.current,
-  });
-
-  // Main component render
   return (
-    <div className="container mx-auto p-6">
-      {error && <div className="bg-red-100 p-3 mb-4 rounded">{error}</div>}
+    <div
+      className="min-h-screen p-8 relative 
+overflow-hidden isolate w-[90vw] mx-auto before:absolute before:inset-0 
+before:bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.9),_transparent)] 
+before:opacity-50 before:-z-10"
+    >
+      <div className="mx-auto max-w-6xl rounded-2xl border border-white/30 bg-white/95 backdrop-blur-sm p-8 shadow-2xl shadow-gray-100/30">
+        <h2 className="mb-6 border-b border-gray-200 pb-4 text-2xl font-bold text-gray-900">
+          <span className="bg-gradient-to-r from-blue-700 to-purple-700 bg-clip-text text-transparent">
+            Patient Consultation Portal
+          </span>
+        </h2>
+        {patient && (
+          <div className="mb-8 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            {/* Header Section */}
+            <div className="flex items-center justify-between mb-8 px-6 py-4 bg-gradient-to-r from-gray-50 to-white shadow-md rounded-2xl">
+              {/* Back to Search Button */}
+              <button
+                onClick={handleReturnHome}
+                className="group flex items-center gap-2 px-4 py-2 bg-white text-gray-600 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 rounded-xl font-medium text-sm shadow-sm hover:shadow-md transition-all duration-200"
+              >
+                <AiOutlineArrowLeft className="w-5 h-5 transition-transform duration-200 group-hover:-translate-x-1" />
+                Back to Search
+              </button>
 
-      {/* Step 1: Patient Search */}
-      {step === 1 && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-4">Patient Search</h2>
-          <div className="flex gap-4">
-            <input
-              type="tel"
-              placeholder="Enter Mobile Number"
-              className="flex-1 p-2 border rounded"
-              value={mobile}
-              onChange={(e) => setMobile(e.target.value)}
+              {/* Right Side Actions */}
+              <div className="flex items-center gap-6">
+                {/* Show Previous Prescriptions Button */}
+                {Array.isArray(prescriptions) && prescriptions.length > 0 && (
+                  <button
+                    onClick={() => setShowPopup(true)}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all duration-300"
+                  >
+                    <AiOutlineHistory className="w-5 h-5" />
+                    Previous Prescriptions
+                  </button>
+                )}
+
+                {/* Patient History or No Patient Message */}
+                {patient?.id ? (
+                  <PatientHistory patientId={patient.id} />
+                ) : (
+                  <p className="text-gray-500 italic text-sm">
+                    No patient selected
+                  </p>
+                )}
+              </div>
+            </div>
+            {/* Patient Info Header */}
+            <div className="bg-gray-50 p-4 rounded-lg mb-6">
+              <div className="flex items-center gap-4">
+                <div className="bg-purple-100 p-2 rounded-lg">
+                  <AiOutlineUser className="w-6 h-6 text-purple-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-800">
+                    {patient.name}
+                  </h2>
+                  <div className="flex items-center gap-3 text-sm text-gray-600">
+                    <span>ID: {patient.id}</span>
+                    <span className="text-gray-400">|</span>
+                    <span>{patient.mobile}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Prescriptions Popup */}
+            {showPopup && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="fixed inset-0 bg-gray-900/70 backdrop-blur-md z-50 overflow-y-auto"
+              >
+                <div className="min-h-screen flex items-start justify-center p-6 pt-20 pb-10">
+                  <motion.div
+                    initial={{ scale: 0.95, y: -20 }}
+                    animate={{ scale: 1, y: 0 }}
+                    exit={{ scale: 0.95, y: -20 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                    className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-auto border border-gray-200 overflow-hidden"
+                  >
+                    {/* Popup Header */}
+                    <div className="px-6 py-5 bg-gradient-to-r from-teal-100 to-blue-100 dark:from-teal-900 dark:to-blue-900 border-b border-gray-200">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-4">
+                          <div className="bg-teal-200 p-3 rounded-full shadow-md">
+                            <AiOutlineFileText className="w-8 h-8 text-teal-700 dark:text-teal-300" />
+                          </div>
+                          <div>
+                            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                              Treatment History
+                            </h2>
+                            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 font-medium">
+                              Previous Prescriptions
+                            </p>
+                          </div>
+                        </div>
+                        <button
+                          onClick={() => setShowPopup(false)}
+                          className="p-2 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full transition-all duration-200"
+                        >
+                          <AiOutlineClose className="w-6 h-6 text-gray-600 dark:text-gray-300 hover:text-red-600 dark:hover:text-red-400" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Prescriptions List */}
+                    <div className="p-8 bg-gray-50 dark:bg-gray-900">
+                      <div className="space-y-10">
+                        {prescriptions.length === 0 ? (
+                          <div className="text-center py-12">
+                            <p className="text-lg font-medium text-gray-600 dark:text-gray-400">
+                              No prescriptions available.
+                            </p>
+                          </div>
+                        ) : (
+                          Object.entries(
+                            prescriptions.reduce((acc, prescription) => {
+                              const dateKey = new Date(
+                                prescription.prescribed_at
+                              ).toLocaleDateString("en-GB", {
+                                day: "numeric",
+                                month: "short",
+                                year: "numeric",
+                              });
+                              if (!acc[dateKey]) acc[dateKey] = [];
+                              acc[dateKey].push(prescription);
+                              return acc;
+                            }, {})
+                          ).map(([date, datePrescriptions], index) => (
+                            <motion.div
+                              key={date}
+                              initial={{ opacity: 0, y: 15 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: index * 0.1 }}
+                              className="group relative"
+                            >
+                              {/* Date Header */}
+                              <div className="flex items-center gap-4 mb-6">
+                                <AiOutlineCalendar className="w-7 h-7 text-teal-600 dark:text-teal-400" />
+                                <span className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                  {date}
+                                </span>
+                                <span className="text-gray-300 dark:text-gray-500">
+                                  •
+                                </span>
+                                <AiOutlineClockCircle className="w-7 h-7 text-teal-600 dark:text-teal-400" />
+                                <span className="text-base text-gray-600 dark:text-gray-300">
+                                  {new Date(
+                                    datePrescriptions[0].prescribed_at
+                                  ).toLocaleTimeString([], {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })}
+                                </span>
+                              </div>
+
+                              {/* Medicine List */}
+                              <div className="space-y-5 pl-12 relative">
+                                {datePrescriptions.map((prescription) => (
+                                  <div
+                                    key={prescription.id}
+                                    className="group bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md hover:shadow-lg hover:bg-teal-100/30 dark:hover:bg-teal-900/50 transition-all duration-300 border border-gray-200 dark:border-gray-700"
+                                  >
+                                    <div className="flex items-start gap-6">
+                                      <div className="p-3 bg-teal-200 dark:bg-teal-800 rounded-full shadow-sm mt-1">
+                                        <AiOutlineMedicineBox className="w-6 h-6 text-teal-700 dark:text-teal-300" />
+                                      </div>
+                                      <div className="flex-1">
+                                        <div className="flex items-baseline gap-4 mb-4">
+                                          <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+                                            {prescription.brand_name}
+                                          </h3>
+                                          <span className="text-sm text-teal-600 bg-teal-100 dark:bg-teal-900 dark:text-teal-300 px-2.5 py-1 rounded-full shadow-sm">
+                                            #{prescription.id}
+                                          </span>
+                                        </div>
+
+                                        {prescription.urdu_name && (
+                                          <div className="mb-5">
+                                            <p className="text-lg font-medium text-gray-700 dark:text-gray-300 urdu-font border-l-4 border-teal-300 pl-4">
+                                              {prescription.urdu_name}
+                                            </p>
+                                          </div>
+                                        )}
+
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                          <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200">
+                                            <div className="p-1.5 bg-teal-100 dark:bg-teal-900 rounded-full">
+                                              <FiDroplet className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                                            </div>
+                                            <div>
+                                              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                                Dosage
+                                              </p>
+                                              {prescription.dosage_en && (
+                                                <p className="text-sm text-gray-600 dark:text-gray-300">
+                                                  {prescription.dosage_en}
+                                                </p>
+                                              )}
+                                              {prescription.dosage_urdu && (
+                                                <p className="text-sm text-gray-600 dark:text-gray-300 urdu-font mt-1 border-l-2 border-teal-200 pl-2">
+                                                  {prescription.dosage_urdu}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200">
+                                            <div className="p-1.5 bg-teal-100 dark:bg-teal-900 rounded-full">
+                                              <FiClock className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                                            </div>
+                                            <div>
+                                              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                                Frequency
+                                              </p>
+                                              {prescription.frequency_en && (
+                                                <p className="text-sm text-gray-600 dark:text-gray-300">
+                                                  {prescription.frequency_en}
+                                                </p>
+                                              )}
+                                              {prescription.frequency_urdu && (
+                                                <p className="text-sm text-gray-600 dark:text-gray-300 urdu-font mt-1 border-l-2 border-teal-200 pl-2">
+                                                  {prescription.frequency_urdu}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200">
+                                            <div className="p-1.5 bg-teal-100 dark:bg-teal-900 rounded-full">
+                                              <FiCalendar className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                                            </div>
+                                            <div>
+                                              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                                Duration
+                                              </p>
+                                              {prescription.duration_en && (
+                                                <p className="text-sm text-gray-600 dark:text-gray-300">
+                                                  {prescription.duration_en}
+                                                </p>
+                                              )}
+                                              {prescription.duration_urdu && (
+                                                <p className="text-sm text-gray-600 dark:text-gray-300 urdu-font mt-1 border-l-2 border-teal-200 pl-2">
+                                                  {prescription.duration_urdu}
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                          <div className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg shadow-sm hover:bg-gray-100 dark:hover:bg-gray-600 transition-all duration-200">
+                                            <div className="p-1.5 bg-teal-100 dark:bg-teal-900 rounded-full">
+                                              <FiInfo className="w-5 h-5 text-teal-600 dark:text-teal-400" />
+                                            </div>
+                                            <div>
+                                              <p className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                                                Instructions
+                                              </p>
+                                              {prescription.instructions_en && (
+                                                <p className="text-sm text-gray-600 dark:text-gray-300">
+                                                  {prescription.instructions_en}
+                                                </p>
+                                              )}
+                                              {prescription.instructions_urdu && (
+                                                <p className="text-sm text-gray-600 dark:text-gray-300 urdu-font mt-1 border-l-2 border-teal-200 pl-2">
+                                                  {
+                                                    prescription.instructions_urdu
+                                                  }
+                                                </p>
+                                              )}
+                                            </div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+
+                                {/* Timeline Connector */}
+                                <div className="absolute left-6 top-0 bottom-0 w-1 bg-teal-300 dark:bg-teal-700 group-last:hidden transition-all duration-300" />
+                              </div>
+                            </motion.div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Enhanced Close Button */}
+                    <div className="p-6 border-t border-gray-200 bg-gray-100 dark:bg-gray-800">
+                      <div className="flex justify-end gap-4">
+                        <button
+                          onClick={() => setShowPopup(false)}
+                          className="px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-teal-600 to-blue-600 hover:from-teal-700 hover:to-blue-700 rounded-lg shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center gap-3"
+                        >
+                          <AiOutlineClose className="w-5 h-5" />
+                          Close Overview
+                        </button>
+                      </div>
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+            )}
+          </div>
+        )}
+        {/* Enhanced Search Section */}
+        {!patient && (
+          <div className="mb-8 bg-white p-6 rounded-xl border border-gray-200 shadow-sm">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="bg-blue-700 p-2.5 rounded-lg text-white shadow-sm">
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  ></path>
+                </svg>
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-800">
+                  Patient Lookup
+                </h3>
+                <p className="text-sm text-gray-600">
+                  Search existing patient records by mobile number
+                </p>
+              </div>
+            </div>
+
+            <form onSubmit={handleSearchSubmit(onSearch)} className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700 flex items-center gap-1">
+                  Mobile Number <span className="text-red-500">*</span>
+                </label>
+                <div className="flex gap-3">
+                  <input
+                    {...registerSearch("mobile")}
+                    placeholder="0300 1234567"
+                    className="w-full rounded-xl border-2 border-gray-200 bg-white p-3.5 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all"
+                  />
+                  <button
+                    type="submit"
+                    disabled={isSearching}
+                    className="self-stretch px-8 bg-blue-700 text-white font-semibold rounded-xl shadow-md hover:bg-blue-800 transition-colors flex items-center justify-center"
+                  >
+                    {isSearching ? (
+                      <div className="flex items-center gap-2">
+                        <span className="animate-spin">🌀</span> Searching...
+                      </div>
+                    ) : (
+                      "Find Patient"
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {searchErrors.mobile && (
+                <div className="flex items-center gap-2 text-red-600 bg-red-50 px-4 py-2.5 rounded-lg">
+                  <svg
+                    className="w-5 h-5 flex-shrink-0"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    ></path>
+                  </svg>
+                  <span className="text-sm">{searchErrors.mobile.message}</span>
+                </div>
+              )}
+            </form>
+          </div>
+        )}
+
+        {patient ? (
+          <div className="space-y-8" id="consultation-content">
+            {/* vitals signs section */}
+            <VitalSignsSection
+              vitalSigns={vitalSigns}
+              onVitalSignsChange={setVitalSigns}
             />
+
+            {/* Symptoms Section */}
+            <SymptomAnalysisSection
+              selectedSymptoms={selectedSymptoms}
+              onSymptomsChange={setSelectedSymptoms}
+            />
+            {/* Neurological Examination Section */}
+            <NeurologicalExamSection
+              neuroExamData={neuroExamData}
+              setNeuroExamData={setNeuroExamData}
+              fields={neuroExamFields}
+            />
+            {/* test sections */}
+            <DiagnosticTestsSection
+              tests={tests}
+              selectedTests={selectedTests}
+              onTestsChange={setSelectedTests}
+              isLoading={loading}
+            />
+
+            {/* Enhanced Medicines Section */}
+
+            <PrescriptionManagementSection
+              selectedMedicines={selectedMedicines}
+              setSelectedMedicines={setSelectedMedicines}
+              customSelectStyles={customSelectStyles}
+            />
+
+            <div className="md:col-span-4 space-y-4">
+              <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
+                Clinical Decisions
+              </h4>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-gray-700">
+                  Diagnosis
+                </label>
+                <textarea
+                  value={neuroExamData.diagnosis || ""}
+                  onChange={(e) =>
+                    setNeuroExamData((prev) => ({
+                      ...prev,
+                      diagnosis: e.target.value,
+                    }))
+                  }
+                  className="w-full rounded-lg border-2 border-gray-100 p-3 h-32"
+                />
+              </div>
+            </div>
+            {/* followup */}
+
+            <FollowUpSection
+              selectedDuration={selectedDuration}
+              followUpDate={followUpDate}
+              followUpNotes={followUpNotes}
+              onDurationChange={setSelectedDuration}
+              onDateChange={setFollowUpDate}
+              onNotesChange={setFollowUpNotes}
+            />
+            {/* Enhanced Final Button */}
             <button
-              className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 disabled:bg-gray-400"
-              onClick={handleSearch}
+              onClick={submitConsultation}
+              className={`w-full py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.01] flex items-center justify-center ${
+                loading ? "opacity-75 cursor-not-allowed" : ""
+              }`}
               disabled={loading}
             >
-              {loading ? 'Searching...' : 'Search'}
+              {loading ? (
+                <>
+                  <svg
+                    className="animate-spin h-5 w-5 mr-2 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v8H4z"
+                    ></path>
+                  </svg>
+                  Processing...
+                </>
+              ) : (
+                <>
+                  <span className="inline-block mr-2">✅</span>
+                  Finalize & Save Consultation
+                </>
+              )}
             </button>
-          </div>
-        </div>
-      )}
-
-      {/* Step 2: Existing Patient */}
-      {step === 2 && patient && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-4">Patient Details</h2>
-          <div className="grid grid-cols-2 gap-4 mb-6">
-            <p><span className="font-semibold">Name:</span> {patient.name}</p>
-            <p><span className="font-semibold">Age:</span> {patient.age}</p>
-            <p><span className="font-semibold">Gender:</span> {patient.gender}</p>
-            <p><span className="font-semibold">Mobile:</span> {patient.mobile}</p>
-          </div>
-          <button
-            className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
-            onClick={() => setStep(4)}
-          >
-            Continue to Symptoms
-          </button>
-        </div>
-      )}
-
-      {/* Step 3: New Patient Form */}
-      {step === 3 && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-4">New Patient Registration</h2>
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Full Name"
-              className="p-2 border rounded"
-              value={newPatient.name}
-              onChange={(e) => setNewPatient({...newPatient, name: e.target.value})}
-            />
-            <input
-              type="number"
-              placeholder="Age"
-              className="p-2 border rounded"
-              value={newPatient.age}
-              onChange={(e) => setNewPatient({...newPatient, age: e.target.value})}
-            />
-            <select
-              className="p-2 border rounded"
-              value={newPatient.gender}
-              onChange={(e) => setNewPatient({...newPatient, gender: e.target.value})}
-            >
-              <option>Male</option>
-              <option>Female</option>
-            </select>
-            <input
-              type="number"
-              placeholder="Weight (kg)"
-              className="p-2 border rounded"
-              value={newPatient.weight}
-              onChange={(e) => setNewPatient({...newPatient, weight: e.target.value})}
-            />
-            <input
-              type="number"
-              placeholder="Height (cm)"
-              className="p-2 border rounded"
-              value={newPatient.height}
-              onChange={(e) => setNewPatient({...newPatient, height: e.target.value})}
-            />
-          </div>
-          <button
-            className="mt-4 bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
-            onClick={createPatient}
-          >
-            Save Patient
-          </button>
-        </div>
-      )}
-
-      {/* Step 4: Symptoms Entry */}
-      {step === 4 && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-4">Symptoms Entry</h2>
-          <div className="flex gap-4 mb-4">
-            <select
-              className="flex-1 p-2 border rounded"
-              onChange={(e) => addSymptom(e.target.value)}
-            >
-              <option value="">Select Symptom</option>
-              {allSymptoms.map(symptom => (
-                <option key={symptom.id} value={symptom.name}>
-                  {symptom.name}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              placeholder="Add Custom Symptom"
-              className="flex-1 p-2 border rounded"
-              onKeyPress={(e) => {
-                if (e.key === 'Enter') {
-                  addSymptom(e.target.value);
-                  e.target.value = '';
-                }
-              }}
-            />
-          </div>
-          <div className="flex flex-wrap gap-2 mb-6">
-            {symptoms.map((symptom, index) => (
-              <div key={index} className="bg-gray-100 px-3 py-1 rounded-full">
-                {symptom}
-                <button 
-                  className="ml-2 text-red-500"
-                  onClick={() => setSymptoms(symptoms.filter((_, i) => i !== index))}
+            <div className="mt-6">
+              <button
+                onClick={handlePrint}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center gap-2 print:hidden"
+                aria-label="Print prescription"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  viewBox="0 0 20 20"
+                  fill="currentColor"
                 >
-                  ×
-                </button>
-              </div>
-            ))}
-          </div>
-          <button
-            className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
-            onClick={() => setStep(5)}
-          >
-            Continue to Prescription
-          </button>
-        </div>
-      )}
-
-      {/* Step 5: Prescription Form */}
-      {step === 5 && (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-          <h2 className="text-2xl font-bold mb-4">Prescription Entry</h2>
-          <div className="mb-6">
-            <input
-              type="text"
-              placeholder="Search Medicine"
-              className="w-full p-2 border rounded mb-2"
-              onChange={(e) => {
-                const med = allMeds.find(m => m.brand_name === e.target.value);
-                setCurrentMed({
-                  ...currentMed,
-                  medicine_id: med?.id || ''
-                });
-              }}
-            />
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <input
-                placeholder="Dosage"
-                className="p-2 border rounded"
-                value={currentMed.dosage}
-                onChange={(e) => setCurrentMed({...currentMed, dosage: e.target.value})}
-              />
-              <input
-                placeholder="Frequency (English)"
-                className="p-2 border rounded"
-                value={currentMed.frequency_en}
-                onChange={(e) => setCurrentMed({...currentMed, frequency_en: e.target.value})}
-              />
-              <input
-                placeholder="ہدایات (اردو)"
-                className="p-2 border rounded urdu-font"
-                dir="rtl"
-                value={currentMed.frequency_urdu}
-                onChange={(e) => setCurrentMed({...currentMed, frequency_urdu: e.target.value})}
-              />
+                  <path
+                    fillRule="evenodd"
+                    d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a2 2 0 002 2h6a2 2 0 002-2v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a2 2 0 00-2-2H7a2 2 0 00-2 2zm8 0H7v3h6V4zm0 8H7v4h6v-4z"
+                    clipRule="evenodd"
+                  />
+                </svg>
+                Print Prescription
+              </button>
             </div>
-            <button
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-              onClick={addMedicine}
-            >
-              Add Medicine
-            </button>
           </div>
-
-          <div className="mb-6">
-            <h3 className="text-xl font-semibold mb-3">Added Medicines</h3>
-            {medsList.map((med, index) => (
-              <div key={index} className="bg-gray-50 p-3 rounded mb-2">
-                <p className="font-medium">
-                  {allMeds.find(m => m.id === med.medicine_id)?.brand_name}
-                </p>
-                <p>Dosage: {med.dosage}</p>
-                <p>Frequency: {med.frequency_en}</p>
-                <p className="urdu-font" dir="rtl">{med.frequency_urdu}</p>
-              </div>
-            ))}
-          </div>
-
-          <PrintablePrescription 
-            ref={printRef}
-            patient={patient} 
-            medicines={medsList}
-            allMeds={allMeds}
-          />
-          
-          <button
-            className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
-            onClick={handlePrint}
-          >
-            Print Prescription
-          </button>
-        </div>
-      )}
+        ) : (
+          showAddPatient && (
+            <AddPatientForm
+              searchedMobile={searchedMobile}
+              onSuccess={handleNewPatientAdded}
+            />
+          )
+        )}
+      </div>
+      <ToastContainer />
     </div>
   );
 };
 
-// Printable Prescription Component
-const PrintablePrescription = React.forwardRef(({ patient = {}, medicines = [], allMeds = [] }, ref) => {
-  return (
-    <div ref={ref} className="p-6 print-visible" style={{ display: 'none' }}>
-      <div className="text-center mb-6">
-        <h1 className="text-2xl font-bold">Specialist Clinics, Lab and Imaging Services</h1>
-        <p>G.T Road, Gujar Khan. Ph: 051-3513287</p>
-      </div>
+export default PatientSearch;
 
-      <div className="mb-6">
-        <h2 className="text-xl font-bold">Patient Details</h2>
-        <p>Name: {patient?.name || 'N/A'}</p>
-        <p>MR#: {patient?.id || 'N/A'}</p>
-        <p>Age/Gender: {patient?.age || 'N/A'} {patient?.gender || ''}</p>
-        <p>Date: {new Date().toLocaleDateString()}</p>
-      </div>
 
-      <table className="w-full mb-6">
-        <thead>
-          <tr>
-            <th className="text-left">Medicine</th>
-            <th className="text-left">Dosage</th>
-            <th className="text-left">Instructions (English)</th>
-            <th className="text-right urdu-font">ہدایات (اردو)</th>
-          </tr>
-        </thead>
-        <tbody>
-          {medicines.map((med, index) => {
-            const medicine = allMeds.find(m => m.id === med.medicine_id);
-            return (
-              <tr key={index}>
-                <td>{medicine?.brand_name || 'Unknown Medicine'}</td>
-                <td>{med.dosage}</td>
-                <td>{med.instructions_en}</td>
-                <td className="urdu-font" dir="rtl">{med.instructions_urdu}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+<div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <FaPills className="text-purple-600" />
+              Prescriptions
+            </h3>
 
-      <div className="text-right mt-8">
-        <p className="font-bold">Dr. Omer Aziz Mirza</p>
-        <p>Consultant Cardiologist</p>
-      </div>
-    </div>
-  );
-});
+            {editFormData.prescriptions?.map((med, index) => (
+              <div key={index} className="mb-4 p-4 bg-white rounded-lg border">
+                {/* Fields Row */}
+                <div className="flex flex-wrap md:flex-nowrap gap-4 items-start">
+                  {/* Medicine Selection */}
+                  <div className="flex-1 min-w-[200px]">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Medicine
+                    </label>
+                    <select
+                      value={med.medicine_id || ""}
+                      onChange={(e) =>
+                        updateField(
+                          "prescriptions",
+                          index,
+                          "medicine_id",
+                          e.target.value
+                        )
+                      }
+                      className="w-full p-2 border rounded-lg"
+                    >
+                      <option value="">Select Medicine</option>
+                      {allMedicines.map((medicine) => (
+                        <option key={medicine.id} value={medicine.id}>
+                          {medicine.brand_name}
+                          {medicine.strength && ` (${medicine.strength})`}
+                          {medicine.generic_name &&
+                            ` - ${medicine.generic_name}`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
 
-export default ClinicSystem;
+                  {/* Dosage Field */}
+                  <div className="flex-1 min-w-[150px]">
+                    <SelectField
+                      label="Dosage (Urdu)"
+                      value={med.dosage_urdu}
+                      onChange={(val) =>
+                        updateField("prescriptions", index, "dosage_urdu", val)
+                      }
+                      options={[
+                        {
+                          label: "ایک گولی صبح وشام",
+                          value: "ایک گولی صبح وشام",
+                        },
+                        { label: "دو گولی روزانہ", value: "دو گولی روزانہ" },
+                        {
+                          label: "آدھی گولی دن میں تین بار",
+                          value: "آدھی گولی دن میں تین بار",
+                        },
+                        { label: "ایک چمچہ شربت", value: "ایک چمچہ شربت" },
+                        { label: "دو قطرے کان میں", value: "دو قطرے کان میں" },
+                        { label: "ضرورت کے مطابق", value: "ضرورت کے مطابق" },
+                      ]}
+                      urdu
+                      selectClassName="text-right direction-rtl"
+                    />
+                  </div>
+
+                  {/* Frequency Field */}
+                  <div className="flex-1 min-w-[150px]">
+                    <SelectField
+                      label="Frequency (Urdu)"
+                      value={med.frequency_urdu}
+                      onChange={(val) =>
+                        updateField(
+                          "prescriptions",
+                          index,
+                          "frequency_urdu",
+                          val
+                        )
+                      }
+                      options={[
+                        { label: "روزانہ ایک بار", value: "روزانہ ایک بار" },
+                        { label: "روزانہ دو بار", value: "روزانہ دو بار" },
+                        { label: "روزانہ تین بار", value: "روزانہ تین بار" },
+                        { label: "ضرورت کے مطابق", value: "ضرورت کے مطابق" },
+                      ]}
+                      urdu
+                      selectClassName="text-right direction-rtl"
+                    />
+                  </div>
+
+                  {/* Duration Field */}
+                  <div className="flex-1 min-w-[150px]">
+                    <SelectField
+                      label="Duration (Urdu)"
+                      value={med.duration_urdu}
+                      onChange={(val) =>
+                        updateField(
+                          "prescriptions",
+                          index,
+                          "duration_urdu",
+                          val
+                        )
+                      }
+                      options={[
+                        { label: "3 دن", value: "3 دن" },
+                        { label: "5 دن", value: "5 دن" },
+                        { label: "7 دن", value: "7 دن" },
+                        { label: "10 دن", value: "10 دن" },
+                        { label: "2 ہفتے", value: "2 ہفتے" },
+                        { label: "1 ماہ", value: "1 ماہ" },
+                      ]}
+                      urdu
+                      selectClassName="text-right direction-rtl"
+                    />
+                  </div>
+
+                  {/* Instructions Field */}
+                  <div className="flex-1 min-w-[200px]">
+                    <SelectField
+                      label="Instructions (Urdu)"
+                      value={med.instructions_urdu}
+                      onChange={(val) =>
+                        updateField(
+                          "prescriptions",
+                          index,
+                          "instructions_urdu",
+                          val
+                        )
+                      }
+                      options={[
+                        { label: "کھانے کے بعد", value: "کھانے کے بعد" },
+                        { label: "کھانے سے پہلے", value: "کھانے سے پہلے" },
+                        { label: "خالی پیٹ", value: "خالی پیٹ" },
+                        { label: "سونے سے پہلے", value: "سونے سے پہلے" },
+                        { label: "درد ہونے پر", value: "درد ہونے پر" },
+                      ]}
+                      urdu
+                      selectClassName="text-right direction-rtl"
+                    />
+                  </div>
+
+                  {/* Delete Button */}
+                  <button
+                    type="button"
+                    onClick={() => removeMedicine(index)}
+                    className="self-end mb-1 text-red-500 hover:text-red-700"
+                  >
+                    <FaTrash className="w-5 h-5" />
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {/* Add Medicine Button */}
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={addMedicine}
+                className="w-full md:w-auto px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors flex items-center gap-2 justify-center"
+              >
+                <FaPlus className="text-sm" />
+                Add Medicine
+              </button>
+            </div>
+          </div>
