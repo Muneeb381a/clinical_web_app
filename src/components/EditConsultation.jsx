@@ -85,16 +85,18 @@ const EditConsultation = () => {
   const [symptomsError, setSymptomsError] = useState(null);
   const [testsError, setTestsError] = useState(null);
 
-  const validateBloodPressure = (value, index) => {
-    if (/^\d{2,3}\/\d{2,3}$/.test(value) || value === "") {
-      updateField("vital_signs", index, "blood_pressure", value);
-    }
+  const handleBloodPressureChange = (value, index) => {
+    // Allow any input but sanitize
+    const sanitized = value
+      .replace(/[^0-9/]/g, '') // Remove non-numeric characters except /
+      .replace(/(\/.*)\//, '$1'); // Prevent multiple slashes
+    updateVitalSign(index, 'blood_pressure', sanitized);
   };
-
-  const validateNumber = (value, index, field, min, max) => {
-    const numValue = parseFloat(value);
-    if (!isNaN(numValue) && numValue >= min && numValue <= max) {
-      updateField("vital_signs", index, field, value);
+  
+  const handleNumberChange = (value, index, field, min, max) => {
+    // Allow empty or numeric values
+    if (value === '' || (!isNaN(value) && !isNaN(parseFloat(value)))) {
+      updateVitalSign(index, field, value);
     }
   };
 
@@ -250,7 +252,19 @@ const EditConsultation = () => {
               how_to_take_urdu: pres.how_to_take_urdu || "",
               prescribed_at: pres.prescribed_at || new Date().toISOString(),
             })),
-            vital_signs: consultationData.vital_signs || [],
+            vital_signs: consultationData.vital_signs?.length
+              ? consultationData.vital_signs
+              : [createNewVitalSign()],
+          });
+
+          const createNewVitalSign = () => ({
+            blood_pressure: "",
+            pulse_rate: "",
+            temperature: "",
+            spo2_level: "",
+            nihss_score: "",
+            fall_assessment: "Done",
+            recorded_at: new Date().toISOString(),
           });
         }
       } catch (error) {
@@ -338,6 +352,17 @@ const EditConsultation = () => {
     setEditFormData((prev) => ({ ...prev, [section]: newData }));
   };
 
+
+  const updateVitalSign = (index, field, value) => {
+    setEditFormData(prev => {
+      const newVitalSigns = [...prev.vital_signs];
+      newVitalSigns[index] = {
+        ...newVitalSigns[index],
+        [field]: value
+      };
+      return { ...prev, vital_signs: newVitalSigns };
+    });
+  };
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
@@ -476,15 +501,6 @@ const EditConsultation = () => {
                 />
                 Vital Signs
               </h3>
-              <button
-                type="button"
-                onClick={addVitalSign}
-                className="px-4 py-2 bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-colors flex items-center gap-2 text-sm font-medium"
-                aria-label="Add new vital sign entry"
-              >
-                <FaPlus className="text-base" aria-hidden="true" />
-                Add Vital Sign
-              </button>
             </div>
 
             {editFormData.vital_signs?.map((vital, index) => (
@@ -492,12 +508,13 @@ const EditConsultation = () => {
                 key={`vital-${vital.recorded_at}-${index}`}
                 className="mb-4 p-4 bg-white rounded-lg border border-gray-200 shadow-xs"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-x-4 gap-y-4">
                   <FormField
                     label="Blood Pressure (mmHg)"
                     placeholder="120/80"
-                    value={vital.blood_pressure}
-                    onChange={(val) => validateBloodPressure(val, index)}
+                    value={vital.blood_pressure || ""}
+                    onChange={(val) => handleBloodPressureChange(val, index)}
+                    type="text"
                     inputClassName="text-center"
                     icon={
                       <FaTint className="text-gray-400" aria-hidden="true" />
@@ -507,20 +524,18 @@ const EditConsultation = () => {
                   />
 
                   <FormField
-                    label="Pulse Rate (bpm)"
-                    placeholder="e.g., 72"
-                    value={vital.pulse_rate}
-                    onChange={(val) =>
-                      validateNumber(val, index, "pulse_rate", 30, 200)
-                    }
-                    inputClassName="text-center"
+                   label="Pulse Rate (bpm)"
+                   placeholder="e.g., 72"
+                   value={vital.pulse_rate || ""}
+                   onChange={(val) => handleNumberChange(val, index, 'pulse_rate', 30, 200)}
+                   type="number"
+                   inputClassName="text-center"
                     icon={
                       <FaHeartbeat
                         className="text-gray-400"
                         aria-hidden="true"
                       />
                     }
-                    type="number"
                     min="30"
                     max="200"
                   />
@@ -528,10 +543,10 @@ const EditConsultation = () => {
                   <FormField
                     label="Temperature (°C)"
                     placeholder="36.5"
-                    value={vital.temperature}
-                    onChange={(val) =>
-                      validateNumber(val, index, "temperature", 35, 42)
-                    }
+                    value={vital.temperature || ""}
+                    onChange={(val) => handleNumberChange(val, index, 'temperature', 35, 42)}
+                    type="number"
+                    step="0.1"
                     inputClassName="text-center"
                     icon={
                       <FaThermometerHalf
@@ -539,24 +554,20 @@ const EditConsultation = () => {
                         aria-hidden="true"
                       />
                     }
-                    type="number"
-                    step="0.1"
                     min="35"
                     max="42"
                   />
 
                   <FormField
-                    label="SpO2 (%)"
-                    placeholder="98"
-                    value={vital.spo2_level}
-                    onChange={(val) =>
-                      validateNumber(val, index, "spo2_level", 70, 100)
-                    }
-                    inputClassName="text-center"
+                   label="SpO2 (%)"
+                   placeholder="98"
+                   value={vital.spo2_level || ""}
+                   onChange={(val) => handleNumberChange(val, index, 'spo2_level', 70, 100)}
+                   type="number"
+                   inputClassName="text-center"
                     icon={
                       <SiOxygen className="text-gray-400" aria-hidden="true" />
                     }
-                    type="number"
                     min="70"
                     max="100"
                   />
@@ -567,7 +578,7 @@ const EditConsultation = () => {
                     placeholder="0-42"
                     value={vital.nihss_score}
                     onChange={(val) =>
-                      validateNumber(val, index, "nihss_score", 0, 42)
+                      handleNumberChange(val, index, "nihss_score", 0, 42)
                     }
                     type="number"
                     min="0"
@@ -865,16 +876,28 @@ const EditConsultation = () => {
                         updateField("prescriptions", index, "dosage_urdu", val)
                       }
                       options={[
-                        { value: "ایک چوتھائی گولی", label: "ایک چوتھائی گولی" },
+                        {
+                          value: "ایک چوتھائی گولی",
+                          label: "ایک چوتھائی گولی",
+                        },
                         { value: "آدھی گولی", label: "آدھی گولی" },
-                        { value: "شدید سر درد کے لیے", label: "شدید سر درد کے لیے" },
-                        { value: "تین چوتھائی گولی", label: "تین چوتھائی گولی" },
+                        {
+                          value: "شدید سر درد کے لیے",
+                          label: "شدید سر درد کے لیے",
+                        },
+                        {
+                          value: "تین چوتھائی گولی",
+                          label: "تین چوتھائی گولی",
+                        },
                         { value: "ایک گولی", label: "ایک گولی" },
                         { value: "ڈیڑھ گولی", label: "ڈیڑھ گولی" },
                         { value: "دو گولیاں", label: "دو گولیاں" },
                         { value: "ڈھائی گولیاں", label: "ڈھائی گولیاں" },
                         { value: "تین گولیاں", label: "تین گولیاں" },
-                        { value: "ساڑھے تین گولیاں", label: "ساڑھے تین گولیاں" },
+                        {
+                          value: "ساڑھے تین گولیاں",
+                          label: "ساڑھے تین گولیاں",
+                        },
                         { value: "چار گولیاں", label: "چار گولیاں" },
                         { value: "پانچ گولیاں", label: "پانچ گولیاں" },
                         { value: "چھ گولیاں", label: "چھ گولیاں" },
@@ -888,7 +911,10 @@ const EditConsultation = () => {
                         { value: "تین چمچ", label: "تین چمچ" },
                         { value: "ڈھائی ملی لیٹر", label: "ڈھائی ملی لیٹر" },
                         { value: "پانچ ملی لیٹر", label: "پانچ ملی لیٹر" },
-                        { value: "ساڑھے سات ملی لیٹر", label: "ساڑھے سات ملی لیٹر" },
+                        {
+                          value: "ساڑھے سات ملی لیٹر",
+                          label: "ساڑھے سات ملی لیٹر",
+                        },
                         { value: "دس ملی لیٹر", label: "دس ملی لیٹر" },
                         { value: "پندرہ ملی لیٹر", label: "پندرہ ملی لیٹر" },
                         { value: "بیس ملی لیٹر", label: "بیس ملی لیٹر" },
@@ -960,7 +986,10 @@ const EditConsultation = () => {
                         { label: "شام، رات", value: "شام، رات" },
                         { label: "صبح سویرے، رات", value: "صبح سویرے، رات" },
                         { label: "صبح، دیر دوپہر", value: "صبح، دیر دوپہر" },
-                        { label: "دوپہر، غروب آفتاب", value: "دوپہر، غروب آفتاب" },
+                        {
+                          label: "دوپہر، غروب آفتاب",
+                          value: "دوپہر، غروب آفتاب",
+                        },
                         { label: "پورا دن", value: "پورا دن" },
                         { label: "پوری رات", value: "پوری رات" },
                         { label: "چوبیس گھنٹے", value: "چوبیس گھنٹے" },
@@ -1011,7 +1040,7 @@ const EditConsultation = () => {
                         { value: "بارہ_مہینے", label: "بارہ مہینے" },
                         { value: "ضرورت_کے_مطابق", label: "ضرورت کے مطابق" },
                         { value: "طویل_المدت", label: "طویل المدت" },
-                        { value: "مختصر_المدت", label: "مختصر المدت" }
+                        { value: "مختصر_المدت", label: "مختصر المدت" },
                       ]}
                       urdu
                       selectClassName="px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-lg direction-rtl hover:border-gray-300 transition-colors"
@@ -1038,10 +1067,22 @@ const EditConsultation = () => {
                         { value: "خالی_پیٹ", label: "خالی پیٹ" },
                         { value: "ناشتے_سے_پہلے", label: "ناشتے سے پہلے" },
                         { value: "ناشتے_کے_بعد", label: "ناشتے کے بعد" },
-                        { value: "دوپہر_کے_کھانے_سے_پہلے", label: "دوپہر کے کھانے سے پہلے" },
-                        { value: "دوپہر_کے_کھانے_کے_بعد", label: "دوپہر کے کھانے کے بعد" },
-                        { value: "رات_کے_کھانے_سے_پہلے", label: "رات کے کھانے سے پہلے" },
-                        { value: "رات_کے_کھانے_کے_بعد", label: "رات کے کھانے کے بعد" },
+                        {
+                          value: "دوپہر_کے_کھانے_سے_پہلے",
+                          label: "دوپہر کے کھانے سے پہلے",
+                        },
+                        {
+                          value: "دوپہر_کے_کھانے_کے_بعد",
+                          label: "دوپہر کے کھانے کے بعد",
+                        },
+                        {
+                          value: "رات_کے_کھانے_سے_پہلے",
+                          label: "رات کے کھانے سے پہلے",
+                        },
+                        {
+                          value: "رات_کے_کھانے_کے_بعد",
+                          label: "رات کے کھانے کے بعد",
+                        },
                         { value: "دودھ_کے_ساتھ", label: "دودھ کے ساتھ" },
                         { value: "چائے_سے_پہلے", label: "چائے سے پہلے" },
                         { value: "چائے_کے_بعد", label: "چائے کے بعد" },
@@ -1049,8 +1090,14 @@ const EditConsultation = () => {
                         { value: "پانی_کے_ساتھ", label: "پانی کے ساتھ" },
                         { value: "جوس_کے_ساتھ", label: "جوس کے ساتھ" },
                         { value: "دہی_کے_ساتھ", label: "دہی کے ساتھ" },
-                        { value: "چکنائی_والے_کھانے_کے_ساتھ", label: "چکنائی والے کھانے کے ساتھ" },
-                        { value: "ڈیری_مصنوعات_کے_بغیر", label: "ڈیری مصنوعات کے بغیر" },
+                        {
+                          value: "چکنائی_والے_کھانے_کے_ساتھ",
+                          label: "چکنائی والے کھانے کے ساتھ",
+                        },
+                        {
+                          value: "ڈیری_مصنوعات_کے_بغیر",
+                          label: "ڈیری مصنوعات کے بغیر",
+                        },
                         { value: "کیفین_سے_پرہیز", label: "کیفین سے پرہیز" },
                       ]}
                       urdu
