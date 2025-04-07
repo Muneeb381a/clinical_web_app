@@ -23,8 +23,10 @@ import {
   FaUser,
   FaPhone,
   FaIdCard,
+  FaFilePdf,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
+import PrescriptionButton from "./PrescriptionButton";
 
 const PatientSearch = () => {
   const [patient, setPatient] = useState(null);
@@ -414,6 +416,7 @@ const PatientSearch = () => {
                           </div>
                         </div>
                         <div className="flex gap-3">
+                        <PrescriptionButton patient={patient} consultation={consultation} />
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
