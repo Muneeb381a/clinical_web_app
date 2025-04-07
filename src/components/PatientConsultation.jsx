@@ -298,7 +298,7 @@ const PatientConsultation = () => {
   //     setLoading(false);
   //   }
   // };
-  
+
   const submitConsultation = async () => {
     if (!patient) return;
     setLoading(true);

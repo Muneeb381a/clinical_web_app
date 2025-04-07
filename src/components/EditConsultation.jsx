@@ -88,14 +88,14 @@ const EditConsultation = () => {
   const handleBloodPressureChange = (value, index) => {
     // Allow any input but sanitize
     const sanitized = value
-      .replace(/[^0-9/]/g, '') // Remove non-numeric characters except /
-      .replace(/(\/.*)\//, '$1'); // Prevent multiple slashes
-    updateVitalSign(index, 'blood_pressure', sanitized);
+      .replace(/[^0-9/]/g, "") // Remove non-numeric characters except /
+      .replace(/(\/.*)\//, "$1"); // Prevent multiple slashes
+    updateVitalSign(index, "blood_pressure", sanitized);
   };
-  
+
   const handleNumberChange = (value, index, field, min, max) => {
     // Allow empty or numeric values
-    if (value === '' || (!isNaN(value) && !isNaN(parseFloat(value)))) {
+    if (value === "" || (!isNaN(value) && !isNaN(parseFloat(value)))) {
       updateVitalSign(index, field, value);
     }
   };
@@ -103,7 +103,7 @@ const EditConsultation = () => {
   useEffect(() => {
     const abortController = new AbortController();
     let isMounted = true;
-  
+
     const createNewVitalSign = () => ({
       blood_pressure: "",
       pulse_rate: "",
@@ -113,81 +113,213 @@ const EditConsultation = () => {
       fall_assessment: "Done",
       recorded_at: new Date().toISOString(),
     });
-  
+
     const processItems = (items, reference, key) => {
-      if (!items || !Array.isArray(items)) return [];
+      if (!items || !Array.isArray(items)) {
+        console.log(`No ${key} items provided, returning empty array`);
+        return [];
+      }
+      if (!reference || !Array.isArray(reference)) {
+        console.log(`No ${key} reference data available`);
+        return [];
+      }
+
+      const normalizeString = (str) => str?.toString().trim().toLowerCase();
+
       const processed = items
         .map((item) => {
           if (!item) return null;
-          if (typeof item === "string" || typeof item === "number") {
-            const found = reference.find((r) => r && r.id === item);
-            return found ? found.id : null;
-          } else if (typeof item === "object" && item[key]) {
-            const found = reference.find((r) => r && r[key] === item[key]);
-            return found ? found.id : null;
+
+          // Handle null or invalid item
+          if (
+            typeof item === "object" &&
+            item[key] === null &&
+            item.test_id === null
+          ) {
+            console.log(`Skipping invalid ${key} item:`, item);
+            return null;
           }
+
+          // Case 1: Item is an ID (number or string)
+          const itemAsId = typeof item === "string" ? parseInt(item, 10) : item;
+          if (typeof itemAsId === "number" && !isNaN(itemAsId)) {
+            const found = reference.find((r) => r && r.id === itemAsId);
+            if (found) return found.id;
+          }
+
+          // Case 2: Item is a string (e.g., "MRI")
+          if (typeof item === "string") {
+            const found = reference.find(
+              (r) => r && normalizeString(r[key]) === normalizeString(item)
+            );
+            if (found) return found.id;
+          }
+
+          // Case 3: Item is an object with id or key
+          if (typeof item === "object") {
+            if (item.id || item.test_id) {
+              const id = item.id || item.test_id;
+              const found = reference.find((r) => r && r.id === id);
+              if (found) return found.id;
+            }
+            if (item[key]) {
+              const found = reference.find(
+                (r) =>
+                  r && normalizeString(r[key]) === normalizeString(item[key])
+              );
+              if (found) return found.id;
+            }
+          }
+
+          console.log(`No match found for ${key} item:`, item);
           return null;
         })
         .filter(Boolean);
+
       console.log(`Processed ${key} items:`, processed);
       return processed;
     };
-  
+
     const fetchData = async () => {
       try {
         setEditLoading(true);
         setError(null);
         setSymptomsError(null);
         setTestsError(null);
-  
-        const { data: consultationData, error: consultationError } = await safeRequest(
-          `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}/consultations/${consultationId}`,
-          { signal: abortController.signal }
-        );
+
+        const { data: consultationData, error: consultationError } =
+          await safeRequest(
+            `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}/consultations/${consultationId}`,
+            { signal: abortController.signal }
+          );
         if (!consultationData || consultationError) {
-          throw new Error(consultationError?.message || "Consultation not found");
+          throw new Error(
+            consultationError?.message || "Consultation not found"
+          );
         }
-        console.log("Raw Consultation Tests:", consultationData.tests);
-  
+        console.log("Raw Consultation Data:", consultationData);
+        console.log("Raw Symptoms:", consultationData.symptoms);
+        console.log("Raw Tests:", consultationData.tests);
+
         const [
           { data: symptomsData, error: symptomsError },
           { data: testsData, error: testsError },
           { data: medicinesData, error: medicinesError },
         ] = await Promise.all([
-          safeRequest("https://patient-management-backend-nine.vercel.app/api/symptoms", { signal: abortController.signal }),
-          safeRequest("https://patient-management-backend-nine.vercel.app/api/tests", { signal: abortController.signal }),
-          safeRequest("https://patient-management-backend-nine.vercel.app/api/medicines", { signal: abortController.signal }),
+          safeRequest(
+            "https://patient-management-backend-nine.vercel.app/api/symptoms",
+            { signal: abortController.signal }
+          ),
+          safeRequest(
+            "https://patient-management-backend-nine.vercel.app/api/tests",
+            { signal: abortController.signal }
+          ),
+          safeRequest(
+            "https://patient-management-backend-nine.vercel.app/api/medicines",
+            { signal: abortController.signal }
+          ),
         ]);
-  
+
         if (symptomsError) setSymptomsError("Couldn't load symptoms list");
         if (testsError) setTestsError("Couldn't load tests list");
-        if (medicinesError) console.error("Medicines load error:", medicinesError);
-  
+        if (medicinesError)
+          console.error("Medicines load error:", medicinesError);
+
         if (isMounted) {
           const referenceData = {
             symptoms: symptomsData ? symptomsData.filter((s) => s != null) : [],
             tests: testsData ? testsData.filter((t) => t != null) : [],
-            medicines: medicinesData ? medicinesData.filter((m) => m != null) : [],
+            medicines: medicinesData
+              ? medicinesData.filter((m) => m != null)
+              : [],
           };
+          console.log("Reference Symptoms:", referenceData.symptoms);
           console.log("Reference Tests:", referenceData.tests);
-  
+
           const prescriptions = consultationData.prescriptions || [];
           const tests = consultationData.tests || [];
           const follow_ups = consultationData.follow_ups || [];
-  
+
           setAllSymptoms(referenceData.symptoms);
           setAllTests(referenceData.tests);
           setAllMedicines(referenceData.medicines);
-  
+
+          const processedSymptoms = processItems(
+            consultationData.symptoms || [],
+            referenceData.symptoms,
+            "name"
+          );
+          const processedTests = processItems(
+            consultationData.tests || [],
+            referenceData.tests,
+            "test_name"
+          );
+
+          // Filter out invalid test/symptom entries before setting state
+          const validTests = (consultationData.tests || []).filter(
+            (t) => t && (t.test_id !== null || t.test_name !== null)
+          );
+          const validSymptoms = (consultationData.symptoms || []).filter(
+            (s) => s && (s.id !== null || s.name !== null)
+          );
+
           setEditFormData({
             ...consultationData,
-            symptoms: processItems(consultationData.symptoms || [], referenceData.symptoms, "name"),
-            tests: processItems(consultationData.tests || [], referenceData.tests, "test_name"),
+            symptoms:
+              processedSymptoms.length > 0
+                ? processedSymptoms
+                : validSymptoms.length > 0
+                ? validSymptoms.map((s) => s.id || s) // Fallback to raw IDs if present
+                : [],
+            tests:
+              processedTests.length > 0
+                ? processedTests
+                : validTests.length > 0
+                ? validTests.map((t) => t.test_id || t.id || t) // Fallback to raw IDs if present
+                : [],
             diagnosis: consultationData.neuro_diagnosis || "",
             treatment_plan: consultationData.neuro_treatment_plan || "",
-            // ... (rest of fields unchanged)
+            motor_function: consultationData.motor_function || "",
+            muscle_tone: consultationData.muscle_tone || "",
+            muscle_strength: consultationData.muscle_strength || "",
+            coordination: consultationData.coordination || "",
+            deep_tendon_reflexes: consultationData.deep_tendon_reflexes || "",
+            gait_assessment: consultationData.gait_assessment || "",
+            cranial_nerves: consultationData.cranial_nerves || "",
+            romberg_test: consultationData.romberg_test || "",
+            plantar_reflex: consultationData.plantar_reflex || "",
+            straight_leg_raise_left:
+              consultationData.straight_leg_raise_left || "",
+            straight_leg_raise_right:
+              consultationData.straight_leg_raise_right || "",
+            pupillary_reaction: consultationData.pupillary_reaction || "",
+            speech_assessment: consultationData.speech_assessment || "",
+            sensory_examination: consultationData.sensory_examination || "",
+            mental_status: consultationData.mental_status || "",
+            cerebellar_function: consultationData.cerebellar_function || "",
+            muscle_wasting: consultationData.muscle_wasting || "",
+            abnormal_movements: consultationData.abnormal_movements || "",
+            nystagmus: consultationData.nystagmus || "",
+            fundoscopy: consultationData.fundoscopy || "",
+            brudzinski_sign: consultationData.brudzinski_sign || false,
+            kernig_sign: consultationData.kernig_sign || false,
+            temperature_sensation:
+              consultationData.temperature_sensation || false,
+            pain_sensation: consultationData.pain_sensation || false,
+            vibration_sense: consultationData.vibration_sense || false,
+            proprioception: consultationData.proprioception || false,
+            facial_sensation: consultationData.facial_sensation || false,
+            swallowing_function: consultationData.swallowing_function || false,
+            mmse_score: consultationData.mmse_score || "",
+            gcs_score: consultationData.gcs_score || "",
+            notes: consultationData.notes || "",
             prescriptions: prescriptions.map((pres) => ({
-              medicine_id: referenceData.medicines.find((m) => m && m.id === pres.medicine_id)?.id || pres.medicine_id || "",
+              medicine_id:
+                referenceData.medicines.find(
+                  (m) => m && m.id === pres.medicine_id
+                )?.id ||
+                pres.medicine_id ||
+                "",
               dosage_en: pres.dosage_en || "",
               dosage_urdu: pres.dosage_urdu || "",
               frequency_en: pres.frequency_en || "",
@@ -208,6 +340,21 @@ const EditConsultation = () => {
               notes: f.notes || "",
             })),
           });
+
+          if (processedSymptoms.length === 0 && validSymptoms.length > 0) {
+            setSymptomsError(
+              "Previous symptoms not matched with reference data"
+            );
+          }
+          if (processedTests.length === 0 && validTests.length > 0) {
+            setTestsError("Previous tests not matched with reference data");
+          }
+          if (consultationData.tests?.length && !validTests.length) {
+            setTestsError("Invalid test data received from consultation");
+          }
+          if (consultationData.symptoms?.length && !validSymptoms.length) {
+            setSymptomsError("Invalid symptom data received from consultation");
+          }
         }
       } catch (error) {
         if (isMounted && !axios.isCancel(error)) {
@@ -218,9 +365,9 @@ const EditConsultation = () => {
         if (isMounted) setEditLoading(false);
       }
     };
-  
+
     fetchData();
-  
+
     return () => {
       isMounted = false;
       abortController.abort();
@@ -294,13 +441,12 @@ const EditConsultation = () => {
     setEditFormData((prev) => ({ ...prev, [section]: newData }));
   };
 
-
   const updateVitalSign = (index, field, value) => {
-    setEditFormData(prev => {
+    setEditFormData((prev) => {
       const newVitalSigns = [...prev.vital_signs];
       newVitalSigns[index] = {
         ...newVitalSigns[index],
-        [field]: value
+        [field]: value,
       };
       return { ...prev, vital_signs: newVitalSigns };
     });
@@ -466,12 +612,14 @@ const EditConsultation = () => {
                   />
 
                   <FormField
-                   label="Pulse Rate (bpm)"
-                   placeholder="e.g., 72"
-                   value={vital.pulse_rate || ""}
-                   onChange={(val) => handleNumberChange(val, index, 'pulse_rate', 30, 200)}
-                   type="number"
-                   inputClassName="text-center"
+                    label="Pulse Rate (bpm)"
+                    placeholder="e.g., 72"
+                    value={vital.pulse_rate || ""}
+                    onChange={(val) =>
+                      handleNumberChange(val, index, "pulse_rate", 30, 200)
+                    }
+                    type="number"
+                    inputClassName="text-center"
                     icon={
                       <FaHeartbeat
                         className="text-gray-400"
@@ -486,7 +634,9 @@ const EditConsultation = () => {
                     label="Temperature (°C)"
                     placeholder="36.5"
                     value={vital.temperature || ""}
-                    onChange={(val) => handleNumberChange(val, index, 'temperature', 35, 42)}
+                    onChange={(val) =>
+                      handleNumberChange(val, index, "temperature", 35, 42)
+                    }
                     type="number"
                     step="0.1"
                     inputClassName="text-center"
@@ -501,12 +651,14 @@ const EditConsultation = () => {
                   />
 
                   <FormField
-                   label="SpO2 (%)"
-                   placeholder="98"
-                   value={vital.spo2_level || ""}
-                   onChange={(val) => handleNumberChange(val, index, 'spo2_level', 70, 100)}
-                   type="number"
-                   inputClassName="text-center"
+                    label="SpO2 (%)"
+                    placeholder="98"
+                    value={vital.spo2_level || ""}
+                    onChange={(val) =>
+                      handleNumberChange(val, index, "spo2_level", 70, 100)
+                    }
+                    type="number"
+                    inputClassName="text-center"
                     icon={
                       <SiOxygen className="text-gray-400" aria-hidden="true" />
                     }
@@ -540,47 +692,66 @@ const EditConsultation = () => {
               </div>
             ))}
           </div>
-          {/* Tests Section */}
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <FaStethoscope className="text-green-500" />
+              Symptoms
+            </h3>
+            {symptomsError ? (
+              <div>
+                <p className="text-red-600">{symptomsError}</p>
+                <p className="text-yellow-600">
+                  Raw symptoms: {JSON.stringify(editFormData?.symptoms || [])}
+                </p>
+              </div>
+            ) : (
+              <SymptomsSelector
+                allSymptoms={allSymptoms}
+                selectedSymptoms={editFormData?.symptoms || []}
+                onSelect={(selectedIds) => {
+                  console.log("Selected Symptoms:", selectedIds);
+                  handleFormChange("symptoms", [...new Set(selectedIds)]);
+                }}
+                onRemove={(removedId) => {
+                  console.log("Removing Symptom:", removedId);
+                  handleFormChange(
+                    "symptoms",
+                    editFormData.symptoms.filter((id) => id !== removedId)
+                  );
+                }}
+              />
+            )}
+          </div>
+
           <div className="bg-gray-50 p-4 rounded-lg">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <FaFlask className="text-purple-500" />
               Tests
             </h3>
             {testsError ? (
-              <p className="text-red-600">{testsError}</p>
+              <div>
+                <p className="text-red-600">{testsError}</p>
+                <p className="text-yellow-600">
+                  Raw tests: {JSON.stringify(editFormData?.tests || [])}
+                </p>
+              </div>
             ) : (
               <TestsSelector
                 allTests={allTests}
                 selectedTests={editFormData?.tests || []}
-                onSelect={(selected) => handleFormChange("tests", selected)}
-                onRemove={(testId) =>
+                onSelect={(selected) => {
+                  console.log("Selected Tests:", selected);
+                  handleFormChange("tests", selected);
+                }}
+                onRemove={(testId) => {
+                  console.log("Removing Test:", testId);
                   handleFormChange(
                     "tests",
                     editFormData.tests.filter((t) => t !== testId)
-                  )
-                }
+                  );
+                }}
               />
             )}
-          </div>
-          {/* Symptoms Section */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <FaStethoscope className="text-green-500" />
-              Symptoms
-            </h3>
-            <SymptomsSelector
-              allSymptoms={allSymptoms}
-              selectedSymptoms={editFormData.symptoms || []}
-              onSelect={(selectedIds) =>
-                handleFormChange("symptoms", [...new Set(selectedIds)])
-              }
-              onRemove={(removedId) =>
-                handleFormChange(
-                  "symptoms",
-                  editFormData.symptoms.filter((id) => id !== removedId)
-                )
-              }
-            />
           </div>
           {/* Neurological Examination Section */}
           <div className="bg-gray-50 p-4 rounded-lg">
