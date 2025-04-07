@@ -176,24 +176,6 @@ const PatientHistory = () => {
                 </button>
               </div>
 
-              <div className="mb-6 bg-teal-50 p-4 rounded-lg flex items-center gap-4">
-                <MdOutlineFilterList className="text-2xl text-teal-600" />
-                <input
-                  type="date"
-                  value={filterDate}
-                  onChange={(e) => setFilterDate(e.target.value)}
-                  className="border border-teal-200 bg-white px-4 py-2 rounded-lg shadow-sm focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
-                />
-                {filterDate && (
-                  <button
-                    onClick={() => setFilterDate("")}
-                    className="ml-2 px-3 py-1.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition-colors"
-                  >
-                    Clear Filter
-                  </button>
-                )}
-              </div>
-
               {history.length === 0 ? (
                 <div className="text-center py-8">
                   <div className="inline-block p-4 bg-gray-100 rounded-full">
@@ -216,6 +198,7 @@ const PatientHistory = () => {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                        onClick={() => toggleSection(index)}
                       >
                         <div className="flex justify-between items-start">
                           <div className="flex items-center gap-3 mb-4">
