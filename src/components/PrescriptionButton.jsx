@@ -6,7 +6,6 @@ const PrescriptionButton = ({ patient, consultation }) => {
     const patientId = patient.id || patient._id;
     const url = `/api/patients/${patientId}/consultations/${consultation.consultation_id}/pdf`;
     
-    // Simply open in new tab without any automatic actions
     window.open(url, '_blank', 'noopener,noreferrer');
   };
 
