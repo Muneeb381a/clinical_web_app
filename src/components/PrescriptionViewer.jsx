@@ -9,3 +9,5 @@ const PrescriptionViewer = () => {
       />
     );
   };
+
+  export default PrescriptionViewer
