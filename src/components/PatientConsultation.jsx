@@ -518,7 +518,7 @@ const PatientConsultation = () => {
         <PatientInfoHeader
           patient={patient}
           onReturnHome={handleReturnHome}
-          prescriptions={prescriptions}
+          // prescriptions={prescriptions}
           setShowPopup={setShowPopup}
         />
         <ConsultationForm
@@ -545,12 +545,12 @@ const PatientConsultation = () => {
           onSubmit={submitConsultation}
           onPrint={handlePrint}
         />
-        {showPopup && (
+        {/* {showPopup && (
           <PrescriptionsPopup
             prescriptions={prescriptions}
             onClose={() => setShowPopup(false)}
           />
-        )}
+        )} */}
       </div>
       <ToastContainer />
     </div>

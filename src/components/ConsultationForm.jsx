@@ -21,7 +21,7 @@ const ConsultationForm = ({
     <SymptomAnalysisSection selectedSymptoms={selectedSymptoms} onSymptomsChange={onSymptomsChange} />
     <NeurologicalExamSection neuroExamData={neuroExamData} setNeuroExamData={setNeuroExamData} fields={neuroExamFields} />
     <DiagnosisTestSection tests={tests} selectedTests={selectedTests} onTestsChange={onTestsChange} isLoading={loading} />
-    <PrescriptionManagementSection selectedMedicines={selectedMedicines} setSelectedMedicines={setSelectedMedicines} customSelectStyles={customSelectStyles} />
+    {/* <PrescriptionManagementSection selectedMedicines={selectedMedicines} setSelectedMedicines={setSelectedMedicines} customSelectStyles={customSelectStyles} /> */}
     <div className="md:col-span-4 space-y-4">
       <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">Clinical Decisions</h4>
       <div className="space-y-2">
