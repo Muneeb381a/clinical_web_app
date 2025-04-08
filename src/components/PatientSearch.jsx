@@ -143,6 +143,54 @@ const PatientSearch = () => {
     </motion.div>
   );
 
+  // const onSearch = async (data) => {
+  //   if (!data.mobile.trim()) {
+  //     toast.error("Please enter a valid mobile number.");
+  //     return;
+  //   }
+
+  //   const mobile = data.mobile.trim();
+  //   setIsSearching(true);
+  //   setPatient(null);
+  //   setConsultations([]);
+  //   setShowAddPatient(false);
+  //   setExpandedSections({});
+
+  //   try {
+  //     const patientRes = await axios.get(
+  //       `https://patient-management-backend-nine.vercel.app/api/patients/search?mobile=${encodeURIComponent(
+  //         mobile
+  //       )}`
+  //     );
+
+  //     if (patientRes.data?.exists) {
+  //       const patientData = patientRes.data.data;
+  //       const patientId = patientData.id || patientData._id;
+  //       setPatient(patientData);
+
+  //       const historyRes = await axios.get(
+  //         `https://patient-management-backend-nine.vercel.app/api/patient-history/${patientId}`,
+  //         { timeout: 10000 }
+  //       );
+  //       setConsultations(
+  //         Array.isArray(historyRes.data) ? historyRes.data : [historyRes.data]
+  //       );
+  //     } else {
+  //       setPatient(null);
+  //       setSearchedMobile(mobile);
+  //       setShowAddPatient(true);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching patient or history", error);
+  //     toast.error(
+  //       error.message || "Failed to fetch patient. Please try again."
+  //     );
+  //   } finally {
+  //     setIsSearching(false);
+  //   }
+  // };
+
+  // In your PatientSearch component, modify the onSearch function
   const onSearch = async (data) => {
     if (!data.mobile.trim()) {
       toast.error("Please enter a valid mobile number.");
@@ -166,6 +214,10 @@ const PatientSearch = () => {
       if (patientRes.data?.exists) {
         const patientData = patientRes.data.data;
         const patientId = patientData.id || patientData._id;
+
+        // Update URL here
+        navigate(`/patients/${patientId}`, { replace: true });
+
         setPatient(patientData);
 
         const historyRes = await axios.get(
@@ -189,6 +241,48 @@ const PatientSearch = () => {
       setIsSearching(false);
     }
   };
+
+  // Update the useEffect to handle direct patient URLs
+  useEffect(() => {
+    const loadPatientFromURL = async () => {
+      const pathParts = window.location.pathname.split("/");
+      const patientId = pathParts[2];
+
+      if (pathParts[1] === "patients" && patientId && patientId !== "new") {
+        try {
+          setIsSearching(true);
+          const patientRes = await axios.get(
+            `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}`
+          );
+
+          if (patientRes.data) {
+            setPatient(patientRes.data);
+            const historyRes = await axios.get(
+              `https://patient-management-backend-nine.vercel.app/api/patient-history/${patientId}`
+            );
+            setConsultations(
+              Array.isArray(historyRes.data)
+                ? historyRes.data
+                : [historyRes.data]
+            );
+          }
+        } catch (error) {
+          console.error("Error loading patient from URL:", error);
+          toast.error("Failed to load patient from URL");
+        } finally {
+          setIsSearching(false);
+        }
+      } else if (pathParts[1] === "patients" && pathParts[2] === "new") {
+        const urlParams = new URLSearchParams(window.location.search);
+        const mobile = urlParams.get("mobile");
+        if (mobile) {
+          setSearchedMobile(mobile);
+          setShowAddPatient(true);
+        }
+      }
+    };
+    loadPatientFromURL();
+  }, [navigate]); // Add navigate to dependency array
 
   const handleNewPatientAdded = () => onSearch({ mobile: searchedMobile });
   const handleAddConsultation = () => {
@@ -416,7 +510,10 @@ const PatientSearch = () => {
                           </div>
                         </div>
                         <div className="flex gap-3">
-                        <PrescriptionButton patient={patient} consultation={consultation} />
+                          <PrescriptionButton
+                            patient={patient}
+                            consultation={consultation}
+                          />
                           <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}

@@ -505,7 +505,7 @@ const EditConsultation = () => {
       // Only handle print and navigation on successful update
       if (response.status >= 200 && response.status < 300) {
         handlePrint();
-        navigate(`/`);
+        navigate(`/patients/${patientId}`);
       }
     } catch (error) {
       console.error("Update error:", error);
@@ -523,7 +523,7 @@ const EditConsultation = () => {
   };
 
   const handleCancel = () => {
-    navigate(`/`);
+    navigate(`/patients/${patientId}`);
   };
 
   const handlePrint = () => {

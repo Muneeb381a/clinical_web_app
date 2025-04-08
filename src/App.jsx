@@ -49,6 +49,7 @@ const App = () => {
       <Suspense fallback={<Loader />}>
         <Routes>
           <Route path="/" element={<PatientSearch />} />
+          <Route path="/patients/:patientId" element={<PatientSearch />} />
           <Route path="/patients/new" element={<PatientSearch />} />
           <Route
             path="/patients/:patientId/consultation"
