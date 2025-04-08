@@ -1,12 +1,16 @@
-import { motion } from 'framer-motion';
-import { FaFilePdf } from 'react-icons/fa';
+import { motion } from "framer-motion";
+import { FaFilePdf } from "react-icons/fa";
 
 const PrescriptionButton = ({ patient, consultation }) => {
   const handleOpenPrescription = () => {
     const patientId = patient.id || patient._id;
-    const url = `/api/patients/${patientId}/consultations/${consultation.consultation_id}/pdf`;
-    
-    window.open(url, '_blank', 'noopener,noreferrer');
+
+    // For development testing
+    const url = import.meta.env.DEV
+      ? "https://patient-management-backend-nine.vercel.app/api/patients/${patientId}/consultations/${consultation.consultation_id}/pdf"
+      : `/api/patients/${patientId}/consultations/${consultation.consultation_id}/pdf`;
+
+    window.open(url, "_blank", "noopener,noreferrer");
   };
 
   return (
