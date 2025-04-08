@@ -697,14 +697,6 @@ const EditConsultation = () => {
               <FaStethoscope className="text-green-500" />
               Symptoms
             </h3>
-            {symptomsError ? (
-              <div>
-                <p className="text-red-600">{symptomsError}</p>
-                <p className="text-yellow-600">
-                  Raw symptoms: {JSON.stringify(editFormData?.symptoms || [])}
-                </p>
-              </div>
-            ) : (
               <SymptomsSelector
                 allSymptoms={allSymptoms}
                 selectedSymptoms={editFormData?.symptoms || []}
@@ -720,7 +712,6 @@ const EditConsultation = () => {
                   );
                 }}
               />
-            )}
           </div>
 
           <div className="bg-gray-50 p-4 rounded-lg">
