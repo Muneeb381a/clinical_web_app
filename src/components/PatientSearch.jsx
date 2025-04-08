@@ -362,7 +362,7 @@ const PatientSearch = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleBackToHome}
-                className="mb-6 flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold"
+                className="mb-6 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold transition-colors duration-200 shadow-sm hover:shadow-md"
               >
                 <FaArrowLeft className="text-lg" />
                 Back to Home
