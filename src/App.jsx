@@ -6,7 +6,6 @@ import PatientConsultation from "./components/PatientConsultation";
 import PatientHistory from "./components/PatientHistoryModal";
 import EditConsultation from "./components/EditConsultation";
 import { Loader } from "./pages/Loader";
-import PrescriptionButton from "./components/PrescriptionButton"
 
 
 
@@ -67,7 +66,6 @@ const App = () => {
             path="/patients/:patientId/consultations/new"
             element={<PatientConsultation />}
           />
-          <Route path="/patients/:patientId/prescriptions/:consultationId" element={<PrescriptionButton />} />
         </Routes>
       </Suspense>
     </>

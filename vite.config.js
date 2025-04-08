@@ -9,7 +9,12 @@ export default defineConfig({
   ],
   server: {
     proxy: {
-      '/api': 'https://patient-management-backend-nine.vercel.app',
+      '/api': {
+        target: 'https://patient-management-backend-nine.vercel.app',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api/, ''),
+        secure: false // Only if using self-signed certificates
+      }
     }
   },
   build: {
