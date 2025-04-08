@@ -13,9 +13,6 @@ export default defineConfig({
         target: 'https://patient-management-backend-nine.vercel.app',
         changeOrigin: true,
         rewrite: (path) => path, // Remove the path rewrite
-        headers: {
-          'Access-Control-Allow-Origin': 'https://clinical-web-app.vercel.app'
-        }
       }
     }
   },

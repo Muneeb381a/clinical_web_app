@@ -3,10 +3,12 @@ import { FaFilePdf } from 'react-icons/fa';
 
 const PrescriptionButton = ({ patient, consultation }) => {
     const handleOpenPrescription = () => {
-      const url = `/api/patients/${patient.id}/consultations/${consultation.consultation_id}/pdf`;
-      window.open(url, '_blank', 'noopener,noreferrer');
-    };
-  
+        const backendUrl = import.meta.env.VITE_API_BASE_URL; // From .env
+        const patientId = patient.id || patient._id;
+        const url = `${backendUrl}/api/patients/${patientId}/consultations/${consultation.consultation_id}/pdf`;
+        
+        window.open(url, '_blank', 'noopener,noreferrer');
+      };
     return (
       <motion.button
         whileHover={{ scale: 1.05 }}
