@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import PatientSearchForm from "./PatientSearchForm";
 import AddPatientForm from "../pages/AddPatientForm";
 import {
@@ -24,6 +24,7 @@ import {
   FaPhone,
   FaIdCard,
   FaFilePdf,
+  FaArrowLeft,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import PrescriptionButton from "./PrescriptionButton";
@@ -37,6 +38,10 @@ const PatientSearch = () => {
   const [searchedMobile, setSearchedMobile] = useState("");
   const [expandedSections, setExpandedSections] = useState({});
   const navigate = useNavigate();
+  const location = useLocation();
+  const handleBackToHome = () => {
+    navigate("/");
+  };
 
   const FullPageLoader = ({ message = "Processing your request" }) => (
     <motion.div
@@ -279,6 +284,12 @@ const PatientSearch = () => {
           setSearchedMobile(mobile);
           setShowAddPatient(true);
         }
+      } else if (pathParts[1] === "") {
+        // Reset state when navigating to home
+        setPatient(null);
+        setConsultations([]);
+        setShowAddPatient(false);
+        setExpandedSections({});
       }
     };
     loadPatientFromURL();
@@ -347,6 +358,15 @@ const PatientSearch = () => {
           <div className="space-y-8">
             {/* Patient Profile Section */}
             <div className="bg-gradient-to-br from-blue-50/80 to-purple-50/80 p-8 rounded-2xl border border-white/20 shadow-xl backdrop-blur-sm">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleBackToHome}
+                className="mb-6 flex items-center gap-2 text-blue-600 hover:text-blue-800 font-semibold"
+              >
+                <FaArrowLeft className="text-lg" />
+                Back to Home
+              </motion.button>
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
