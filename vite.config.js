@@ -12,8 +12,10 @@ export default defineConfig({
       '/api': {
         target: 'https://patient-management-backend-nine.vercel.app',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
-        secure: false // Only if using self-signed certificates
+        rewrite: (path) => path, // Remove the path rewrite
+        headers: {
+          'Access-Control-Allow-Origin': 'https://clinical-web-app.vercel.app'
+        }
       }
     }
   },
