@@ -320,16 +320,10 @@ const EditConsultation = () => {
                 )?.id ||
                 pres.medicine_id ||
                 "",
-              dosage_en: pres.dosage_en || "",
               dosage_urdu: pres.dosage_urdu || "",
-              frequency_en: pres.frequency_en || "",
               frequency_urdu: pres.frequency_urdu || "",
-              duration_en: pres.duration_en || "",
               duration_urdu: pres.duration_urdu || "",
-              instructions_en: pres.instructions_en || "",
               instructions_urdu: pres.instructions_urdu || "",
-              how_to_take_en: pres.how_to_take_en || "",
-              how_to_take_urdu: pres.how_to_take_urdu || "",
               prescribed_at: pres.prescribed_at || new Date().toISOString(),
             })),
             vital_signs: consultationData.vital_signs?.length
@@ -388,16 +382,10 @@ const EditConsultation = () => {
         ...(prev.prescriptions || []),
         {
           medicine_id: "",
-          dosage_en: "",
           dosage_urdu: "",
-          frequency_en: "",
           frequency_urdu: "",
-          duration_en: "",
           duration_urdu: "",
-          instructions_en: "",
           instructions_urdu: "",
-          how_to_take_en: "",
-          how_to_take_urdu: "",
           prescribed_at: new Date().toISOString(),
         },
       ],
@@ -697,6 +685,7 @@ const EditConsultation = () => {
               <FaStethoscope className="text-green-500" />
               Symptoms
             </h3>
+
               <SymptomsSelector
                 allSymptoms={allSymptoms}
                 selectedSymptoms={editFormData?.symptoms || []}
@@ -962,6 +951,7 @@ const EditConsultation = () => {
                           value={medicine.id}
                           className="text-gray-700"
                         >
+                          {medicine.form}{' '}
                           {medicine.brand_name}
                           {medicine.strength && ` (${medicine.strength})`}
                           {medicine.generic_name &&
