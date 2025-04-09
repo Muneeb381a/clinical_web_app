@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { toast } from 'react-toastify';
-import CreatableSelect from 'react-select/creatable';
-import Select from 'react-select';
-import { AiOutlineCloseCircle, AiOutlinePlus } from 'react-icons/ai';
-import Loader from './Loader'; 
+import React, { useState, useEffect } from "react";
+import axios from "axios";
+import { toast } from "react-toastify";
+import CreatableSelect from "react-select/creatable";
+import Select from "react-select";
+import { AiOutlineCloseCircle, AiOutlinePlus } from "react-icons/ai";
+import Loader from "./Loader";
 const MEDICINE_DEFAULTS = {
   Tablet: {
     dosage_en: "1",
@@ -37,12 +37,14 @@ const PrescriptionManagementSection = ({
         setMedicines(
           res.data.map((m) => ({
             value: m.id,
-            label: `${m.form} ${m.brand_name}${m.strength ? ` (${m.strength})` : ""}`,
+            label: `${m.form} ${m.brand_name}${
+              m.strength ? ` (${m.strength})` : ""
+            }`,
           }))
         );
       } catch (error) {
         console.error("Error fetching medicines:", error);
-        toast.error('Failed to fetch medicines');
+        toast.error("Failed to fetch medicines");
       } finally {
         setIsFetchingMedicines(false);
       }
@@ -67,7 +69,9 @@ const PrescriptionManagementSection = ({
       const newMedicine = response.data;
       const formattedMedicine = {
         value: newMedicine.id,
-        label: `${newMedicine.form} ${newMedicine.brand_name}${newMedicine.strength ? ` (${newMedicine.strength})` : ""}`,
+        label: `${newMedicine.form} ${newMedicine.brand_name}${
+          newMedicine.strength ? ` (${newMedicine.strength})` : ""
+        }`,
       };
 
       setMedicines((prev) => [...prev, formattedMedicine]);
@@ -103,9 +107,7 @@ const PrescriptionManagementSection = ({
   return (
     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
       <div className="flex items-center gap-3 mb-5">
-        <div className="bg-purple-600 p-2 rounded-lg text-white">
-          💊
-        </div>
+        <div className="bg-purple-600 p-2 rounded-lg text-white">💊</div>
         <h3 className="text-lg font-semibold text-gray-800">
           Prescription Management
         </h3>
@@ -140,9 +142,7 @@ const PrescriptionManagementSection = ({
                       if (newId) {
                         setSelectedMedicines((prev) =>
                           prev.map((item, i) =>
-                            i === index
-                              ? { ...item, medicine_id: newId }
-                              : item
+                            i === index ? { ...item, medicine_id: newId } : item
                           )
                         );
                       }
@@ -175,11 +175,23 @@ const PrescriptionManagementSection = ({
                       { value: "morning_night", label: "صبح، رات " },
                       { value: "afternoon_evening", label: "دوپہر، شام " },
                       { value: "afternoon_night", label: "دوپہر، رات " },
-                      { value: "morning_evening_night", label: "صبح، شام، رات " },
-                      { value: "morning_afternoon_evening", label: "صبح، دوپہر، شام " },
+                      {
+                        value: "morning_evening_night",
+                        label: "صبح، شام، رات ",
+                      },
+                      {
+                        value: "morning_afternoon_evening",
+                        label: "صبح، دوپہر، شام ",
+                      },
                       { value: "as_needed", label: "حسب ضرورت" },
-                      { value: "morning_afternoon_night", label: "صبح، دوپہر، رات " },
-                      { value: "afternoon_evening_night", label: "دوپہر، شام، رات " },
+                      {
+                        value: "morning_afternoon_night",
+                        label: "صبح، دوپہر، رات ",
+                      },
+                      {
+                        value: "afternoon_evening_night",
+                        label: "دوپہر، شام، رات ",
+                      },
                       { value: "early_morning", label: "صبح سویرے " },
                       { value: "late_morning", label: "دیر صبح " },
                       { value: "late_afternoon", label: "دیر دوپہر " },
@@ -188,21 +200,37 @@ const PrescriptionManagementSection = ({
                       { value: "late_night", label: "رات دیر گئے " },
                       { value: "morning_afternoon", label: "صبح، دوپہر " },
                       { value: "evening_night", label: "شام، رات " },
-                      { value: "early_morning_night", label: "صبح سویرے، رات " },
-                      { value: "morning_late_afternoon", label: "صبح، دیر دوپہر " },
-                      { value: "afternoon_sunset", label: "دوپہر، غروب آفتاب " },
+                      {
+                        value: "early_morning_night",
+                        label: "صبح سویرے، رات ",
+                      },
+                      {
+                        value: "morning_late_afternoon",
+                        label: "صبح، دیر دوپہر ",
+                      },
+                      {
+                        value: "afternoon_sunset",
+                        label: "دوپہر، غروب آفتاب ",
+                      },
                       { value: "all_day", label: "پورا دن " },
                       { value: "all_night", label: "پوری رات " },
                       { value: "24_hours", label: "چوبیس گھنٹے " },
                     ]}
-                    value={{ value: med.frequency_en, label: med.frequency_urdu }}
+                    value={{
+                      value: med.frequency_en,
+                      label: med.frequency_urdu,
+                    }}
                     className="react-select-container font-urdu"
                     classNamePrefix="react-select"
                     onChange={(e) => {
                       setSelectedMedicines((prev) =>
                         prev.map((item, i) =>
                           i === index
-                            ? { ...item, frequency_en: e.value, frequency_urdu: e.label }
+                            ? {
+                                ...item,
+                                frequency_en: e.value,
+                                frequency_urdu: e.label,
+                              }
                             : item
                         )
                       );
@@ -239,6 +267,8 @@ const PrescriptionManagementSection = ({
                       { value: "one_and_half_spoon", label: "ڈیڑھ چمچ " },
                       { value: "two_spoons", label: "دو چمچ" },
                       { value: "three_spoons", label: "تین چمچ " },
+                      { value: "1_ml", label: "ایک ملی لیٹر " },
+                      { value: "2_ml", label: "دو ملی لیٹر " },
                       { value: "2.5_ml", label: "ڈھائی ملی لیٹر " },
                       { value: "5_ml", label: "پانچ ملی لیٹر " },
                       { value: "7.5_ml", label: "ساڑھے سات ملی لیٹر " },
@@ -247,6 +277,19 @@ const PrescriptionManagementSection = ({
                       { value: "20_ml", label: "بیس ملی لیٹر " },
                       { value: "25_ml", label: "پچیس ملی لیٹر " },
                       { value: "30_ml", label: "تیس ملی لیٹر " },
+                      { value: "3_ml", label: "تین ملی لیٹر " },
+                      { value: "4_ml", label: "چار ملی لیٹر " },
+                      { value: "6_ml", label: "چھہ ملی لیٹر " },
+                      { value: "8_ml", label: "آٹھ ملی لیٹر " },
+                      { value: "9_ml", label: "نو ملی لیٹر " },
+                      { value: "12.5_ml", label: "ساڑھے بارہ ملی لیٹر " },
+                      { value: "50_ml", label: "پچاس ملی لیٹر " },
+                      { value: "100_ml", label: "سو ملی لیٹر " },
+                      { value: "3_ml", label: "تین ملی لیٹر " },
+                      { value: "3.5_ml", label: "ساڑھے تین ملی لیٹر " },
+                      { value: "4_ml", label: "چار ملی لیٹر " },
+                      { value: "4.5_ml", label: "ساڑھے چار ملی لیٹر " },
+                      { value: "5_ml", label: "پانچ ملی لیٹر " },
                       { value: "one_droplet", label: "ایک قطرہ " },
                       { value: "two_droplets", label: "دو قطرے " },
                       { value: "three_droplets", label: "تین قطرے " },
@@ -275,13 +318,18 @@ const PrescriptionManagementSection = ({
                     classNamePrefix="react-select"
                     value={{
                       value: selectedMedicines[index]?.dosage_en || "1",
-                      label: selectedMedicines[index]?.dosage_urdu || "ایک گولی",
+                      label:
+                        selectedMedicines[index]?.dosage_urdu || "ایک گولی",
                     }}
                     onChange={(e) => {
                       setSelectedMedicines((prev) =>
                         prev.map((item, i) =>
                           i === index
-                            ? { ...item, dosage_en: e.value, dosage_urdu: e.label }
+                            ? {
+                                ...item,
+                                dosage_en: e.value,
+                                dosage_urdu: e.label,
+                              }
                             : item
                         )
                       );
@@ -342,7 +390,11 @@ const PrescriptionManagementSection = ({
                       setSelectedMedicines((prev) =>
                         prev.map((item, i) =>
                           i === index
-                            ? { ...item, duration_en: e.value, duration_urdu: e.label }
+                            ? {
+                                ...item,
+                                duration_en: e.value,
+                                duration_urdu: e.label,
+                              }
                             : item
                         )
                       );
@@ -364,7 +416,10 @@ const PrescriptionManagementSection = ({
                       { value: "empty_stomach", label: "خالی پیٹ" },
                       { value: "before_breakfast", label: "ناشتے سے پہلے" },
                       { value: "after_breakfast", label: "ناشتے کے بعد" },
-                      { value: "before_lunch", label: "دوپہر کے کھانے سے پہلے" },
+                      {
+                        value: "before_lunch",
+                        label: "دوپہر کے کھانے سے پہلے",
+                      },
                       { value: "after_lunch", label: "دوپہر کے کھانے کے بعد" },
                       { value: "before_dinner", label: "رات کے کھانے سے پہلے" },
                       { value: "after_dinner", label: "رات کے کھانے کے بعد" },
@@ -375,18 +430,28 @@ const PrescriptionManagementSection = ({
                       { value: "with_water", label: "پانی کے ساتھ" },
                       { value: "with_juice", label: "جوس کے ساتھ" },
                       { value: "with_yogurt", label: "دہی کے ساتھ" },
-                      { value: "with_fatty_foods", label: "چکنائی والے کھانے کے ساتھ" },
+                      {
+                        value: "with_fatty_foods",
+                        label: "چکنائی والے کھانے کے ساتھ",
+                      },
                       { value: "without_dairy", label: "ڈیری مصنوعات کے بغیر" },
                       { value: "avoid_caffeine", label: "کیفین سے بچیں" },
                     ]}
-                    value={{ value: med.instructions_en, label: med.instructions_urdu }}
+                    value={{
+                      value: med.instructions_en,
+                      label: med.instructions_urdu,
+                    }}
                     className="react-select-container font-urdu"
                     classNamePrefix="react-select"
                     onChange={(e) => {
                       setSelectedMedicines((prev) =>
                         prev.map((item, i) =>
                           i === index
-                            ? { ...item, instructions_en: e.value, instructions_urdu: e.label }
+                            ? {
+                                ...item,
+                                instructions_en: e.value,
+                                instructions_urdu: e.label,
+                              }
                             : item
                         )
                       );
@@ -399,7 +464,9 @@ const PrescriptionManagementSection = ({
               {/* Remove Medicine */}
               <button
                 onClick={() => {
-                  setSelectedMedicines((prev) => prev.filter((_, i) => i !== index));
+                  setSelectedMedicines((prev) =>
+                    prev.filter((_, i) => i !== index)
+                  );
                 }}
                 className="text-red-500 hover:text-red-700 mt-4"
               >
