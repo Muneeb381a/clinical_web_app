@@ -532,7 +532,9 @@ const EditConsultation = () => {
           >
             <FaSpinner className="w-12 h-12 text-blue-600" />
           </motion.div>
-          <p className="text-lg font-medium text-gray-700 ml-4">Searching...</p>
+          <p className="text-lg font-medium text-gray-700 ml-4">
+            {editFormData ? "Saving Changes..." : "Loading Consultation..."}
+          </p>
         </div>
       )}
       {error && <div className="text-red-600 mb-4">{error}</div>}
@@ -686,21 +688,21 @@ const EditConsultation = () => {
               Symptoms
             </h3>
 
-              <SymptomsSelector
-                allSymptoms={allSymptoms}
-                selectedSymptoms={editFormData?.symptoms || []}
-                onSelect={(selectedIds) => {
-                  console.log("Selected Symptoms:", selectedIds);
-                  handleFormChange("symptoms", [...new Set(selectedIds)]);
-                }}
-                onRemove={(removedId) => {
-                  console.log("Removing Symptom:", removedId);
-                  handleFormChange(
-                    "symptoms",
-                    editFormData.symptoms.filter((id) => id !== removedId)
-                  );
-                }}
-              />
+            <SymptomsSelector
+              allSymptoms={allSymptoms}
+              selectedSymptoms={editFormData?.symptoms || []}
+              onSelect={(selectedIds) => {
+                console.log("Selected Symptoms:", selectedIds);
+                handleFormChange("symptoms", [...new Set(selectedIds)]);
+              }}
+              onRemove={(removedId) => {
+                console.log("Removing Symptom:", removedId);
+                handleFormChange(
+                  "symptoms",
+                  editFormData.symptoms.filter((id) => id !== removedId)
+                );
+              }}
+            />
           </div>
 
           <div className="bg-gray-50 p-4 rounded-lg">
@@ -951,8 +953,7 @@ const EditConsultation = () => {
                           value={medicine.id}
                           className="text-gray-700"
                         >
-                          {medicine.form}{' '}
-                          {medicine.brand_name}
+                          {medicine.form} {medicine.brand_name}
                           {medicine.strength && ` (${medicine.strength})`}
                           {medicine.generic_name &&
                             ` - ${medicine.generic_name}`}
@@ -972,7 +973,10 @@ const EditConsultation = () => {
                       options={[
                         { value: "0.25", label: "ایک چوتھائی گولی " },
                         { value: "0.5", label: "آدھی گولی " },
-                        { value: "headache_severe", label: "شدید سر درد کے لیے" },
+                        {
+                          value: "headache_severe",
+                          label: "شدید سر درد کے لیے",
+                        },
                         { value: "0.75", label: "تین چوتھائی گولی " },
                         { value: "1", label: "ایک گولی" },
                         { value: "1.5", label: "ڈیڑھ گولی " },
@@ -1035,7 +1039,10 @@ const EditConsultation = () => {
                         { value: "every_12_hours", label: "ہر 12 گھنٹے بعد " },
                         { value: "once_a_day", label: "دن میں ایک بار " },
                         { value: "twice_a_day", label: "دن میں دو بار " },
-                        { value: "three_times_a_day", label: "دن میں تین بار " },
+                        {
+                          value: "three_times_a_day",
+                          label: "دن میں تین بار ",
+                        },
                         { value: "four_times_a_day", label: "دن میں چار بار " },
                       ]}
                       urdu
