@@ -329,10 +329,15 @@ const EditConsultation = () => {
             vital_signs: consultationData.vital_signs?.length
               ? consultationData.vital_signs
               : [createNewVitalSign()],
-            follow_ups: follow_ups.map((f) => ({
-              follow_up_date: f.follow_up_date || "",
-              notes: f.notes || "",
-            })),
+            follow_ups:
+              consultationData.follow_ups?.map((f) => ({
+                id: f.id || null, // Add ID for existing entries
+                follow_up_date: f.follow_up_date
+                  ? new Date(f.follow_up_date).toISOString().split("T")[0] // Format for date input
+                  : "",
+                notes: f.notes || "",
+                created_at: f.created_at || new Date().toISOString(), // Preserve creation timestamp
+              })) || [],
           });
 
           if (processedSymptoms.length === 0 && validSymptoms.length > 0) {
@@ -416,9 +421,11 @@ const EditConsultation = () => {
       follow_ups: [
         ...(prev.follow_ups || []),
         {
+          id: null, // Mark as new entry
           follow_up_date: "",
           notes: "",
-        },
+          created_at: new Date().toISOString()
+        }
       ],
     }));
   };
