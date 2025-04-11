@@ -106,7 +106,7 @@ const PatientConsultation = () => {
         if (error.response?.status >= 400 && error.response?.status < 600) {
           if (attempt < retries) {
             const delay = 1000 * Math.pow(2, attempt);
-            toast.info(`Failed to fetch ${resourceName}. Retrying in ${delay / 1000}s...`);
+            // toast.info(`Failed to fetch ${resourceName}. Retrying in ${delay / 1000}s...`);
             await new Promise((resolve) => setTimeout(resolve, delay));
             attempt++;
           } else {
