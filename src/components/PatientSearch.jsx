@@ -25,6 +25,7 @@ import {
   FaIdCard,
   FaFilePdf,
   FaArrowLeft,
+  FaWalking,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import PrescriptionButton from "./PrescriptionButton";
@@ -735,6 +736,36 @@ const PatientSearch = () => {
                                                   <span className="text-xs text-gray-500 ml-1">
                                                     %
                                                   </span>
+                                                </p>
+                                              </div>
+                                            </div>
+                                            <div className="flex items-center justify-center gap-3 p-3 bg-green-50 rounded-lg flex-1 min-w-[120px]">
+                                              <div className="p-2 bg-green-100 rounded-full">
+                                                <FaBrain className="text-green-600 w-5 h-5" />{" "}
+                                                {/* Brain icon for NIHSS */}
+                                              </div>
+                                              <div>
+                                                <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                                                  NIHSS Score
+                                                </p>
+                                                <p className="text-lg font-bold text-gray-900 mt-1">
+                                                  {vital.nihss_score ?? "N/A"}
+                                                </p>
+                                              </div>
+                                            </div>
+
+                                            <div className="flex items-center justify-center gap-3 p-3 bg-orange-50 rounded-lg flex-1 min-w-[120px]">
+                                              <div className="p-2 bg-orange-100 rounded-full">
+                                                <FaWalking className="text-orange-600 w-5 h-5" />{" "}
+                                                {/* Walking icon for Fall Assessment */}
+                                              </div>
+                                              <div>
+                                                <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide">
+                                                  Fall Assessment
+                                                </p>
+                                                <p className="text-lg font-bold text-gray-900 mt-1">
+                                                  {vital.fall_assessment ||
+                                                    "N/A"}
                                                 </p>
                                               </div>
                                             </div>
