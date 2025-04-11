@@ -42,6 +42,7 @@ const PatientConsultation = () => {
   const [followUpDate, setFollowUpDate] = useState(null);
   const [followUpNotes, setFollowUpNotes] = useState("");
   const [loading, setLoading] = useState(true);
+  const [submissionLoading, setSubmissionLoading] = useState(false); // Separate loading for submission
   const [selectedDuration, setSelectedDuration] = useState(null);
   const [prescriptions, setPrescriptions] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
@@ -54,6 +55,7 @@ const PatientConsultation = () => {
     nihss: "",
     fall_assessment: "Done",
   });
+  const [hasReloaded, setHasReloaded] = useState(false); // Track page reload
 
   const customSelectStyles = {
     control: (base) => ({
@@ -111,15 +113,19 @@ const PatientConsultation = () => {
           status: error.response?.status,
         });
         toast.error(`Failed to load data: ${error.message}`);
-        // Reload page on failure
-        toast.info("Reloading page due to data fetch failure...");
-        setTimeout(() => window.location.reload(), 2000);
+        if (!hasReloaded) {
+          toast.info("Reloading page to fetch all data...");
+          setHasReloaded(true);
+          setTimeout(() => window.location.reload(), 2000); // Full page reload
+        } else {
+          navigate("/"); // Fallback to home if reload fails
+        }
       } finally {
         setLoading(false);
       }
     };
     fetchData();
-  }, [patientId, navigate]);
+  }, [patientId, navigate, hasReloaded]);
 
   useEffect(() => {
     if (patient?.id) {
@@ -161,14 +167,15 @@ const PatientConsultation = () => {
   };
 
   const submitConsultation = async () => {
-    if (!patient || loading) {
-      toast.error("Please wait for data to load or ensure patient data is available.");
+    if (!patient || loading || submissionLoading) {
+      toast.error("Please wait for data to load or ongoing submission to complete.");
       return;
     }
 
-    setLoading(true);
+    setSubmissionLoading(true);
 
-    console.log("Submitting consultation with state:", {
+    // Ensure state is up-to-date before submission
+    const currentState = {
       patientId: patient.id,
       vitalSigns,
       selectedSymptoms,
@@ -176,7 +183,8 @@ const PatientConsultation = () => {
       neuroExamData,
       followUpDate,
       followUpNotes,
-    });
+    };
+    console.log("Submitting consultation with state:", currentState);
 
     try {
       const consultationPayload = {
@@ -332,7 +340,7 @@ const PatientConsultation = () => {
           "Failed to save consultation. Please try again."
       );
     } finally {
-      setLoading(false);
+      setSubmissionLoading(false);
     }
   };
 
@@ -391,7 +399,7 @@ const PatientConsultation = () => {
           tests={tests}
           selectedTests={selectedTests}
           onTestsChange={setSelectedTests}
-          loading={loading}
+          loading={submissionLoading} // Use submissionLoading for form
           selectedMedicines={selectedMedicines}
           setSelectedMedicines={setSelectedMedicines}
           customSelectStyles={customSelectStyles}
