@@ -196,7 +196,7 @@ const PatientConsultation = () => {
             neuroOptionsMap[field] = neuroResults[index] || [];
           });
           setNeuroOptions(neuroOptionsMap);
-          console.log("Neuro options set:", neuroOptionsMap);
+          // console.log("Neuro options set:", neuroOptionsMap);
         }),
       ];
 
@@ -207,7 +207,7 @@ const PatientConsultation = () => {
     } catch (error) {
       console.error("Critical fetch error:", error);
       setFetchError(`Failed to load data: ${error.message}`);
-      toast.error(`Failed to load data: ${error.message}`);
+      // toast.error(`Failed to load data: ${error.message}`);
     } finally {
       setLoading(false);
       console.log("Loading complete, patient state:", patient, "fetchError:", fetchError);
@@ -505,7 +505,7 @@ const PatientConsultation = () => {
               patient={patient}
               onReturnHome={handleReturnHome}
               setShowPopup={setShowPopup}
-              prescriptions={prescriptions}
+              // prescriptions={prescriptions}
             />
             <ConsultationForm
               vitalSigns={vitalSigns}
