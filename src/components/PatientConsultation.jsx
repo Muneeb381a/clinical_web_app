@@ -126,6 +126,7 @@ const PatientConsultation = () => {
     setFetchError(null);
 
     try {
+      // Fetch patient data first (critical dependency)
       const patientData = await fetchWithRetry(
         `/api/patients/${patientId}`,
         "patient",
@@ -138,62 +139,78 @@ const PatientConsultation = () => {
       setPatient(patientData);
       console.log("Patient state set to:", patientData);
 
-      const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+      // Parallelize independent fetches
+      const fetchPromises = [
+        fetchWithRetry(
+          "/api/medicines",
+          "medicines",
+          (data) =>
+            data.map((med) => ({
+              value: med.id,
+              label: `${med.form || ""} ${med.brand_name}${med.strength ? ` (${med.strength})` : ""}`.trim(),
+            }))
+        ).then((medicinesData) => {
+          setMedicines(medicinesData || []);
+          console.log("Medicines set:", medicinesData);
+        }),
 
-      const medicinesData = await fetchWithRetry(
-        "/api/medicines",
-        "medicines",
-        (data) =>
-          data.map((med) => ({
-            value: med.id,
-            label: `${med.form || ""} ${med.brand_name}${med.strength ? ` (${med.strength})` : ""}`.trim(),
-          }))
-      );
-      setMedicines(medicinesData || []);
-      await delay(500);
+        fetchWithRetry(
+          "/api/symptoms",
+          "symptoms",
+          (data) => data.map((sym) => ({ value: sym.id, label: sym.name }))
+        ).then((symptomsData) => {
+          setSymptomsOptions(symptomsData || []);
+          console.log("Symptoms set:", symptomsData);
+        }),
 
-      const symptomsData = await fetchWithRetry(
-        "/api/symptoms",
-        "symptoms",
-        (data) => data.map((sym) => ({ value: sym.id, label: sym.name }))
-      );
-      setSymptomsOptions(symptomsData || []);
-      await delay(500);
+        fetchWithRetry(
+          "/api/tests",
+          "tests",
+          (data) => data.map((test) => ({ value: test.id, label: test.test_name || test.name }))
+        ).then((testsData) => {
+          setTests(testsData || []);
+          console.log("Tests set:", testsData);
+        }),
 
-      const testsData = await fetchWithRetry(
-        "/api/tests",
-        "tests",
-        (data) => data.map((test) => ({ value: test.id, label: test.test_name || test.name }))
-      );
-      setTests(testsData || []);
-      await delay(500);
+        fetchWithRetry(
+          `/api/prescriptions/patient/${patientId}`,
+          "prescriptions",
+          (data) => data
+        ).then((prescriptionsData) => {
+          setPrescriptions(prescriptionsData || []);
+          console.log("Prescriptions set:", prescriptionsData);
+        }),
 
-      const neuroOptionsMap = {};
-      for (const field of neuroExamFields) {
-        const options = await fetchWithRetry(
-          `/api/neuro-options/${field}`,
-          `neuro-${field}`,
-          (data) => data.map((opt) => ({ value: opt.id, label: opt.value }))
-        );
-        neuroOptionsMap[field] = options || [];
-        await delay(100);
-      }
-      setNeuroOptions(neuroOptionsMap);
+        // Fetch all neuro-options in parallel
+        Promise.all(
+          neuroExamFields.map((field) =>
+            fetchWithRetry(
+              `/api/neuro-options/${field}`,
+              `neuro-${field}`,
+              (data) => data.map((opt) => ({ value: opt.id, label: opt.value }))
+            )
+          )
+        ).then((neuroResults) => {
+          const neuroOptionsMap = {};
+          neuroExamFields.forEach((field, index) => {
+            neuroOptionsMap[field] = neuroResults[index] || [];
+          });
+          setNeuroOptions(neuroOptionsMap);
+          // console.log("Neuro options set:", neuroOptionsMap);
+        }),
+      ];
 
-      const prescriptionsData = await fetchWithRetry(
-        `/api/prescriptions/patient/${patientId}`,
-        "prescriptions",
-        (data) => data
-      );
-      setPrescriptions(prescriptionsData || []);
+      // Wait for all parallel fetches to complete
+      await Promise.all(fetchPromises);
+      console.log("All data fetched successfully");
 
     } catch (error) {
       console.error("Critical fetch error:", error);
-      setFetchError("Failed to load patient data: " + error.message);
-      toast.error("Failed to load patient data.");
+      setFetchError(`Failed to load data: ${error.message}`);
+      toast.error(`Failed to load data: ${error.message}`);
     } finally {
       setLoading(false);
-      console.log("Loading complete, patient state:", patient);
+      console.log("Loading complete, patient state:", patient, "fetchError:", fetchError);
     }
   };
 
@@ -385,17 +402,9 @@ const PatientConsultation = () => {
         requests.push(createFollowUpWithRetry());
       }
 
-      console.log("Executing requests:", requests.length);
-      for (let i = 0; i < requests.length; i++) {
-        try {
-          await requests[i];
-          console.log(`Request ${i + 1}/${requests.length} completed`);
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        } catch (error) {
-          console.error(`Request ${i + 1}/${requests.length} failed:`, error);
-          throw error; // Re-throw to trigger outer catch
-        }
-      }
+      // console.log("Executing requests:", requests.length);
+      await Promise.all(requests); // Parallelize submission requests
+      console.log("All submission requests completed");
 
       toast.success("Consultation added successfully! 🎉", { autoClose: 2000 });
       setVitalSigns({ pulseRate: "", bloodPressure: "", temperature: "", spo2: "", nihss: "", fall_assessment: "Done" });
