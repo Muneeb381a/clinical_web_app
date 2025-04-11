@@ -778,8 +778,6 @@ const PatientConsultation = () => {
       setSubmissionLoading(false);
     }
   };
-
-  
  
   if (loading) {
     return (
