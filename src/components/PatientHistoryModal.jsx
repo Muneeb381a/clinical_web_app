@@ -20,6 +20,7 @@ import {
   FaRegClock,
   FaFileMedical,
   FaHandHoldingMedical,
+  FaCalendar,
 } from "react-icons/fa";
 import { MdOutlineFilterList } from "react-icons/md";
 import { motion, AnimatePresence } from "framer-motion";
@@ -444,17 +445,22 @@ const PatientHistory = () => {
 
                             {/* Prescriptions */}
                             {record.prescriptions?.length > 0 && (
-                              <section className="prescription-section mb-10">
-                                <header className="section-header flex items-center gap-4 mb-8">
-                                  <div className="icon-container p-3 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl shadow-lg">
+                              <section className="prescription-section mb-14">
+                                <header className="section-header flex items-center gap-4 mb-10">
+                                  <div className="icon-container p-3 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl shadow-lg transform hover:rotate-12 transition-transform duration-300">
                                     <FaPills
                                       className="text-2xl text-white"
                                       aria-hidden="true"
                                     />
                                   </div>
-                                  <h2 className="section-title text-2xl font-bold text-gray-800">
-                                    Medication Plan
-                                  </h2>
+                                  <div>
+                                    <h2 className="section-title text-3xl font-bold text-gray-800 mb-1">
+                                      Medication Plan
+                                    </h2>
+                                    <p className="text-gray-500 text-sm">
+                                      Prescribed Medications & Dosages
+                                    </p>
+                                  </div>
                                 </header>
 
                                 <div className="prescriptions-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
@@ -462,17 +468,17 @@ const PatientHistory = () => {
                                     (prescription, idx) => (
                                       <article
                                         key={idx}
-                                        className="prescription-card group bg-white p-5 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:border-purple-100 relative overflow-hidden"
+                                        className="prescription-card group bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-purple-100 relative overflow-hidden"
                                       >
                                         <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-purple-400 to-blue-400" />
 
-                                        <div className="card-header flex justify-between items-start mb-4">
+                                        <div className="card-header flex justify-between items-start mb-5">
                                           <div className="medication-info max-w-[70%]">
-                                            <h3 className="medication-brand font-semibold text-gray-800 truncate text-lg">
+                                            <h3 className="medication-brand font-semibold text-gray-800 text-xl mb-1 truncate">
                                               {prescription.brand_name ||
                                                 "Unnamed Medication"}
                                             </h3>
-                                            <p className="generic-name text-sm text-gray-500 truncate">
+                                            <p className="generic-name text-sm text-gray-500 font-urdu truncate">
                                               {prescription.generic_name}
                                             </p>
                                           </div>
@@ -482,7 +488,7 @@ const PatientHistory = () => {
                                           </span>
                                         </div>
 
-                                        <dl className="prescription-details grid gap-3 text-sm">
+                                        <dl className="prescription-details grid gap-4 text-sm">
                                           <DetailItem
                                             label="Dosage"
                                             valueEn={prescription.dosage_en}
@@ -490,7 +496,9 @@ const PatientHistory = () => {
                                             icon={
                                               <FaSyringe className="text-purple-500" />
                                             }
+                                            urduClass="font-urdu text-lg"
                                           />
+
                                           <DetailItem
                                             label="Frequency"
                                             valueEn={prescription.frequency_en}
@@ -500,7 +508,9 @@ const PatientHistory = () => {
                                             icon={
                                               <FaRegClock className="text-blue-500" />
                                             }
+                                            urduClass="font-urdu text-lg"
                                           />
+
                                           <DetailItem
                                             label="Instructions"
                                             valueEn={
@@ -512,10 +522,13 @@ const PatientHistory = () => {
                                             icon={
                                               <FaFileMedical className="text-green-500" />
                                             }
+                                            urduClass="font-urdu text-lg"
                                           />
-                                          <div className="prescription-meta pt-3 mt-3 border-t border-gray-100">
+
+                                          <div className="prescription-meta pt-4 mt-4 border-t border-gray-100">
                                             <div className="flex items-center justify-between text-xs">
-                                              <span className="text-gray-500 font-medium">
+                                              <span className="text-gray-500 font-medium flex items-center gap-1">
+                                                <FaCalendar className="text-gray-400" />
                                                 Prescribed On
                                               </span>
                                               <span className="text-gray-600">
@@ -535,6 +548,10 @@ const PatientHistory = () => {
                                             </div>
                                           </div>
                                         </dl>
+
+                                        {/* Hover Effect Elements */}
+                                        <div className="absolute inset-0 border-2 border-transparent group-hover:border-purple-100 rounded-2xl pointer-events-none transition-all duration-300" />
+                                        <div className="absolute inset-0 bg-gradient-to-br from-white to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
                                       </article>
                                     )
                                   )}
