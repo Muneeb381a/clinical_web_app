@@ -246,9 +246,9 @@ const PatientConsultation = () => {
       toast.error("Please wait for data to load or ongoing submission to complete.");
       return;
     }
-
+  
     setSubmissionLoading(true);
-
+  
     try {
       console.log("Submitting consultation with data:", {
         patient_id: patient.id,
@@ -261,136 +261,175 @@ const PatientConsultation = () => {
         followUpNotes,
         selectedDuration,
       });
-
+  
+      // Step 1: Create Consultation
+      const consultationPayload = {
+        patient_id: patient.id,
+        doctor_name: "Dr. Abdul Rauf",
+        diagnosis: neuroExamData.diagnosis || null,
+        notes: neuroExamData.treatment_plan || null,
+        consultation_date: new Date().toISOString().split("T")[0],
+        status: "completed",
+      };
+      console.log("POST /api/consultations payload:", consultationPayload);
       const consultationRes = await axios.post(
         `${BASE_URL}/api/consultations`,
-        {
-          patient_id: patient.id,
-          doctor_name: "Dr. Abdul Rauf",
-          diagnosis: neuroExamData.diagnosis || null,
-          notes: neuroExamData.treatment_plan || null,
-          consultation_date: new Date().toISOString().split("T")[0],
-          status: "completed",
-        },
+        consultationPayload,
         { timeout: 15000 }
       );
       const consultationId = consultationRes.data.id;
       console.log("Consultation created with ID:", consultationId);
-
+  
       const requests = [];
-
+  
+      // Step 2: Vitals
       if (Object.values(vitalSigns).some((v) => v)) {
-        console.log("Submitting vitals:", vitalSigns);
+        const vitalsPayload = {
+          consultation_id: consultationId,
+          patient_id: patient.id,
+          pulse_rate: Number(vitalSigns.pulseRate) || null,
+          blood_pressure: vitalSigns.bloodPressure || null,
+          temperature: Number(vitalSigns.temperature) || null,
+          spo2_level: Number(vitalSigns.spo2) || null,
+          nihss_score: Number(vitalSigns.nihss) || null,
+          fall_assessment: vitalSigns.fall_assessment || "Done",
+        };
+        console.log("POST /api/vitals payload:", vitalsPayload);
         requests.push(
-          axios.post(`${BASE_URL}/api/vitals`, {
-            consultation_id: consultationId,
-            patient_id: patient.id,
-            pulse_rate: Number(vitalSigns.pulseRate) || null,
-            blood_pressure: vitalSigns.bloodPressure || null,
-            temperature: Number(vitalSigns.temperature) || null,
-            spo2_level: Number(vitalSigns.spo2) || null,
-            nihss_score: Number(vitalSigns.nihss) || null,
-            fall_assessment: vitalSigns.fall_assessment || "Done",
-          }).catch((error) => {
-            console.error("Error submitting vitals:", error.response?.data || error.message);
+          axios.post(`${BASE_URL}/api/vitals`, vitalsPayload).catch((error) => {
+            console.error("Error submitting vitals:", {
+              status: error.response?.status,
+              message: error.response?.data?.message || error.message,
+              payload: vitalsPayload,
+            });
             throw new Error("Failed to submit vitals");
           })
         );
       }
-
+  
+      // Step 3: Symptoms
       if (selectedSymptoms.length > 0) {
-        console.log("Submitting symptoms:", selectedSymptoms);
+        const symptomsPayload = {
+          symptom_ids: selectedSymptoms.map((s) => s.value),
+        };
+        console.log("POST /api/consultations/{id}/symptoms payload:", symptomsPayload);
         requests.push(
-          axios.post(`${BASE_URL}/api/consultations/${consultationId}/symptoms`, {
-            symptom_ids: selectedSymptoms.map((s) => s.value),
-          }).catch((error) => {
-            console.error("Error submitting symptoms:", error.response?.data || error.message);
+          axios.post(`${BASE_URL}/api/consultations/${consultationId}/symptoms`, symptomsPayload).catch((error) => {
+            console.error("Error submitting symptoms:", {
+              status: error.response?.status,
+              message: error.response?.data?.message || error.message,
+              payload: symptomsPayload,
+            });
             throw new Error("Failed to submit symptoms");
           })
         );
       }
-
+  
+      // Step 4: Prescriptions
       if (selectedMedicines.length > 0) {
-        console.log("Submitting prescriptions:", selectedMedicines);
+        const prescriptionsPayload = {
+          consultation_id: consultationId,
+          medicines: selectedMedicines.map((med) => ({
+            medicine_id: med.medicine_id,
+            dosage_en: med.dosage_en || "",
+            dosage_urdu: med.dosage_urdu || "",
+            frequency_en: med.frequency_en || "",
+            frequency_urdu: med.frequency_urdu || "",
+            duration_en: med.duration_en || "",
+            duration_urdu: med.duration_urdu || "",
+            instructions_en: med.instructions_en || "",
+            instructions_urdu: med.instructions_urdu || "",
+          })),
+        };
+        console.log("POST /api/prescriptions payload:", prescriptionsPayload);
         requests.push(
-          axios.post(`${BASE_URL}/api/prescriptions`, {
-            consultation_id: consultationId,
-            medicines: selectedMedicines.map((med) => ({
-              medicine_id: med.medicine_id,
-              dosage_en: med.dosage_en || "",
-              dosage_urdu: med.dosage_urdu || "",
-              frequency_en: med.frequency_en || "",
-              frequency_urdu: med.frequency_urdu || "",
-              duration_en: med.duration_en || "",
-              duration_urdu: med.duration_urdu || "",
-              instructions_en: med.instructions_en || "",
-              instructions_urdu: med.instructions_urdu || "",
-            })),
-          }).catch((error) => {
-            console.error("Error submitting prescriptions:", error.response?.data || error.message);
+          axios.post(`${BASE_URL}/api/prescriptions`, prescriptionsPayload).catch((error) => {
+            console.error("Error submitting prescriptions:", {
+              status: error.response?.status,
+              message: error.response?.data?.message || error.message,
+              payload: prescriptionsPayload,
+            });
             throw new Error("Failed to submit prescriptions");
           })
         );
       }
-
+  
+      // Step 5: Neuro Exam
       if (Object.keys(neuroExamData).length > 0) {
-        console.log("Submitting neuro exam data:", neuroExamData);
+        const neuroPayload = {
+          consultation_id: consultationId,
+          patient_id: patient.id,
+          ...neuroExamData,
+          diagnosis: neuroExamData.diagnosis || "",
+          treatment_plan: neuroExamData.treatment_plan || "",
+          pain_sensation: !!neuroExamData.pain_sensation,
+          vibration_sense: !!neuroExamData.vibration_sense,
+          proprioception: !!neuroExamData.proprioception,
+          temperature_sensation: !!neuroExamData.temperature_sensation,
+          brudzinski_sign: !!neuroExamData.brudzinski_sign,
+          kernig_sign: !!neuroExamData.kernig_sign,
+          facial_sensation: !!neuroExamData.facial_sensation,
+          swallowing_function: !!neuroExamData.swallowing_function,
+          mmse_score: neuroExamData.mmse_score || "",
+          gcs_score: neuroExamData.gcs_score || "",
+        };
+        console.log("POST /api/examination payload:", neuroPayload);
         requests.push(
-          axios.post(`${BASE_URL}/api/examination`, {
-            consultation_id: consultationId,
-            patient_id: patient.id,
-            ...neuroExamData,
-            diagnosis: neuroExamData.diagnosis || "",
-            treatment_plan: neuroExamData.treatment_plan || "",
-            pain_sensation: !!neuroExamData.pain_sensation,
-            vibration_sense: !!neuroExamData.vibration_sense,
-            proprioception: !!neuroExamData.proprioception,
-            temperature_sensation: !!neuroExamData.temperature_sensation,
-            brudzinski_sign: !!neuroExamData.brudzinski_sign,
-            kernig_sign: !!neuroExamData.kernig_sign,
-            facial_sensation: !!neuroExamData.facial_sensation,
-            swallowing_function: !!neuroExamData.swallowing_function,
-            mmse_score: neuroExamData.mmse_score || "",
-            gcs_score: neuroExamData.gcs_score || "",
-          }).catch((error) => {
-            console.error("Error submitting neuro exam:", error.response?.data || error.message);
+          axios.post(`${BASE_URL}/api/examination`, neuroPayload).catch((error) => {
+            console.error("Error submitting neuro exam:", {
+              status: error.response?.status,
+              message: error.response?.data?.message || error.message,
+              payload: neuroPayload,
+            });
             throw new Error("Failed to submit neuro exam");
           })
         );
       }
-
+  
+      // Step 6: Tests
       if (selectedTests.length > 0) {
         const testIds = selectedTests
           .map((test) => tests.find((t) => t.label === test || t.value === test)?.value)
           .filter(Boolean);
-        console.log("Submitting tests:", testIds);
+        const testsPayload = {
+          test_ids: testIds,
+          consultation_id: consultationId,
+        };
+        console.log("POST /api/tests/assign payload:", testsPayload);
         if (testIds.length > 0) {
           requests.push(
-            axios.post(`${BASE_URL}/api/tests/assign`, {
-              test_ids: testIds,
-              consultation_id: consultationId,
-            }).catch((error) => {
-              console.error("Error submitting tests:", error.response?.data || error.message);
+            axios.post(`${BASE_URL}/api/tests/assign`, testsPayload).catch((error) => {
+              console.error("Error submitting tests:", {
+                status: error.response?.status,
+                message: error.response?.data?.message || error.message,
+                payload: testsPayload,
+              });
               throw new Error("Failed to submit tests");
             })
           );
         }
       }
-
+  
+      // Step 7: Follow-Up
       if (selectedDuration && followUpDate) {
+        const followUpPayload = {
+          follow_up_date: followUpDate.toISOString().split("T")[0],
+          notes: followUpNotes || "عام چیک اپ",
+          duration_days: Number(selectedDuration) || 7,
+        };
+        console.log("POST /api/followups/consultations/{id}/followups payload:", followUpPayload);
         const createFollowUpWithRetry = async (attempt = 1) => {
           try {
-            console.log("Submitting follow-up:", { followUpDate, followUpNotes, selectedDuration });
             return await axios.post(
               `${BASE_URL}/api/followups/consultations/${consultationId}/followups`,
-              {
-                follow_up_date: followUpDate.toISOString().split("T")[0],
-                notes: followUpNotes || "عام چیک اپ",
-                duration_days: Number(selectedDuration) || 7,
-              }
+              followUpPayload
             );
           } catch (error) {
-            console.error("Error submitting follow-up (attempt " + attempt + "):", error.response?.data || error.message);
+            console.error(`Error submitting follow-up (attempt ${attempt}/3):`, {
+              status: error.response?.status,
+              message: error.response?.data?.message || error.message,
+              payload: followUpPayload,
+            });
             if (attempt < 3) {
               const delay = 500 * Math.pow(2, attempt);
               await new Promise((resolve) => setTimeout(resolve, delay));
@@ -401,11 +440,11 @@ const PatientConsultation = () => {
         };
         requests.push(createFollowUpWithRetry());
       }
-
-      console.log("Executing requests:", requests.length);
-      await Promise.all(requests); // Parallelize submission requests
+  
+      console.log("Executing", requests.length, "requests in parallel");
+      await Promise.all(requests);
       console.log("All submission requests completed");
-
+  
       toast.success("Consultation added successfully! 🎉", { autoClose: 2000 });
       setVitalSigns({ pulseRate: "", bloodPressure: "", temperature: "", spo2: "", nihss: "", fall_assessment: "Done" });
       setFollowUpDate(null);
@@ -413,17 +452,21 @@ const PatientConsultation = () => {
       setSelectedDuration(null);
       handlePrint();
       setTimeout(() => navigate("/"), 1000);
-
+  
     } catch (error) {
-      console.error("Submission error:", error);
+      console.error("Submission error:", {
+        status: error.response?.status,
+        message: error.response?.data?.message || error.message,
+        endpoint: error.config?.url,
+        payload: error.config?.data ? JSON.parse(error.config.data) : null,
+      });
       toast.error(
-        error.message || error.response?.data?.message || "Failed to save consultation. Please try again."
+        error.response?.data?.message || error.message || "Failed to save consultation. Please try again."
       );
     } finally {
       setSubmissionLoading(false);
     }
   };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
