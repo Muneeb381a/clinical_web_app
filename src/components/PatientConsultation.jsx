@@ -39,7 +39,8 @@ const PatientConsultation = () => {
   const [tests, setTests] = useState([]);
   const [selectedTests, setSelectedTests] = useState([]);
   const [neuroExamData, setNeuroExamData] = useState({});
-  const [neuroOptions, setNeuroOptions] = useState({}); // Store neuro exam options
+  const [neuroOptions, setNeuroOptions] = useState({});
+  const [symptomsOptions, setSymptomsOptions] = useState([]);
   const [followUpDate, setFollowUpDate] = useState(null);
   const [followUpNotes, setFollowUpNotes] = useState("");
   const [loading, setLoading] = useState(true);
@@ -57,8 +58,9 @@ const PatientConsultation = () => {
     fall_assessment: "Done",
   });
   const [fetchError, setFetchError] = useState(null);
-  const [retryCount, setRetryCount] = useState(0);
+
   const MAX_RETRIES = 2;
+  const BASE_URL = "https://patient-management-backend-nine.vercel.app";
 
   const customSelectStyles = {
     control: (base) => ({
@@ -82,97 +84,126 @@ const PatientConsultation = () => {
     }),
   };
 
-  const fetchDataWithRetry = async () => {
+  const fetchWithRetry = async (url, resourceName, transformFn, retries = MAX_RETRIES) => {
+    let attempt = 0;
+    while (attempt <= retries) {
+      try {
+        const response = await axios.get(`${BASE_URL}${url}`, {
+          timeout: 10000,
+          headers: { "Content-Type": "application/json" },
+        });
+        console.log(`Raw response for ${resourceName}:`, response.data);
+        const data = response.data.data && Array.isArray(response.data.data) ? response.data.data : response.data;
+        const transformed = Array.isArray(data) ? transformFn(data) : transformFn(data);
+        console.log(`Fetched ${resourceName}:`, transformed);
+        return transformed;
+      } catch (error) {
+        console.error(`Error fetching ${resourceName} (attempt ${attempt + 1}/${retries + 1}):`, {
+          status: error.response?.status,
+          message: error.response?.data?.message || error.message,
+          url: `${BASE_URL}${url}`,
+        });
+        if (error.response?.status >= 400 && error.response?.status < 600) {
+          if (attempt < retries) {
+            const delay = 1000 * Math.pow(2, attempt);
+            toast.info(`Failed to fetch ${resourceName}. Retrying in ${delay / 1000}s...`);
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            attempt++;
+          } else {
+            console.warn(`Max retries reached for ${resourceName}. Returning default.`);
+            return [];
+          }
+        } else {
+          console.warn(`Invalid data format for ${resourceName}. Returning default.`);
+          return [];
+        }
+      }
+    }
+  };
+
+  const fetchData = async () => {
     setLoading(true);
     setFetchError(null);
 
     try {
-      // Fetch patient, medicines, and prescriptions
-      const [patientRes, medicinesRes, prescriptionsRes] = await Promise.all([
-        axios.get(
-          `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}`,
-          { timeout: 10000 }
-        ),
-        axios.get(
-          "https://patient-management-backend-nine.vercel.app/api/medicines",
-          { timeout: 10000 }
-        ),
-        patientId
-          ? axios.get(
-              `https://patient-management-backend-nine.vercel.app/api/prescriptions/patient/${patientId}`,
-              { timeout: 10000 }
-            )
-          : Promise.resolve({ data: [] }), // Fallback if no patientId yet
-      ]);
-
-      console.log("Patient response:", patientRes.data);
-      console.log("Medicines response:", medicinesRes.data);
-      console.log("Prescriptions response:", prescriptionsRes.data);
-
-      setPatient(patientRes.data);
-      setMedicines(
-        medicinesRes.data.map((med) => ({
-          value: med.id,
-          label: `${med.form || ""} ${med.brand_name}${
-            med.strength ? ` (${med.strength})` : ""
-          }`.trim(),
-        }))
+      const patientData = await fetchWithRetry(
+        `/api/patients/${patientId}`,
+        "patient",
+        (data) => data
       );
-      setPrescriptions(prescriptionsRes.data || []);
+      console.log("Patient data fetched:", patientData);
+      if (!patientData || !patientData.id) {
+        throw new Error("Invalid patient data received");
+      }
+      setPatient(patientData);
+      console.log("Patient state set to:", patientData);
 
-      // Fetch neuro exam options for all fields
-      const neuroPromises = neuroExamFields.map((field) =>
-        axios
-          .get(
-            `https://patient-management-backend-nine.vercel.app/api/neuro-options/${field}`,
-            { timeout: 10000 }
-          )
-          .then((res) => ({
-            field,
-            options: res.data.map((opt) => ({
-              value: opt.id || opt.value,
-              label: opt.name || opt.label,
-            })),
+      const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+      const medicinesData = await fetchWithRetry(
+        "/api/medicines",
+        "medicines",
+        (data) =>
+          data.map((med) => ({
+            value: med.id,
+            label: `${med.form || ""} ${med.brand_name}${med.strength ? ` (${med.strength})` : ""}`.trim(),
           }))
-          .catch((err) => {
-            console.error(`Failed to fetch options for ${field}:`, err.message);
-            return { field, options: [] }; // Fallback to empty options
-          })
       );
+      setMedicines(medicinesData || []);
+      await delay(500);
 
-      const neuroResults = await Promise.all(neuroPromises);
-      const neuroOptionsMap = neuroResults.reduce((acc, { field, options }) => {
-        acc[field] = options;
-        return acc;
-      }, {});
-      console.log("Neuro exam options:", neuroOptionsMap);
+      const symptomsData = await fetchWithRetry(
+        "/api/symptoms",
+        "symptoms",
+        (data) => data.map((sym) => ({ value: sym.id, label: sym.name }))
+      );
+      setSymptomsOptions(symptomsData || []);
+      await delay(500);
+
+      const testsData = await fetchWithRetry(
+        "/api/tests",
+        "tests",
+        (data) => data.map((test) => ({ value: test.id, label: test.test_name || test.name }))
+      );
+      setTests(testsData || []);
+      await delay(500);
+
+      const neuroOptionsMap = {};
+      for (const field of neuroExamFields) {
+        const options = await fetchWithRetry(
+          `/api/neuro-options/${field}`,
+          `neuro-${field}`,
+          (data) => data.map((opt) => ({ value: opt.id, label: opt.value }))
+        );
+        neuroOptionsMap[field] = options || [];
+        await delay(100);
+      }
       setNeuroOptions(neuroOptionsMap);
 
-    } catch (error) {
-      console.error("Error fetching data:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-      });
-      toast.error(`Failed to load data: ${error.message}`);
+      const prescriptionsData = await fetchWithRetry(
+        `/api/prescriptions/patient/${patientId}`,
+        "prescriptions",
+        (data) => data
+      );
+      setPrescriptions(prescriptionsData || []);
 
-      if (retryCount < MAX_RETRIES) {
-        const delay = 2000 * (retryCount + 1); // Exponential backoff: 2s, 4s
-        toast.info(`Retrying in ${delay / 1000} seconds... (${retryCount + 1}/${MAX_RETRIES})`);
-        setTimeout(() => setRetryCount((prev) => prev + 1), delay);
-      } else {
-        toast.info("Max retries reached. Reloading page...");
-        setTimeout(() => window.location.reload(), 2000);
-      }
-      setFetchError(error.message);
+    } catch (error) {
+      console.error("Critical fetch error:", error);
+      setFetchError("Failed to load patient data: " + error.message);
+      toast.error("Failed to load patient data.");
     } finally {
       setLoading(false);
+      console.log("Loading complete, patient state:", patient);
     }
   };
 
   useEffect(() => {
-    fetchDataWithRetry();
-  }, [patientId, navigate, retryCount]);
+    fetchData();
+  }, [patientId, navigate]);
+
+  useEffect(() => {
+    console.log("Patient state updated:", patient);
+  }, [patient]);
 
   const handleReturnHome = () => {
     setPatient(null);
@@ -194,66 +225,47 @@ const PatientConsultation = () => {
   };
 
   const submitConsultation = async () => {
-    if (!patient || loading || submissionLoading) {
+    if (!patient || submissionLoading) {
       toast.error("Please wait for data to load or ongoing submission to complete.");
       return;
     }
 
     setSubmissionLoading(true);
 
-    const currentState = {
-      patientId: patient.id,
-      vitalSigns,
-      selectedSymptoms,
-      selectedMedicines,
-      neuroExamData,
-      followUpDate,
-      followUpNotes,
-    };
-    console.log("Submitting consultation with state:", currentState);
-
     try {
-      const consultationPayload = {
+      console.log("Submitting consultation with data:", {
         patient_id: patient.id,
-        doctor_name: "Dr. Abdul Rauf",
-        diagnosis: neuroExamData.diagnosis || "",
-        notes: neuroExamData.treatment_plan || "",
-        consultation_date: new Date().toISOString().split("T")[0],
-        status: "completed",
-      };
-
-      if (!consultationPayload.patient_id || isNaN(consultationPayload.patient_id)) {
-        throw new Error("Invalid patient ID");
-      }
-      if (!consultationPayload.consultation_date) {
-        throw new Error("Missing consultation date");
-      }
+        vitalSigns,
+        selectedSymptoms,
+        selectedMedicines,
+        neuroExamData,
+        selectedTests,
+        followUpDate,
+        followUpNotes,
+        selectedDuration,
+      });
 
       const consultationRes = await axios.post(
-        "https://patient-management-backend-nine.vercel.app/api/consultations",
-        consultationPayload,
+        `${BASE_URL}/api/consultations`,
         {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
-          },
-          timeout: 15000,
-        }
+          patient_id: patient.id,
+          doctor_name: "Dr. Abdul Rauf",
+          diagnosis: neuroExamData.diagnosis || null,
+          notes: neuroExamData.treatment_plan || null,
+          consultation_date: new Date().toISOString().split("T")[0],
+          status: "completed",
+        },
+        { timeout: 15000 }
       );
-
-      if (!consultationRes.data?.id) {
-        throw new Error("Failed to create consultation record");
-      }
-
       const consultationId = consultationRes.data.id;
       console.log("Consultation created with ID:", consultationId);
 
       const requests = [];
 
-      requests.push(
-        axios.post(
-          "https://patient-management-backend-nine.vercel.app/api/vitals",
-          {
+      if (Object.values(vitalSigns).some((v) => v)) {
+        console.log("Submitting vitals:", vitalSigns);
+        requests.push(
+          axios.post(`${BASE_URL}/api/vitals`, {
             consultation_id: consultationId,
             patient_id: patient.id,
             pulse_rate: Number(vitalSigns.pulseRate) || null,
@@ -262,156 +274,170 @@ const PatientConsultation = () => {
             spo2_level: Number(vitalSigns.spo2) || null,
             nihss_score: Number(vitalSigns.nihss) || null,
             fall_assessment: vitalSigns.fall_assessment || "Done",
-          }
-        ).catch((err) => {
-          console.error("Vitals failed:", err.response?.data || err.message);
-          throw err;
-        })
-      );
+          }).catch((error) => {
+            console.error("Error submitting vitals:", error.response?.data || error.message);
+            throw new Error("Failed to submit vitals");
+          })
+        );
+      }
 
       if (selectedSymptoms.length > 0) {
+        console.log("Submitting symptoms:", selectedSymptoms);
         requests.push(
-          axios.post(
-            `https://patient-management-backend-nine.vercel.app/api/consultations/${consultationId}/symptoms`,
-            {
-              symptom_ids: selectedSymptoms
-                .map((s) => parseInt(s.value))
-                .filter((id) => !isNaN(id)),
-            }
-          ).catch((err) => {
-            console.error("Symptoms failed:", err.response?.data || err.message);
-            throw err;
+          axios.post(`${BASE_URL}/api/consultations/${consultationId}/symptoms`, {
+            symptom_ids: selectedSymptoms.map((s) => s.value),
+          }).catch((error) => {
+            console.error("Error submitting symptoms:", error.response?.data || error.message);
+            throw new Error("Failed to submit symptoms");
           })
         );
       }
 
       if (selectedMedicines.length > 0) {
+        console.log("Submitting prescriptions:", selectedMedicines);
         requests.push(
-          axios.post(
-            "https://patient-management-backend-nine.vercel.app/api/prescriptions",
-            {
-              consultation_id: consultationId,
-              medicines: selectedMedicines.map((med) => ({
-                medicine_id: med.medicine_id,
-                dosage_urdu: med.dosage_urdu || "",
-                frequency_urdu: med.frequency_urdu || "",
-                duration_urdu: med.duration_urdu || "",
-                instructions_urdu: med.instructions_urdu || "",
-              })),
-            }
-          ).catch((err) => {
-            console.error("Prescriptions failed:", err.response?.data || err.message);
-            throw err;
+          axios.post(`${BASE_URL}/api/prescriptions`, {
+            consultation_id: consultationId,
+            medicines: selectedMedicines.map((med) => ({
+              medicine_id: med.medicine_id,
+              dosage_en: med.dosage_en || "",
+              dosage_urdu: med.dosage_urdu || "",
+              frequency_en: med.frequency_en || "",
+              frequency_urdu: med.frequency_urdu || "",
+              duration_en: med.duration_en || "",
+              duration_urdu: med.duration_urdu || "",
+              instructions_en: med.instructions_en || "",
+              instructions_urdu: med.instructions_urdu || "",
+            })),
+          }).catch((error) => {
+            console.error("Error submitting prescriptions:", error.response?.data || error.message);
+            throw new Error("Failed to submit prescriptions");
           })
         );
       }
 
-      const neuroPayload = {
-        consultation_id: consultationId,
-        patient_id: patient.id,
-        ...neuroExamData,
-        diagnosis: neuroExamData.diagnosis || "",
-        treatment_plan: neuroExamData.treatment_plan || "",
-      };
-
-      const booleanFields = [
-        "pain_sensation",
-        "vibration_sense",
-        "proprioception",
-        "temperature_sensation",
-        "brudzinski_sign",
-        "kernig_sign",
-        "facial_sensation",
-        "swallowing_function",
-      ];
-      booleanFields.forEach((field) => {
-        neuroPayload[field] = !!neuroExamData[field];
-      });
-
-      requests.push(
-        axios.post(
-          "https://patient-management-backend-nine.vercel.app/api/examination",
-          neuroPayload
-        ).catch((err) => {
-          console.error("Neuro exam failed:", err.response?.data || err.message);
-          throw err;
-        })
-      );
-
-      await Promise.all(requests);
-
-      if (followUpDate && selectedDuration) {
-        await axios.post(
-          `https://patient-management-backend-nine.vercel.app/api/followups/consultations/${consultationId}/followups`,
-          {
-            follow_up_date: new Date(followUpDate).toISOString().split("T")[0],
-            notes: followUpNotes || "Routine follow-up",
-            duration_days: parseInt(selectedDuration) || 7,
-          }
+      if (Object.keys(neuroExamData).length > 0) {
+        console.log("Submitting neuro exam data:", neuroExamData);
+        requests.push(
+          axios.post(`${BASE_URL}/api/examination`, {
+            consultation_id: consultationId,
+            patient_id: patient.id,
+            ...neuroExamData,
+            diagnosis: neuroExamData.diagnosis || "",
+            treatment_plan: neuroExamData.treatment_plan || "",
+            pain_sensation: !!neuroExamData.pain_sensation,
+            vibration_sense: !!neuroExamData.vibration_sense,
+            proprioception: !!neuroExamData.proprioception,
+            temperature_sensation: !!neuroExamData.temperature_sensation,
+            brudzinski_sign: !!neuroExamData.brudzinski_sign,
+            kernig_sign: !!neuroExamData.kernig_sign,
+            facial_sensation: !!neuroExamData.facial_sensation,
+            swallowing_function: !!neuroExamData.swallowing_function,
+            mmse_score: neuroExamData.mmse_score || "",
+            gcs_score: neuroExamData.gcs_score || "",
+          }).catch((error) => {
+            console.error("Error submitting neuro exam:", error.response?.data || error.message);
+            throw new Error("Failed to submit neuro exam");
+          })
         );
       }
 
-      toast.success("Consultation saved successfully!");
+      if (selectedTests.length > 0) {
+        const testIds = selectedTests
+          .map((test) => tests.find((t) => t.label === test || t.value === test)?.value)
+          .filter(Boolean);
+        console.log("Submitting tests:", testIds);
+        if (testIds.length > 0) {
+          requests.push(
+            axios.post(`${BASE_URL}/api/tests/assign`, {
+              test_ids: testIds,
+              consultation_id: consultationId,
+            }).catch((error) => {
+              console.error("Error submitting tests:", error.response?.data || error.message);
+              throw new Error("Failed to submit tests");
+            })
+          );
+        }
+      }
+
+      if (selectedDuration && followUpDate) {
+        const createFollowUpWithRetry = async (attempt = 1) => {
+          try {
+            console.log("Submitting follow-up:", { followUpDate, followUpNotes, selectedDuration });
+            return await axios.post(
+              `${BASE_URL}/api/followups/consultations/${consultationId}/followups`,
+              {
+                follow_up_date: followUpDate.toISOString().split("T")[0],
+                notes: followUpNotes || "عام چیک اپ",
+                duration_days: Number(selectedDuration) || 7,
+              }
+            );
+          } catch (error) {
+            console.error("Error submitting follow-up (attempt " + attempt + "):", error.response?.data || error.message);
+            if (attempt < 3) {
+              const delay = 500 * Math.pow(2, attempt);
+              await new Promise((resolve) => setTimeout(resolve, delay));
+              return createFollowUpWithRetry(attempt + 1);
+            }
+            throw new Error("Failed to submit follow-up after retries");
+          }
+        };
+        requests.push(createFollowUpWithRetry());
+      }
+
+      console.log("Executing requests:", requests.length);
+      for (let i = 0; i < requests.length; i++) {
+        try {
+          await requests[i];
+          console.log(`Request ${i + 1}/${requests.length} completed`);
+          await new Promise((resolve) => setTimeout(resolve, 500));
+        } catch (error) {
+          console.error(`Request ${i + 1}/${requests.length} failed:`, error);
+          throw error; // Re-throw to trigger outer catch
+        }
+      }
+
+      toast.success("Consultation added successfully! 🎉", { autoClose: 2000 });
+      setVitalSigns({ pulseRate: "", bloodPressure: "", temperature: "", spo2: "", nihss: "", fall_assessment: "Done" });
+      setFollowUpDate(null);
+      setFollowUpNotes("");
+      setSelectedDuration(null);
       handlePrint();
-      setTimeout(() => navigate("/"), 1500);
+      setTimeout(() => navigate("/"), 1000);
+
     } catch (error) {
-      console.error("Submission failed:", {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status,
-      });
+      console.error("Submission error:", error);
       toast.error(
-        error.response?.data?.message ||
-          error.message ||
-          "Failed to save consultation. Please try again."
+        error.message || error.response?.data?.message || "Failed to save consultation. Please try again."
       );
     } finally {
       setSubmissionLoading(false);
     }
   };
 
-  useEffect(() => {
-    const handleOnlineSync = () => {
-      const pending = JSON.parse(localStorage.getItem("pendingConsultations") || "[]");
-      if (pending.length > 0) {
-        pending.forEach(async (data) => {
-          try {
-            await submitConsultation(data);
-            localStorage.setItem(
-              "pendingConsultations",
-              JSON.stringify(pending.filter((item) => item.timestamp !== data.timestamp))
-            );
-          } catch (error) {
-            console.error("Background sync failed:", error);
-          }
-        });
-      }
-    };
-    window.addEventListener("online", handleOnlineSync);
-    return () => window.removeEventListener("online", handleOnlineSync);
-  }, []);
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-lg text-gray-600">
-          Loading consultation data... Attempt {retryCount + 1}/{MAX_RETRIES + 1}
-        </p>
+        <p className="text-lg text-gray-600">Loading consultation data...</p>
       </div>
     );
   }
 
-  if (fetchError && retryCount >= MAX_RETRIES) {
+  console.log("Rendering UI, patient:", patient, "fetchError:", fetchError);
+
+  if (fetchError) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-lg text-red-600">
-          Failed to load data after multiple attempts: {fetchError}. Reloading...
-        </p>
+      <div className="min-h-screen flex items-center justify-center flex-col">
+        <p className="text-lg text-red-600">{fetchError}</p>
+        <button
+          onClick={handleReturnHome}
+          className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
+        >
+          Return to Home
+        </button>
       </div>
     );
   }
-
-  if (!patient) return null;
 
   return (
     <div className="min-h-screen p-8 relative overflow-hidden isolate w-[90vw] mx-auto before:absolute before:inset-0 before:bg-[radial-gradient(circle_at_top_left,_rgba(255,255,255,0.9),_transparent)] before:opacity-50 before:-z-10">
@@ -421,37 +447,61 @@ const PatientConsultation = () => {
             Patient Consultation Portal
           </span>
         </h2>
-        <PatientInfoHeader
-          patient={patient}
-          onReturnHome={handleReturnHome}
-          setShowPopup={setShowPopup}
-        />
-        <ConsultationForm
-          vitalSigns={vitalSigns}
-          onVitalSignsChange={setVitalSigns}
-          selectedSymptoms={selectedSymptoms}
-          onSymptomsChange={setSelectedSymptoms}
-          neuroExamData={neuroExamData}
-          setNeuroExamData={setNeuroExamData}
-          neuroExamFields={neuroExamFields}
-          neuroOptions={neuroOptions} // Pass pre-fetched options
-          tests={tests}
-          selectedTests={selectedTests}
-          onTestsChange={setSelectedTests}
-          loading={submissionLoading}
-          selectedMedicines={selectedMedicines}
-          setSelectedMedicines={setSelectedMedicines}
-          customSelectStyles={customSelectStyles}
-          selectedDuration={selectedDuration}
-          followUpDate={followUpDate}
-          followUpNotes={followUpNotes}
-          onDurationChange={setSelectedDuration}
-          onDateChange={setFollowUpDate}
-          onNotesChange={setFollowUpNotes}
-          onSubmit={submitConsultation}
-          onPrint={handlePrint}
-          medicines={medicines} // Pass medicines to avoid separate fetch
-        />
+        {patient ? (
+          <>
+            <PatientInfoHeader
+              patient={patient}
+              onReturnHome={handleReturnHome}
+              setShowPopup={setShowPopup}
+              prescriptions={prescriptions}
+            />
+            <ConsultationForm
+              vitalSigns={vitalSigns}
+              onVitalSignsChange={setVitalSigns}
+              selectedSymptoms={selectedSymptoms}
+              onSymptomsChange={setSelectedSymptoms}
+              neuroExamData={neuroExamData}
+              setNeuroExamData={setNeuroExamData}
+              neuroExamFields={neuroExamFields}
+              neuroOptions={neuroOptions}
+              tests={tests}
+              selectedTests={selectedTests}
+              onTestsChange={setSelectedTests}
+              loading={submissionLoading}
+              selectedMedicines={selectedMedicines}
+              setSelectedMedicines={setSelectedMedicines}
+              customSelectStyles={customSelectStyles}
+              selectedDuration={selectedDuration}
+              followUpDate={followUpDate}
+              followUpNotes={followUpNotes}
+              onDurationChange={setSelectedDuration}
+              onDateChange={setFollowUpDate}
+              onNotesChange={setFollowUpNotes}
+              onSubmit={submitConsultation}
+              onPrint={handlePrint}
+              medicines={medicines}
+              symptomsOptions={symptomsOptions}
+            />
+            {showPopup && (
+              <PrescriptionsPopup
+                prescriptions={prescriptions}
+                onClose={() => setShowPopup(false)}
+              />
+            )}
+          </>
+        ) : (
+          <div className="flex items-center justify-center flex-col">
+            <p className="text-lg text-red-600">
+              No patient data loaded. Please try again or return home.
+            </p>
+            <button
+              onClick={handleReturnHome}
+              className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
+            >
+              Return to Home
+            </button>
+          </div>
+        )}
       </div>
       <ToastContainer />
     </div>
