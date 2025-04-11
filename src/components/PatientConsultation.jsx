@@ -39,10 +39,11 @@ const PatientConsultation = () => {
   const [tests, setTests] = useState([]);
   const [selectedTests, setSelectedTests] = useState([]);
   const [neuroExamData, setNeuroExamData] = useState({});
+  const [neuroOptions, setNeuroOptions] = useState({}); // Store neuro exam options
   const [followUpDate, setFollowUpDate] = useState(null);
   const [followUpNotes, setFollowUpNotes] = useState("");
   const [loading, setLoading] = useState(true);
-  const [submissionLoading, setSubmissionLoading] = useState(false); // Separate loading for submission
+  const [submissionLoading, setSubmissionLoading] = useState(false);
   const [selectedDuration, setSelectedDuration] = useState(null);
   const [prescriptions, setPrescriptions] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
@@ -55,7 +56,9 @@ const PatientConsultation = () => {
     nihss: "",
     fall_assessment: "Done",
   });
-  const [hasReloaded, setHasReloaded] = useState(false); // Track page reload
+  const [fetchError, setFetchError] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_RETRIES = 2;
 
   const customSelectStyles = {
     control: (base) => ({
@@ -79,73 +82,97 @@ const PatientConsultation = () => {
     }),
   };
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        const [patientRes, medicinesRes] = await Promise.all([
-          axios.get(
-            `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}`,
-            { timeout: 10000 }
-          ),
-          axios.get(
-            "https://patient-management-backend-nine.vercel.app/api/medicines",
-            { timeout: 10000 }
-          ),
-        ]);
+  const fetchDataWithRetry = async () => {
+    setLoading(true);
+    setFetchError(null);
 
-        console.log("Patient response:", patientRes.data);
-        console.log("Medicines response:", medicinesRes.data);
+    try {
+      // Fetch patient, medicines, and prescriptions
+      const [patientRes, medicinesRes, prescriptionsRes] = await Promise.all([
+        axios.get(
+          `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}`,
+          { timeout: 10000 }
+        ),
+        axios.get(
+          "https://patient-management-backend-nine.vercel.app/api/medicines",
+          { timeout: 10000 }
+        ),
+        patientId
+          ? axios.get(
+              `https://patient-management-backend-nine.vercel.app/api/prescriptions/patient/${patientId}`,
+              { timeout: 10000 }
+            )
+          : Promise.resolve({ data: [] }), // Fallback if no patientId yet
+      ]);
 
-        setPatient(patientRes.data);
-        setMedicines(
-          medicinesRes.data.map((med) => ({
-            value: med.id,
-            label: `${med.form || ""} ${med.brand_name}${
-              med.strength ? ` (${med.strength})` : ""
-            }`.trim(),
+      console.log("Patient response:", patientRes.data);
+      console.log("Medicines response:", medicinesRes.data);
+      console.log("Prescriptions response:", prescriptionsRes.data);
+
+      setPatient(patientRes.data);
+      setMedicines(
+        medicinesRes.data.map((med) => ({
+          value: med.id,
+          label: `${med.form || ""} ${med.brand_name}${
+            med.strength ? ` (${med.strength})` : ""
+          }`.trim(),
+        }))
+      );
+      setPrescriptions(prescriptionsRes.data || []);
+
+      // Fetch neuro exam options for all fields
+      const neuroPromises = neuroExamFields.map((field) =>
+        axios
+          .get(
+            `https://patient-management-backend-nine.vercel.app/api/neuro-options/${field}`,
+            { timeout: 10000 }
+          )
+          .then((res) => ({
+            field,
+            options: res.data.map((opt) => ({
+              value: opt.id || opt.value,
+              label: opt.name || opt.label,
+            })),
           }))
-        );
-      } catch (error) {
-        console.error("Error fetching data:", {
-          message: error.message,
-          response: error.response?.data,
-          status: error.response?.status,
-        });
-        toast.error(`Failed to load data: ${error.message}`);
-        if (!hasReloaded) {
-          toast.info("Reloading page to fetch all data...");
-          setHasReloaded(true);
-          setTimeout(() => window.location.reload(), 2000); // Full page reload
-        } else {
-          navigate("/"); // Fallback to home if reload fails
-        }
-      } finally {
-        setLoading(false);
+          .catch((err) => {
+            console.error(`Failed to fetch options for ${field}:`, err.message);
+            return { field, options: [] }; // Fallback to empty options
+          })
+      );
+
+      const neuroResults = await Promise.all(neuroPromises);
+      const neuroOptionsMap = neuroResults.reduce((acc, { field, options }) => {
+        acc[field] = options;
+        return acc;
+      }, {});
+      console.log("Neuro exam options:", neuroOptionsMap);
+      setNeuroOptions(neuroOptionsMap);
+
+    } catch (error) {
+      console.error("Error fetching data:", {
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
+      });
+      toast.error(`Failed to load data: ${error.message}`);
+
+      if (retryCount < MAX_RETRIES) {
+        const delay = 2000 * (retryCount + 1); // Exponential backoff: 2s, 4s
+        toast.info(`Retrying in ${delay / 1000} seconds... (${retryCount + 1}/${MAX_RETRIES})`);
+        setTimeout(() => setRetryCount((prev) => prev + 1), delay);
+      } else {
+        toast.info("Max retries reached. Reloading page...");
+        setTimeout(() => window.location.reload(), 2000);
       }
-    };
-    fetchData();
-  }, [patientId, navigate, hasReloaded]);
+      setFetchError(error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    if (patient?.id) {
-      const fetchPrescriptions = async () => {
-        try {
-          const response = await axios.get(
-            `https://patient-management-backend-nine.vercel.app/api/prescriptions/patient/${patient.id}`,
-            { timeout: 10000 }
-          );
-          console.log("Prescriptions response:", response.data);
-          setPrescriptions(response.data || []);
-        } catch (error) {
-          console.error("Error fetching prescriptions:", error);
-          if (error.response?.status === 404) setPrescriptions([]);
-          else toast.error("Failed to load prescriptions");
-        }
-      };
-      fetchPrescriptions();
-    }
-  }, [patient?.id]);
+    fetchDataWithRetry();
+  }, [patientId, navigate, retryCount]);
 
   const handleReturnHome = () => {
     setPatient(null);
@@ -174,7 +201,6 @@ const PatientConsultation = () => {
 
     setSubmissionLoading(true);
 
-    // Ensure state is up-to-date before submission
     const currentState = {
       patientId: patient.id,
       vitalSigns,
@@ -368,7 +394,19 @@ const PatientConsultation = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-lg text-gray-600">Loading consultation data...</p>
+        <p className="text-lg text-gray-600">
+          Loading consultation data... Attempt {retryCount + 1}/{MAX_RETRIES + 1}
+        </p>
+      </div>
+    );
+  }
+
+  if (fetchError && retryCount >= MAX_RETRIES) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-lg text-red-600">
+          Failed to load data after multiple attempts: {fetchError}. Reloading...
+        </p>
       </div>
     );
   }
@@ -387,6 +425,7 @@ const PatientConsultation = () => {
           patient={patient}
           onReturnHome={handleReturnHome}
           setShowPopup={setShowPopup}
+          prescriptions={prescriptions} // Pass prescriptions if needed
         />
         <ConsultationForm
           vitalSigns={vitalSigns}
@@ -396,10 +435,11 @@ const PatientConsultation = () => {
           neuroExamData={neuroExamData}
           setNeuroExamData={setNeuroExamData}
           neuroExamFields={neuroExamFields}
+          neuroOptions={neuroOptions} // Pass pre-fetched options
           tests={tests}
           selectedTests={selectedTests}
           onTestsChange={setSelectedTests}
-          loading={submissionLoading} // Use submissionLoading for form
+          loading={submissionLoading}
           selectedMedicines={selectedMedicines}
           setSelectedMedicines={setSelectedMedicines}
           customSelectStyles={customSelectStyles}
@@ -411,6 +451,7 @@ const PatientConsultation = () => {
           onNotesChange={setFollowUpNotes}
           onSubmit={submitConsultation}
           onPrint={handlePrint}
+          medicines={medicines} // Pass medicines to avoid separate fetch
         />
       </div>
       <ToastContainer />
