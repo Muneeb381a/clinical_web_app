@@ -425,7 +425,6 @@ const PatientConsultation = () => {
           patient={patient}
           onReturnHome={handleReturnHome}
           setShowPopup={setShowPopup}
-          prescriptions={prescriptions} // Pass prescriptions if needed
         />
         <ConsultationForm
           vitalSigns={vitalSigns}
