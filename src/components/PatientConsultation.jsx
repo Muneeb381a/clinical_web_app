@@ -196,7 +196,7 @@ const PatientConsultation = () => {
             neuroOptionsMap[field] = neuroResults[index] || [];
           });
           setNeuroOptions(neuroOptionsMap);
-          // console.log("Neuro options set:", neuroOptionsMap);
+          console.log("Neuro options set:", neuroOptionsMap);
         }),
       ];
 
@@ -402,7 +402,7 @@ const PatientConsultation = () => {
         requests.push(createFollowUpWithRetry());
       }
 
-      // console.log("Executing requests:", requests.length);
+      console.log("Executing requests:", requests.length);
       await Promise.all(requests); // Parallelize submission requests
       console.log("All submission requests completed");
 
