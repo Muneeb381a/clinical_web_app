@@ -41,7 +41,7 @@ const PatientConsultation = () => {
   const [neuroExamData, setNeuroExamData] = useState({});
   const [followUpDate, setFollowUpDate] = useState(null);
   const [followUpNotes, setFollowUpNotes] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [selectedDuration, setSelectedDuration] = useState(null);
   const [prescriptions, setPrescriptions] = useState([]);
   const [showPopup, setShowPopup] = useState(false);
@@ -79,28 +79,43 @@ const PatientConsultation = () => {
 
   useEffect(() => {
     const fetchData = async () => {
+      setLoading(true);
       try {
         const [patientRes, medicinesRes] = await Promise.all([
           axios.get(
-            `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}`
+            `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}`,
+            { timeout: 10000 }
           ),
           axios.get(
-            "https://patient-management-backend-nine.vercel.app/api/medicines"
+            "https://patient-management-backend-nine.vercel.app/api/medicines",
+            { timeout: 10000 }
           ),
         ]);
+
+        console.log("Patient response:", patientRes.data);
+        console.log("Medicines response:", medicinesRes.data);
+
         setPatient(patientRes.data);
         setMedicines(
           medicinesRes.data.map((med) => ({
             value: med.id,
-            label: `${med.form} ${med.brand_name}${
+            label: `${med.form || ""} ${med.brand_name}${
               med.strength ? ` (${med.strength})` : ""
-            }`,
+            }`.trim(),
           }))
         );
       } catch (error) {
-        console.error("Error fetching data:", error);
-        toast.error("Failed to load patient or medicines");
-        navigate("/");
+        console.error("Error fetching data:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+        });
+        toast.error(`Failed to load data: ${error.message}`);
+        // Reload page on failure
+        toast.info("Reloading page due to data fetch failure...");
+        setTimeout(() => window.location.reload(), 2000);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
@@ -111,13 +126,15 @@ const PatientConsultation = () => {
       const fetchPrescriptions = async () => {
         try {
           const response = await axios.get(
-            `https://patient-management-backend-nine.vercel.app/api/prescriptions/patient/${patient.id}`
+            `https://patient-management-backend-nine.vercel.app/api/prescriptions/patient/${patient.id}`,
+            { timeout: 10000 }
           );
+          console.log("Prescriptions response:", response.data);
           setPrescriptions(response.data || []);
         } catch (error) {
           console.error("Error fetching prescriptions:", error);
-          if (error.response && error.response.status === 404)
-            setPrescriptions([]);
+          if (error.response?.status === 404) setPrescriptions([]);
+          else toast.error("Failed to load prescriptions");
         }
       };
       fetchPrescriptions();
@@ -143,213 +160,62 @@ const PatientConsultation = () => {
     });
   };
 
-  // const submitConsultation = async () => {
-  //   if (!patient) return;
-  //   setLoading(true);
-
-  //   const createFollowUpWithRetry = async (consultationId, attempt = 1) => {
-  //     try {
-  //       return await axios.post(
-  //         `http://localhost:4500/api/followups/consultations/${consultationId}/followups`,
-  //         {
-  //           follow_up_date: followUpDate.toISOString().split("T")[0],
-  //           notes: followUpNotes || "عام چیک اپ",
-  //           duration_days: selectedDuration
-  //         }
-  //       );
-  //     } catch (error) {
-  //       if (error.response?.status === 404 && attempt < 3) {
-  //         await new Promise(resolve => setTimeout(resolve, 500 * attempt));
-  //         return createFollowUpWithRetry(consultationId, attempt + 1);
-  //       }
-  //       throw error;
-  //     }
-  //   };
-
-  //   try {
-  //     const consultationRes = await axios.post(
-  //       "https://patient-management-backend-nine.vercel.app/api/consultations",
-  //       { patient_id: patient.id, doctor_name: "Dr. Abdul Rauf" }
-  //     );
-  //     const consultationId = consultationRes.data.id;
-
-  //     let allTests = [];
-  //     if (!allTests.length) {
-  //       const testsResponse = await axios.get("https://patient-management-backend-nine.vercel.app/api/tests");
-  //       allTests = testsResponse.data;
-  //     }
-
-  //     const testIds = selectedTests.map(name => allTests.find(t => t.test_name === name)?.id).filter(Boolean);
-  //     const testAssignmentPromises = testIds.map(testId =>
-  //       axios.post("https://patient-management-backend-nine.vercel.app/api/tests/assign", {
-  //         test_id: testId,
-  //         consultation_id: consultationId,
-  //       })
-  //     );
-
-  //     const apiCalls = [];
-  //     const hasVitalValues = Object.values({
-  //       pulse_rate: vitalSigns.pulseRate,
-  //       blood_pressure: vitalSigns.bloodPressure,
-  //       temperature: vitalSigns.temperature,
-  //       spo2_level: vitalSigns.spo2,
-  //       nihss_score: vitalSigns.nihss,
-  //     }).some(v => v);
-
-  //     if (hasVitalValues) {
-  //       apiCalls.push(
-  //         axios.post("https://patient-management-backend-nine.vercel.app/api/vitals", {
-  //           consultation_id: consultationId,
-  //           patient_id: patient.id,
-  //           pulse_rate: Number(vitalSigns.pulseRate) || null,
-  //           blood_pressure: vitalSigns.bloodPressure || null,
-  //           temperature: Number(vitalSigns.temperature) || null,
-  //           spo2_level: Number(vitalSigns.spo2) || null,
-  //           nihss_score: Number(vitalSigns.nihss) || null,
-  //           fall_assessment: vitalSigns.fall_assessment || "Done",
-  //         })
-  //       );
-  //     }
-
-  //     if (selectedSymptoms.length > 0) {
-  //       apiCalls.push(
-  //         axios.post(`https://patient-management-backend-nine.vercel.app/api/consultations/${consultationId}/symptoms`, {
-  //           patient_id: patient.id,
-  //           symptom_ids: selectedSymptoms.map(s => s.value),
-  //         })
-  //       );
-  //     }
-
-  //     if (selectedMedicines.length > 0) {
-  //       apiCalls.push(
-  //         axios.post("https://patient-management-backend-nine.vercel.app/api/prescriptions", {
-  //           consultation_id: consultationId,
-  //           patient_id: patient.id,
-  //           medicines: selectedMedicines.map(med => ({
-  //             medicine_id: med.medicine_id,
-  //             dosage_en: med.dosage_en,
-  //             dosage_urdu: med.dosage_urdu,
-  //             frequency_en: med.frequency_en,
-  //             frequency_urdu: med.frequency_urdu,
-  //             duration_en: med.duration_en,
-  //             duration_urdu: med.duration_urdu,
-  //             instructions_en: med.instructions_en,
-  //             instructions_urdu: med.instructions_urdu,
-  //           })),
-  //         })
-  //       );
-  //     }
-
-  //     const neuroData = neuroExamFields.reduce((acc, key) => {
-  //       if (neuroExamData[key]?.trim()) acc[key] = neuroExamData[key];
-  //       return acc;
-  //     }, {});
-  //     const hasNeuroData = Object.keys(neuroData).length > 0;
-
-  //     if (hasNeuroData || neuroExamData.diagnosis || neuroExamData.treatment_plan) {
-  //       apiCalls.push(
-  //         axios.post("https://patient-management-backend-nine.vercel.app/api/examination", {
-  //           consultation_id: consultationId,
-  //           patient_id: patient.id,
-  //           ...neuroData,
-  //           diagnosis: neuroExamData.diagnosis || "",
-  //           treatment_plan: neuroExamData.treatment_plan || "",
-  //           pain_sensation: !!neuroExamData.pain_sensation,
-  //           vibration_sense: !!neuroExamData.vibration_sense,
-  //           proprioception: !!neuroExamData.proprioception,
-  //           temperature_sensation: !!neuroExamData.temperature_sensation,
-  //           brudzinski_sign: !!neuroExamData.brudzinski_sign,
-  //           kernig_sign: !!neuroExamData.kernig_sign,
-  //           facial_sensation: !!neuroExamData.facial_sensation,
-  //           swallowing_function: !!neuroExamData.swallowing_function,
-  //           mmse_score: neuroExamData.mmse_score || "",
-  //           gcs_score: neuroExamData.gcs_score || "",
-  //         })
-  //       );
-  //     }
-
-  //     if (selectedDuration && followUpDate) {
-  //     apiCalls.push(createFollowUpWithRetry(consultationId));  // Changed this line
-  //   }
-
-  //     apiCalls.push(...testAssignmentPromises);
-  //     const results = await Promise.allSettled(apiCalls);
-  //     const failedCalls = results.filter(r => r.status === "rejected");
-
-  //     if (failedCalls.length > 0) {
-  //       console.error("Some API calls failed:", failedCalls.map(r => r.reason.response?.data || r.reason.message));
-  //       throw new Error("Some parts of the form could not be submitted.");
-  //     }
-
-  //     toast.success("Consultation added successfully! 🎉", { position: "top-right", autoClose: 2000 });
-  //     setVitalSigns({ pulseRate: "", bloodPressure: "", temperature: "", spo2: "", nihss: "", fall_assessment: "Done" });
-  //     setFollowUpDate(null);
-  //     setFollowUpNotes("");
-  //     setSelectedDuration(null);
-  //     handlePrint();
-  //     setTimeout(() => {
-  //       navigate('/');
-  //       window.location.reload();
-  //     }, 1000);
-  //   } catch (error) {
-  //     console.error("❌ Error submitting consultation:", error.response?.data || error.message);
-  //     alert("An error occurred while saving the consultation.");
-  //   } finally {
-  //     setLoading(false);
-  //   }
-  // };
-
-
   const submitConsultation = async () => {
-    if (!patient) return;
+    if (!patient || loading) {
+      toast.error("Please wait for data to load or ensure patient data is available.");
+      return;
+    }
+
     setLoading(true);
-  
+
+    console.log("Submitting consultation with state:", {
+      patientId: patient.id,
+      vitalSigns,
+      selectedSymptoms,
+      selectedMedicines,
+      neuroExamData,
+      followUpDate,
+      followUpNotes,
+    });
+
     try {
-      // 1. Prepare consultation payload with validation
       const consultationPayload = {
         patient_id: patient.id,
         doctor_name: "Dr. Abdul Rauf",
         diagnosis: neuroExamData.diagnosis || "",
         notes: neuroExamData.treatment_plan || "",
-        consultation_date: new Date().toISOString().split('T')[0], // Required field
-        status: "completed" // Add required status field
+        consultation_date: new Date().toISOString().split("T")[0],
+        status: "completed",
       };
-  
-      // 2. Client-side validation
-      const validationErrors = [];
+
       if (!consultationPayload.patient_id || isNaN(consultationPayload.patient_id)) {
-        validationErrors.push("Invalid patient ID");
+        throw new Error("Invalid patient ID");
       }
       if (!consultationPayload.consultation_date) {
-        validationErrors.push("Missing consultation date");
+        throw new Error("Missing consultation date");
       }
-      if (validationErrors.length > 0) {
-        throw new Error(validationErrors.join(", "));
-      }
-  
-      // 3. Create consultation
+
       const consultationRes = await axios.post(
         "https://patient-management-backend-nine.vercel.app/api/consultations",
         consultationPayload,
         {
           headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token") || ""}`,
           },
-          timeout: 10000
+          timeout: 15000,
         }
       );
-  
+
       if (!consultationRes.data?.id) {
         throw new Error("Failed to create consultation record");
       }
-  
+
       const consultationId = consultationRes.data.id;
-  
-      // 4. Prepare all additional data requests
+      console.log("Consultation created with ID:", consultationId);
+
       const requests = [];
-  
-      // Add vital signs
+
       requests.push(
         axios.post(
           "https://patient-management-backend-nine.vercel.app/api/vitals",
@@ -363,43 +229,49 @@ const PatientConsultation = () => {
             nihss_score: Number(vitalSigns.nihss) || null,
             fall_assessment: vitalSigns.fall_assessment || "Done",
           }
-        )
+        ).catch((err) => {
+          console.error("Vitals failed:", err.response?.data || err.message);
+          throw err;
+        })
       );
-  
-      // Add symptoms
+
       if (selectedSymptoms.length > 0) {
         requests.push(
           axios.post(
             `https://patient-management-backend-nine.vercel.app/api/consultations/${consultationId}/symptoms`,
             {
               symptom_ids: selectedSymptoms
-                .map(s => parseInt(s.value))
-                .filter(id => !isNaN(id))
+                .map((s) => parseInt(s.value))
+                .filter((id) => !isNaN(id)),
             }
-          )
+          ).catch((err) => {
+            console.error("Symptoms failed:", err.response?.data || err.message);
+            throw err;
+          })
         );
       }
-  
-      // Add prescriptions
+
       if (selectedMedicines.length > 0) {
         requests.push(
           axios.post(
             "https://patient-management-backend-nine.vercel.app/api/prescriptions",
             {
               consultation_id: consultationId,
-              medicines: selectedMedicines.map(med => ({
+              medicines: selectedMedicines.map((med) => ({
                 medicine_id: med.medicine_id,
                 dosage_urdu: med.dosage_urdu || "",
                 frequency_urdu: med.frequency_urdu || "",
                 duration_urdu: med.duration_urdu || "",
                 instructions_urdu: med.instructions_urdu || "",
-              }))
+              })),
             }
-          )
+          ).catch((err) => {
+            console.error("Prescriptions failed:", err.response?.data || err.message);
+            throw err;
+          })
         );
       }
-  
-      // Add neuro exam
+
       const neuroPayload = {
         consultation_id: consultationId,
         patient_id: patient.id,
@@ -407,90 +279,91 @@ const PatientConsultation = () => {
         diagnosis: neuroExamData.diagnosis || "",
         treatment_plan: neuroExamData.treatment_plan || "",
       };
-      
-      // Convert boolean fields
+
       const booleanFields = [
-        'pain_sensation', 'vibration_sense', 'proprioception',
-        'temperature_sensation', 'brudzinski_sign', 'kernig_sign',
-        'facial_sensation', 'swallowing_function'
+        "pain_sensation",
+        "vibration_sense",
+        "proprioception",
+        "temperature_sensation",
+        "brudzinski_sign",
+        "kernig_sign",
+        "facial_sensation",
+        "swallowing_function",
       ];
-      
-      booleanFields.forEach(field => {
+      booleanFields.forEach((field) => {
         neuroPayload[field] = !!neuroExamData[field];
       });
-  
+
       requests.push(
         axios.post(
           "https://patient-management-backend-nine.vercel.app/api/examination",
           neuroPayload
-        )
+        ).catch((err) => {
+          console.error("Neuro exam failed:", err.response?.data || err.message);
+          throw err;
+        })
       );
-  
-      // 5. Execute all requests
-      const results = await Promise.allSettled(requests);
-      
-      // 6. Handle errors
-      const failedRequests = results.filter(r => r.status === "rejected");
-      if (failedRequests.length > 0) {
-        console.error("Partial failures:", failedRequests);
-        throw new Error("Some components failed to save");
-      }
-  
-      // 7. Add follow-up if needed
+
+      await Promise.all(requests);
+
       if (followUpDate && selectedDuration) {
         await axios.post(
           `https://patient-management-backend-nine.vercel.app/api/followups/consultations/${consultationId}/followups`,
           {
-            follow_up_date: new Date(followUpDate).toISOString().split('T')[0],
+            follow_up_date: new Date(followUpDate).toISOString().split("T")[0],
             notes: followUpNotes || "Routine follow-up",
-            duration_days: parseInt(selectedDuration) || 7
+            duration_days: parseInt(selectedDuration) || 7,
           }
         );
       }
-  
-      // 8. Success handling
+
       toast.success("Consultation saved successfully!");
       handlePrint();
       setTimeout(() => navigate("/"), 1500);
-  
     } catch (error) {
       console.error("Submission failed:", {
-        error: error.response?.data || error.message,
-        stack: error.stack
+        message: error.message,
+        response: error.response?.data,
+        status: error.response?.status,
       });
-  
       toast.error(
         error.response?.data?.message ||
-        error.message ||
-        "Failed to save consultation. Please check your data."
+          error.message ||
+          "Failed to save consultation. Please try again."
       );
     } finally {
       setLoading(false);
     }
   };
 
-  
-  // Add background sync
-  window.addEventListener("online", () => {
-    const pending = JSON.parse(
-      localStorage.getItem("pendingConsultations") || []
+  useEffect(() => {
+    const handleOnlineSync = () => {
+      const pending = JSON.parse(localStorage.getItem("pendingConsultations") || "[]");
+      if (pending.length > 0) {
+        pending.forEach(async (data) => {
+          try {
+            await submitConsultation(data);
+            localStorage.setItem(
+              "pendingConsultations",
+              JSON.stringify(pending.filter((item) => item.timestamp !== data.timestamp))
+            );
+          } catch (error) {
+            console.error("Background sync failed:", error);
+          }
+        });
+      }
+    };
+    window.addEventListener("online", handleOnlineSync);
+    return () => window.removeEventListener("online", handleOnlineSync);
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-lg text-gray-600">Loading consultation data...</p>
+      </div>
     );
-    if (pending.length > 0) {
-      pending.forEach(async (data) => {
-        try {
-          await submitConsultation(data);
-          localStorage.setItem(
-            "pendingConsultations",
-            JSON.stringify(
-              pending.filter((item) => item.timestamp !== data.timestamp)
-            )
-          );
-        } catch (error) {
-          console.error("Background sync failed:", error);
-        }
-      });
-    }
-  });
+  }
 
   if (!patient) return null;
 
@@ -505,7 +378,6 @@ const PatientConsultation = () => {
         <PatientInfoHeader
           patient={patient}
           onReturnHome={handleReturnHome}
-          // prescriptions={prescriptions}
           setShowPopup={setShowPopup}
         />
         <ConsultationForm
@@ -532,12 +404,6 @@ const PatientConsultation = () => {
           onSubmit={submitConsultation}
           onPrint={handlePrint}
         />
-        {/* {showPopup && (
-          <PrescriptionsPopup
-            prescriptions={prescriptions}
-            onClose={() => setShowPopup(false)}
-          />
-        )} */}
       </div>
       <ToastContainer />
     </div>
