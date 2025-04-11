@@ -45,6 +45,11 @@ const fieldColors = {
   fundoscopy: "#64748b", // Slate
   // Default color for unspecified fields
   default: "#3b82f6",
+  straight_leg_raise_left: "#8b5cf6",
+  straight_leg_raise_right: "#8b5cf6",
+  romberg_test: "#3b82f6", // Add missing field
+  muscle_wasting: "#3b82f6", // Add missing field
+  abnormal_movements: "#3b82f6", // Add missing field
 };
 
 const NeuroExamSelect = ({ field, value, onChange }) => {
@@ -57,6 +62,7 @@ const NeuroExamSelect = ({ field, value, onChange }) => {
 
   useEffect(() => {
     const loadOptions = async () => {
+      console.log(`Loading options for field: ${field}`); // Add this
       setLoading(true);
       setError(null);
       try {
