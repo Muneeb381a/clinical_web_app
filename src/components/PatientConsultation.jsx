@@ -84,7 +84,13 @@ const PatientConsultation = () => {
     }),
   };
 
-  const fetchWithRetry = async (url, resourceName, transformFn, retries = MAX_RETRIES) => {
+
+  const fetchWithRetry = async (
+    url,
+    resourceName,
+    transformFn,
+    retries = MAX_RETRIES
+  ) => {
     let attempt = 0;
     while (attempt <= retries) {
       try {
@@ -93,16 +99,26 @@ const PatientConsultation = () => {
           headers: { "Content-Type": "application/json" },
         });
         console.log(`Raw response for ${resourceName}:`, response.data);
-        const data = response.data.data && Array.isArray(response.data.data) ? response.data.data : response.data;
-        const transformed = Array.isArray(data) ? transformFn(data) : transformFn(data);
+        const data =
+          response.data.data && Array.isArray(response.data.data)
+            ? response.data.data
+            : response.data;
+        const transformed = Array.isArray(data)
+          ? transformFn(data)
+          : transformFn(data);
         console.log(`Fetched ${resourceName}:`, transformed);
         return transformed;
       } catch (error) {
-        console.error(`Error fetching ${resourceName} (attempt ${attempt + 1}/${retries + 1}):`, {
-          status: error.response?.status,
-          message: error.response?.data?.message || error.message,
-          url: `${BASE_URL}${url}`,
-        });
+        console.error(
+          `Error fetching ${resourceName} (attempt ${attempt + 1}/${
+            retries + 1
+          }):`,
+          {
+            status: error.response?.status,
+            message: error.response?.data?.message || error.message,
+            url: `${BASE_URL}${url}`,
+          }
+        );
         if (error.response?.status >= 400 && error.response?.status < 600) {
           if (attempt < retries) {
             const delay = 1000 * Math.pow(2, attempt);
@@ -110,11 +126,15 @@ const PatientConsultation = () => {
             await new Promise((resolve) => setTimeout(resolve, delay));
             attempt++;
           } else {
-            console.warn(`Max retries reached for ${resourceName}. Returning default.`);
+            console.warn(
+              `Max retries reached for ${resourceName}. Returning default.`
+            );
             return [];
           }
         } else {
-          console.warn(`Invalid data format for ${resourceName}. Returning default.`);
+          console.warn(
+            `Invalid data format for ${resourceName}. Returning default.`
+          );
           return [];
         }
       }
@@ -141,32 +161,30 @@ const PatientConsultation = () => {
 
       // Parallelize independent fetches
       const fetchPromises = [
-        fetchWithRetry(
-          "/api/medicines",
-          "medicines",
-          (data) =>
-            data.map((med) => ({
-              value: med.id,
-              label: `${med.form || ""} ${med.brand_name}${med.strength ? ` (${med.strength})` : ""}`.trim(),
-            }))
+        fetchWithRetry("/api/medicines", "medicines", (data) =>
+          data.map((med) => ({
+            value: med.id,
+            label: `${med.form || ""} ${med.brand_name}${
+              med.strength ? ` (${med.strength})` : ""
+            }`.trim(),
+          }))
         ).then((medicinesData) => {
           setMedicines(medicinesData || []);
           console.log("Medicines set:", medicinesData);
         }),
 
-        fetchWithRetry(
-          "/api/symptoms",
-          "symptoms",
-          (data) => data.map((sym) => ({ value: sym.id, label: sym.name }))
+        fetchWithRetry("/api/symptoms", "symptoms", (data) =>
+          data.map((sym) => ({ value: sym.id, label: sym.name }))
         ).then((symptomsData) => {
           setSymptomsOptions(symptomsData || []);
           console.log("Symptoms set:", symptomsData);
         }),
 
-        fetchWithRetry(
-          "/api/tests",
-          "tests",
-          (data) => data.map((test) => ({ value: test.id, label: test.test_name || test.name }))
+        fetchWithRetry("/api/tests", "tests", (data) =>
+          data.map((test) => ({
+            value: test.id,
+            label: test.test_name || test.name,
+          }))
         ).then((testsData) => {
           setTests(testsData || []);
           console.log("Tests set:", testsData);
@@ -203,14 +221,18 @@ const PatientConsultation = () => {
       // Wait for all parallel fetches to complete
       await Promise.all(fetchPromises);
       console.log("All data fetched successfully");
-
     } catch (error) {
       console.error("Critical fetch error:", error);
       setFetchError(`Failed to load data: ${error.message}`);
       // toast.error(`Failed to load data: ${error.message}`);
     } finally {
       setLoading(false);
-      console.log("Loading complete, patient state:", patient, "fetchError:", fetchError);
+      console.log(
+        "Loading complete, patient state:",
+        patient,
+        "fetchError:",
+        fetchError
+      );
     }
   };
 
@@ -241,6 +263,7 @@ const PatientConsultation = () => {
     });
   };
 
+
   const submitConsultation = async () => {
     if (!patient || submissionLoading) {
       toast.error("Please wait for data to load or ongoing submission to complete.");
@@ -250,82 +273,48 @@ const PatientConsultation = () => {
     setSubmissionLoading(true);
   
     try {
-      console.log("Submitting consultation with data:", {
-        patient_id: patient.id,
-        vitalSigns,
-        selectedSymptoms,
-        selectedMedicines,
-        neuroExamData,
-        selectedTests,
-        followUpDate,
-        followUpNotes,
-        selectedDuration,
-      });
-  
-      // Step 1: Create Consultation
+      // Step 1: Create Consultation (all fields optional)
       const consultationPayload = {
         patient_id: patient.id,
         doctor_name: "Dr. Abdul Rauf",
-        diagnosis: neuroExamData.diagnosis || null,
-        notes: neuroExamData.treatment_plan || null,
+        diagnosis: neuroExamData.diagnosis || "", // Empty string if not provided
+        notes: neuroExamData.treatment_plan || "", // Empty string if not provided
         consultation_date: new Date().toISOString().split("T")[0],
         status: "completed",
       };
-      console.log("POST /api/consultations payload:", consultationPayload);
+  
       const consultationRes = await axios.post(
         `${BASE_URL}/api/consultations`,
-        consultationPayload,
-        { timeout: 15000 }
+        consultationPayload
       );
       const consultationId = consultationRes.data.id;
-      console.log("Consultation created with ID:", consultationId);
   
       const requests = [];
   
-      // Step 2: Vitals
-      if (Object.values(vitalSigns).some((v) => v)) {
-        const vitalsPayload = {
-          consultation_id: consultationId,
-          patient_id: patient.id,
-          pulse_rate: Number(vitalSigns.pulseRate) || null,
-          blood_pressure: vitalSigns.bloodPressure || null,
-          temperature: Number(vitalSigns.temperature) || null,
-          spo2_level: Number(vitalSigns.spo2) || null,
-          nihss_score: Number(vitalSigns.nihss) || null,
-          fall_assessment: vitalSigns.fall_assessment || "Done",
-        };
-        console.log("POST /api/vitals payload:", vitalsPayload);
-        requests.push(
-          axios.post(`${BASE_URL}/api/vitals`, vitalsPayload).catch((error) => {
-            console.error("Error submitting vitals:", {
-              status: error.response?.status,
-              message: error.response?.data?.message || error.message,
-              payload: vitalsPayload,
-            });
-            throw new Error("Failed to submit vitals");
-          })
-        );
-      }
+      // Step 2: Vitals (all fields optional)
+      const vitalsPayload = {
+        patient_id: patient.id,
+        consultation_id: consultationId,
+        blood_pressure: vitalSigns.bloodPressure || null,
+        pulse_rate: vitalSigns.pulseRate ? parseInt(vitalSigns.pulseRate) : null,
+        temperature: vitalSigns.temperature ? parseFloat(vitalSigns.temperature) : null,
+        spo2_level: vitalSigns.spo2 ? parseInt(vitalSigns.spo2) : null,
+        nihss_score: vitalSigns.nihss ? parseInt(vitalSigns.nihss) : null,
+        fall_assessment: vitalSigns.fall_assessment || null,
+      };
+      requests.push(axios.post(`${BASE_URL}/api/vitals`, vitalsPayload));
   
-      // Step 3: Symptoms
+      // Step 3: Symptoms (optional)
       if (selectedSymptoms.length > 0) {
-        const symptomsPayload = {
-          symptom_ids: selectedSymptoms.map((s) => s.value),
-        };
-        console.log("POST /api/consultations/{id}/symptoms payload:", symptomsPayload);
         requests.push(
-          axios.post(`${BASE_URL}/api/consultations/${consultationId}/symptoms`, symptomsPayload).catch((error) => {
-            console.error("Error submitting symptoms:", {
-              status: error.response?.status,
-              message: error.response?.data?.message || error.message,
-              payload: symptomsPayload,
-            });
-            throw new Error("Failed to submit symptoms");
-          })
+          axios.post(
+            `${BASE_URL}/api/consultations/${consultationId}/symptoms`,
+            { symptom_ids: selectedSymptoms.map((s) => s.value) }
+          )
         );
       }
   
-      // Step 4: Prescriptions
+      // Step 4: Prescriptions (optional)
       if (selectedMedicines.length > 0) {
         const prescriptionsPayload = {
           consultation_id: consultationId,
@@ -337,24 +326,12 @@ const PatientConsultation = () => {
             frequency_urdu: med.frequency_urdu || "",
             duration_en: med.duration_en || "",
             duration_urdu: med.duration_urdu || "",
-            instructions_en: med.instructions_en || "",
-            instructions_urdu: med.instructions_urdu || "",
           })),
         };
-        console.log("POST /api/prescriptions payload:", prescriptionsPayload);
-        requests.push(
-          axios.post(`${BASE_URL}/api/prescriptions`, prescriptionsPayload).catch((error) => {
-            console.error("Error submitting prescriptions:", {
-              status: error.response?.status,
-              message: error.response?.data?.message || error.message,
-              payload: prescriptionsPayload,
-            });
-            throw new Error("Failed to submit prescriptions");
-          })
-        );
+        requests.push(axios.post(`${BASE_URL}/api/prescriptions`, prescriptionsPayload));
       }
   
-      // Step 5: Neuro Exam
+      // Step 5: Neuro Exam (optional)
       if (Object.keys(neuroExamData).length > 0) {
         const neuroPayload = {
           consultation_id: consultationId,
@@ -362,111 +339,52 @@ const PatientConsultation = () => {
           ...neuroExamData,
           diagnosis: neuroExamData.diagnosis || "",
           treatment_plan: neuroExamData.treatment_plan || "",
-          pain_sensation: !!neuroExamData.pain_sensation,
-          vibration_sense: !!neuroExamData.vibration_sense,
-          proprioception: !!neuroExamData.proprioception,
-          temperature_sensation: !!neuroExamData.temperature_sensation,
-          brudzinski_sign: !!neuroExamData.brudzinski_sign,
-          kernig_sign: !!neuroExamData.kernig_sign,
-          facial_sensation: !!neuroExamData.facial_sensation,
-          swallowing_function: !!neuroExamData.swallowing_function,
-          mmse_score: neuroExamData.mmse_score || "",
-          gcs_score: neuroExamData.gcs_score || "",
         };
-        console.log("POST /api/examination payload:", neuroPayload);
+        requests.push(axios.post(`${BASE_URL}/api/examination`, neuroPayload));
+      }
+  
+      // Step 6: Tests (optional)
+      if (selectedTests.length > 0) {
         requests.push(
-          axios.post(`${BASE_URL}/api/examination`, neuroPayload).catch((error) => {
-            console.error("Error submitting neuro exam:", {
-              status: error.response?.status,
-              message: error.response?.data?.message || error.message,
-              payload: neuroPayload,
-            });
-            throw new Error("Failed to submit neuro exam");
+          axios.post(`${BASE_URL}/api/tests/assign`, {
+            consultation_id: consultationId,
+            test_ids: selectedTests.map((t) => t.value)
           })
         );
       }
   
-      // Step 6: Tests
-      if (selectedTests.length > 0) {
-        const testIds = selectedTests
-          .map((test) => tests.find((t) => t.label === test || t.value === test)?.value)
-          .filter(Boolean);
-        const testsPayload = {
-          test_ids: testIds,
-          consultation_id: consultationId,
-        };
-        console.log("POST /api/tests/assign payload:", testsPayload);
-        if (testIds.length > 0) {
-          requests.push(
-            axios.post(`${BASE_URL}/api/tests/assign`, testsPayload).catch((error) => {
-              console.error("Error submitting tests:", {
-                status: error.response?.status,
-                message: error.response?.data?.message || error.message,
-                payload: testsPayload,
-              });
-              throw new Error("Failed to submit tests");
-            })
-          );
-        }
-      }
-  
-      // Step 7: Follow-Up
-      if (selectedDuration && followUpDate) {
+      // Step 7: Follow-Up (optional)
+      if (followUpDate) {
         const followUpPayload = {
-          follow_up_date: followUpDate.toISOString().split("T")[0],
-          notes: followUpNotes || "عام چیک اپ",
-          duration_days: Number(selectedDuration) || 7,
+          follow_up_date: new Date(followUpDate).toISOString().split("T")[0],
+          notes: followUpNotes || "",
+          duration_days: selectedDuration ? Math.max(1, Math.min(Number(selectedDuration), 365)) : null,
         };
-        console.log("POST /api/followups/consultations/{id}/followups payload:", followUpPayload);
-        const createFollowUpWithRetry = async (attempt = 1) => {
-          try {
-            return await axios.post(
-              `${BASE_URL}/api/followups/consultations/${consultationId}/followups`,
-              followUpPayload
-            );
-          } catch (error) {
-            console.error(`Error submitting follow-up (attempt ${attempt}/3):`, {
-              status: error.response?.status,
-              message: error.response?.data?.message || error.message,
-              payload: followUpPayload,
-            });
-            if (attempt < 3) {
-              const delay = 500 * Math.pow(2, attempt);
-              await new Promise((resolve) => setTimeout(resolve, delay));
-              return createFollowUpWithRetry(attempt + 1);
-            }
-            throw new Error("Failed to submit follow-up after retries");
-          }
-        };
-        requests.push(createFollowUpWithRetry());
+        requests.push(
+          axios.post(
+            `${BASE_URL}/api/followups/consultations/${consultationId}/followups`,
+            followUpPayload
+          )
+        );
       }
   
-      console.log("Executing", requests.length, "requests in parallel");
+      // Execute all requests
       await Promise.all(requests);
-      console.log("All submission requests completed");
   
-      toast.success("Consultation added successfully! 🎉", { autoClose: 2000 });
-      setVitalSigns({ pulseRate: "", bloodPressure: "", temperature: "", spo2: "", nihss: "", fall_assessment: "Done" });
-      setFollowUpDate(null);
-      setFollowUpNotes("");
-      setSelectedDuration(null);
+      // Success handling
+      toast.success("Consultation saved successfully!");
       handlePrint();
-      setTimeout(() => navigate("/"), 1000);
+      setTimeout(() => navigate("/"), 1500);
   
     } catch (error) {
-      console.error("Submission error:", {
-        status: error.response?.status,
-        message: error.response?.data?.message || error.message,
-        endpoint: error.config?.url,
-        payload: error.config?.data ? JSON.parse(error.config.data) : null,
-      });
-      toast.error(
-        error.response?.data?.message || error.message || "Failed to save consultation. Please try again."
-      );
+      console.error("Submission error:", error);
+      toast.error(error.response?.data?.message || "Submission completed with partial data");
     } finally {
       setSubmissionLoading(false);
     }
   };
+
+  
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
