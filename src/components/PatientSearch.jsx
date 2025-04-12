@@ -253,31 +253,55 @@ const PatientSearch = () => {
     const loadPatientFromURL = async () => {
       const pathParts = window.location.pathname.split("/");
       const patientId = pathParts[2];
-
+  
       if (pathParts[1] === "patients" && patientId && patientId !== "new") {
-        try {
-          setIsSearching(true);
-          const patientRes = await axios.get(
-            `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}`
-          );
-
-          if (patientRes.data) {
-            setPatient(patientRes.data);
-            const historyRes = await axios.get(
-              `https://patient-management-backend-nine.vercel.app/api/patient-history/${patientId}`
+        const maxRetries = 2;
+        let attempt = 0;
+  
+        const fetchPatient = async () => {
+          try {
+            setIsSearching(true);
+            const patientRes = await axios.get(
+              `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}`,
+              { timeout: 15000 }
             );
-            setConsultations(
-              Array.isArray(historyRes.data)
-                ? historyRes.data
-                : [historyRes.data]
+  
+            if (patientRes.data) {
+              setPatient(patientRes.data);
+              const historyRes = await axios.get(
+                `https://patient-management-backend-nine.vercel.app/api/patient-history/${patientId}`,
+                { timeout: 10000 }
+              );
+              setConsultations(
+                Array.isArray(historyRes.data)
+                  ? historyRes.data
+                  : [historyRes.data]
+              );
+            }
+          } catch (error) {
+            console.error(`URL load attempt ${attempt + 1}:`, {
+              message: error.message,
+              status: error.response?.status,
+              data: error.response?.data,
+              code: error.code,
+            });
+            if (error.response?.status === 500 && attempt < maxRetries - 1) {
+              attempt++;
+              await new Promise((resolve) => setTimeout(resolve, 1000));
+              return fetchPatient();
+            }
+            toast.error(
+              error.response?.status === 500
+                ? "Server error loading patient. Please try again."
+                : "Failed to load patient from URL"
             );
+            throw error;
+          } finally {
+            setIsSearching(false);
           }
-        } catch (error) {
-          console.error("Error loading patient from URL:", error);
-          toast.error("Failed to load patient from URL");
-        } finally {
-          setIsSearching(false);
-        }
+        };
+  
+        await fetchPatient();
       } else if (pathParts[1] === "patients" && pathParts[2] === "new") {
         const urlParams = new URLSearchParams(window.location.search);
         const mobile = urlParams.get("mobile");
@@ -286,7 +310,6 @@ const PatientSearch = () => {
           setShowAddPatient(true);
         }
       } else if (pathParts[1] === "") {
-        // Reset state when navigating to home
         setPatient(null);
         setConsultations([]);
         setShowAddPatient(false);
@@ -294,7 +317,7 @@ const PatientSearch = () => {
       }
     };
     loadPatientFromURL();
-  }, [navigate]); // Add navigate to dependency array
+  }, [navigate]);
 
   const handleNewPatientAdded = () => onSearch({ mobile: searchedMobile });
   const handleAddConsultation = () => {
