@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import { IoManOutline } from "react-icons/io5";
+import { FaPersonFallingBurst } from "react-icons/fa6";
 
 import {
   FaTimes,
@@ -222,7 +224,11 @@ const PatientHistory = () => {
                                   Follow-up:{" "}
                                   {new Date(
                                     record.follow_up_date
-                                  ).toLocaleDateString()}
+                                  ).toLocaleDateString("en-PK", {
+                                    day: "numeric",
+                                    month: "short",
+                                    year: "numeric",
+                                  })}
                                 </p>
                               )}
                             </div>
@@ -426,6 +432,28 @@ const PatientHistory = () => {
                                                 </p>
                                               </div>
                                             </div>
+                                            <div className="flex items-center justify-center gap-2 p-2 bg-green-50 rounded-lg flex-1 min-w-[110px]">
+                                              <IoManOutline  className="text-green-600" />
+                                              <div>
+                                                <p className="text-xs font-medium text-green-700">
+                                                  NIHSS
+                                                </p>
+                                                <p className="text-lg font-bold text-gray-900">
+                                                  {vital.nihss_score || "N/A"}
+                                                </p>
+                                              </div>
+                                            </div>
+                                            <div className="flex items-center justify-center gap-2 p-2 bg-green-50 rounded-lg flex-1 min-w-[110px]">
+                                              <FaPersonFallingBurst  className="text-green-600" />
+                                              <div>
+                                                <p className="text-xs font-medium text-green-700">
+                                                  Fall Assessment
+                                                </p>
+                                                <p className="text-lg font-bold text-gray-900">
+                                                  {vital.fall_assessment || "N/A"}
+                                                </p>
+                                              </div>
+                                            </div>
                                           </div>
                                           <p className="text-xs text-gray-500">
                                             Recorded:{" "}
@@ -447,14 +475,14 @@ const PatientHistory = () => {
                             {record.prescriptions?.length > 0 && (
                               <section className="prescription-section mb-16 space-y-12">
                                 <header className="section-header">
-                                <div className="flex items-center gap-3 mb-4">
-                                  <div className="p-2.5 bg-blue-100 rounded-lg">
-                                    <FaPills className="text-xl text-blue-600" />
+                                  <div className="flex items-center gap-3 mb-4">
+                                    <div className="p-2.5 bg-blue-100 rounded-lg">
+                                      <FaPills className="text-xl text-blue-600" />
+                                    </div>
+                                    <h4 className="text-lg font-semibold text-gray-900">
+                                      Medication
+                                    </h4>
                                   </div>
-                                  <h4 className="text-lg font-semibold text-gray-900">
-                                    Medication
-                                  </h4>
-                                </div>
                                 </header>
 
                                 <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
