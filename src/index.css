@@ -14,6 +14,17 @@
   font-weight: 400; 
 }
 
+.font-urdu-blue {
+  font-family: 'Noto Nastaliq Urdu', serif;
+  font-size: 0.8rem; 
+  line-height: 1.8; 
+  direction: left;
+  text-align: left; 
+  color: rgb(106, 0, 255); 
+  word-spacing: 2px;
+  font-weight: 400; 
+}
+
 [dir='rtl'] {
   direction: rtl;
   unicode-bidi: embed;

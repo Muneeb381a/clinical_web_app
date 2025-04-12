@@ -445,120 +445,108 @@ const PatientHistory = () => {
 
                             {/* Prescriptions */}
                             {record.prescriptions?.length > 0 && (
-                              <section className="prescription-section mb-14">
-                                <header className="section-header flex items-center gap-4 mb-10">
-                                  <div className="icon-container p-3 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl shadow-lg transform hover:rotate-12 transition-transform duration-300">
-                                    <FaPills
-                                      className="text-2xl text-white"
-                                      aria-hidden="true"
-                                    />
+                              <section className="prescription-section mb-16 space-y-12">
+                                <header className="section-header">
+                                <div className="flex items-center gap-3 mb-4">
+                                  <div className="p-2.5 bg-blue-100 rounded-lg">
+                                    <FaPills className="text-xl text-blue-600" />
                                   </div>
-                                  <div>
-                                    <h2 className="section-title text-3xl font-bold text-gray-800 mb-1">
-                                      Medication Plan
-                                    </h2>
-                                    <p className="text-gray-500 text-sm">
-                                      Prescribed Medications & Dosages
-                                    </p>
-                                  </div>
+                                  <h4 className="text-lg font-semibold text-gray-900">
+                                    Medication
+                                  </h4>
+                                </div>
                                 </header>
 
-                                <div className="prescriptions-grid grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                                   {record.prescriptions.map(
                                     (prescription, idx) => (
                                       <article
                                         key={idx}
-                                        className="prescription-card group bg-white p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-purple-100 relative overflow-hidden"
+                                        className="relative bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow duration-300 border border-gray-100"
                                       >
-                                        <div className="absolute inset-x-0 top-0 h-2 bg-gradient-to-r from-purple-400 to-blue-400" />
-
-                                        <div className="card-header flex justify-between items-start mb-5">
-                                          <div className="medication-info max-w-[70%]">
-                                            <h3 className="medication-brand font-semibold text-gray-800 text-xl mb-1 truncate">
-                                              {prescription.brand_name ||
-                                                "Unnamed Medication"}
-                                            </h3>
-                                            <p className="generic-name text-sm text-gray-500 font-urdu truncate">
-                                              {prescription.generic_name}
-                                            </p>
+                                        <div className="space-y-5">
+                                          {/* Medication Header */}
+                                          <div className="flex justify-between items-start">
+                                            <div className="space-y-1">
+                                              <h3 className="text-xl font-semibold text-gray-900">
+                                                {prescription.brand_name ||
+                                                  "Unspecified Medication"}
+                                              </h3>
+                                              <p className="font-urdu text-right text-lg text-gray-700 leading-relaxed">
+                                                {prescription.generic_name}
+                                              </p>
+                                            </div>
+                                            <span className="px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-50 rounded-full font-urdu-blue">
+                                              {prescription.duration_urdu ||
+                                                "Duration"}
+                                            </span>
                                           </div>
-                                          <span className="duration-chip bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shadow-inner">
-                                            {prescription.duration_en ||
-                                              "No duration"}
-                                          </span>
-                                        </div>
 
-                                        <dl className="prescription-details grid gap-4 text-sm">
-                                          <DetailItem
-                                            label="Dosage"
-                                            valueEn={prescription.dosage_en}
-                                            valueUr={prescription.dosage_urdu}
-                                            icon={
-                                              <FaSyringe className="text-purple-500" />
-                                            }
-                                            urduClass="font-urdu text-lg"
-                                          />
+                                          {/* Details Grid */}
+                                          <div className="space-y-4 font-urdu-blue text-right text-blue-500">
+                                            <DetailItem
+                                              label="Dosage"
+                                              valueUr={prescription.dosage_urdu}
+                                              icon={
+                                                <FaSyringe className="text-gray-500" />
+                                              }
+                                              urduClass="font-urdu-blue text-right text-blue-700 text-base"
+                                            />
 
-                                          <DetailItem
-                                            label="Frequency"
-                                            valueEn={prescription.frequency_en}
-                                            valueUr={
-                                              prescription.frequency_urdu
-                                            }
-                                            icon={
-                                              <FaRegClock className="text-blue-500" />
-                                            }
-                                            urduClass="font-urdu text-lg"
-                                          />
+                                            <DetailItem
+                                              label="Frequency"
+                                              valueEn={
+                                                prescription.frequency_en
+                                              }
+                                              valueUr={
+                                                prescription.frequency_urdu
+                                              }
+                                              icon={
+                                                <FaRegClock className="text-gray-500" />
+                                              }
+                                              className="font-urdu text-right text-urdu-blue text-base leading-relaxed"
+                                            />
 
-                                          <DetailItem
-                                            label="Instructions"
-                                            valueEn={
-                                              prescription.instructions_en
-                                            }
-                                            valueUr={
-                                              prescription.instructions_urdu
-                                            }
-                                            icon={
-                                              <FaFileMedical className="text-green-500" />
-                                            }
-                                            urduClass="font-urdu text-lg"
-                                          />
+                                            <DetailItem
+                                              label="Instructions"
+                                              valueEn={
+                                                prescription.instructions_en
+                                              }
+                                              valueUr={
+                                                prescription.instructions_urdu
+                                              }
+                                              icon={
+                                                <FaFileMedical className="text-gray-500" />
+                                              }
+                                              className="font-urdu text-right text-gray-700 text-base"
+                                            />
+                                          </div>
 
-                                          <div className="prescription-meta pt-4 mt-4 border-t border-gray-100">
-                                            <div className="flex items-center justify-between text-xs">
-                                              <span className="text-gray-500 font-medium flex items-center gap-1">
-                                                <FaCalendar className="text-gray-400" />
-                                                Prescribed On
+                                          {/* Prescription Date */}
+                                          <div className="pt-4 border-t border-gray-100">
+                                            <div className="flex items-center justify-between text-sm">
+                                              <span className="flex items-center gap-2 text-gray-500">
+                                                <FaCalendar className="w-4 h-4" />
+                                                <span>Prescribed</span>
                                               </span>
-                                              <span className="text-gray-600">
+                                              <span className="font-medium text-gray-700">
                                                 {prescription.prescribed_at
                                                   ? new Date(
                                                       prescription.prescribed_at
                                                     ).toLocaleDateString(
-                                                      "en-US",
-                                                      {
-                                                        month: "short",
-                                                        day: "numeric",
-                                                        year: "numeric",
-                                                      }
+                                                      "en-GB"
                                                     )
-                                                  : "N/A"}
+                                                  : "No date"}
                                               </span>
                                             </div>
                                           </div>
-                                        </dl>
-
-                                        {/* Hover Effect Elements */}
-                                        <div className="absolute inset-0 border-2 border-transparent group-hover:border-purple-100 rounded-2xl pointer-events-none transition-all duration-300" />
-                                        <div className="absolute inset-0 bg-gradient-to-br from-white to-purple-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                                        </div>
                                       </article>
                                     )
                                   )}
                                 </div>
                               </section>
                             )}
-
                             {/* Neurological Examination Findings */}
                             {(record.cranial_nerves ||
                               record.motor_function ||
