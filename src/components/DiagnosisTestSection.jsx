@@ -3,7 +3,7 @@ import axios from 'axios';
 import { toast } from 'react-toastify';
 import CreatableSelect from 'react-select/creatable';
 import Loader from './Loader';
-import debounce from 'lodash/debounce'; // Install lodash if not already: npm i lodash
+import debounce from 'lodash/debounce';
 
 const BASE_URL = 'https://patient-management-backend-nine.vercel.app';
 
@@ -21,10 +21,12 @@ const DiagnosticTestsSection = ({
       setIsFetchingTests(true);
       try {
         const response = await axios.get(`${BASE_URL}/api/tests`);
-        setTests(response.data.map((test) => ({
-          value: test.test_name,
-          label: test.test_name,
-        })));
+        setTests(
+          response.data.map((test) => ({
+            value: String(test.id), // Use id as value
+            label: test.test_name,
+          }))
+        );
       } catch (error) {
         toast.error(`Failed to fetch tests: ${error.response?.data?.error || error.message}`);
         console.error('Error fetching tests:', error.response?.data || error);
@@ -46,9 +48,12 @@ const DiagnosticTestsSection = ({
         test_name: inputValue,
         test_notes: 'Created via UI',
       };
-      console.log('Creating test with payload:', payload); // Debug log
+      console.log('Creating test with payload:', payload);
       const response = await axios.post(`${BASE_URL}/api/tests`, payload);
-      const newTest = { value: response.data.test_name, label: response.data.test_name };
+      const newTest = {
+        value: String(response.data.id), // Use id from server
+        label: response.data.test_name,
+      };
       setTests((prev) => [...prev, newTest]);
       onTestsChange([...selectedTests, newTest.value]);
       toast.success(`Test "${inputValue}" created successfully`);
@@ -72,51 +77,53 @@ const DiagnosticTestsSection = ({
         const response = await axios.get(
           `${BASE_URL}/api/tests?search=${encodeURIComponent(inputValue)}`
         );
-        setTests(response.data.map((test) => ({
-          value: test.test_name,
-          label: test.test_name,
-        })));
+        setTests(
+          response.data.map((test) => ({
+            value: String(test.id),
+            label: test.test_name,
+          }))
+        );
       } catch (error) {
         toast.error(`Failed to search tests: ${error.response?.data?.error || error.message}`);
         console.error('Error searching tests:', error.response?.data || error);
       } finally {
         setIsSearchingTests(false);
       }
-    }, 500), // 500ms debounce delay
+    }, 500),
     []
   );
 
   const customStyles = {
     control: (base) => ({
       ...base,
-      borderRadius: "12px",
-      padding: "8px 12px",
-      borderColor: "#e5e7eb",
-      boxShadow: "none",
-      "&:hover": { borderColor: "#d1d5db" },
+      borderRadius: '12px',
+      padding: '8px 12px',
+      borderColor: '#e5e7eb',
+      boxShadow: 'none',
+      '&:hover': { borderColor: '#d1d5db' },
     }),
     multiValue: (base) => ({
       ...base,
-      backgroundColor: "#fff7ed",
-      borderRadius: "8px",
-      padding: "2px 8px",
+      backgroundColor: '#fff7ed',
+      borderRadius: '8px',
+      padding: '2px 8px',
     }),
     multiValueLabel: (base) => ({
       ...base,
-      color: "#ea580c",
-      fontWeight: "500",
+      color: '#ea580c',
+      fontWeight: '500',
     }),
     menu: (base) => ({
       ...base,
-      borderRadius: "12px",
-      border: "1px solid #e5e7eb",
-      boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
+      borderRadius: '12px',
+      border: '1px solid #e5e7eb',
+      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
     }),
     option: (base, state) => ({
       ...base,
-      backgroundColor: state.isFocused ? "#fff7ed" : "white",
-      color: state.isFocused ? "#ea580c" : "#1f2937",
-      fontWeight: state.isFocused ? "500" : "400",
+      backgroundColor: state.isFocused ? '#fff7ed' : 'white',
+      color: state.isFocused ? '#ea580c' : '#1f2937',
+      fontWeight: state.isFocused ? '500' : '400',
     }),
   };
 
@@ -151,7 +158,7 @@ const DiagnosticTestsSection = ({
 
       {isFetchingTests || isCreatingTests ? (
         <Loader
-          message={isCreatingTests ? "Creating test..." : "Loading tests..."}
+          message={isCreatingTests ? 'Creating test...' : 'Loading tests...'}
           color="orange-600"
         />
       ) : (
@@ -160,10 +167,14 @@ const DiagnosticTestsSection = ({
           options={tests}
           value={selectedTests.map((test) => ({
             value: test,
-            label: test,
+            label:
+              tests.find((t) => t.value === test)?.label ||
+              test, // Fallback to test if not found
           }))}
           onChange={(selectedOptions) =>
-            onTestsChange(selectedOptions ? selectedOptions.map((opt) => opt.value) : [])
+            onTestsChange(
+              selectedOptions ? selectedOptions.map((opt) => opt.value) : []
+            )
           }
           onCreateOption={handleCreateTest}
           onInputChange={(inputValue, { action }) => {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -5,6 +6,7 @@ import CreatableSelect from "react-select/creatable";
 import Select from "react-select";
 import { AiOutlineCloseCircle, AiOutlinePlus } from "react-icons/ai";
 import Loader from "./Loader";
+
 const MEDICINE_DEFAULTS = {
   Tablet: {
     dosage_en: "1",
@@ -22,37 +24,22 @@ const PrescriptionManagementSection = ({
   selectedMedicines = [],
   setSelectedMedicines,
   customSelectStyles,
+  medicines,
+  refreshMedicines,
 }) => {
-  const [medicines, setMedicines] = useState([]);
-  const [isFetchingMedicines, setIsFetchingMedicines] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
   useEffect(() => {
-    const fetchMedicines = async () => {
-      setIsFetchingMedicines(true);
-      try {
-        const res = await axios.get(
-          "https://patient-management-backend-nine.vercel.app/api/medicines"
-        );
-        setMedicines(
-          res.data.map((m) => ({
-            value: m.id,
-            label: `${m.form} ${m.brand_name}${
-              m.strength ? ` (${m.strength})` : ""
-            }`,
-          }))
-        );
-      } catch (error) {
-        console.error("Error fetching medicines:", error);
-        toast.error("Failed to fetch medicines");
-      } finally {
-        setIsFetchingMedicines(false);
-      }
-    };
-    fetchMedicines();
-  }, []);
+    if (medicines.length === 0) {
+      toast.warn("No medicines available. Please create a new medicine.");
+    }
+  }, [medicines]);
 
   const handleCreateMedicine = async (inputValue) => {
+    if (!inputValue.trim()) {
+      toast.error("Medicine name cannot be empty");
+      return null;
+    }
     setIsCreating(true);
     try {
       const response = await axios.post(
@@ -63,35 +50,64 @@ const PrescriptionManagementSection = ({
           urdu_name: "",
           urdu_form: "",
           urdu_strength: "",
-        }
+          form: "Tablet",
+          brand_name: inputValue,
+        },
+        { timeout: 10000 }
       );
-
       const newMedicine = response.data;
+      if (!newMedicine.id) {
+        throw new Error("Server did not return a valid medicine ID");
+      }
       const formattedMedicine = {
-        value: newMedicine.id,
-        label: `${newMedicine.form} ${newMedicine.brand_name}${
+        value: String(newMedicine.id),
+        label: `${newMedicine.form || "Tablet"} ${newMedicine.brand_name}${
           newMedicine.strength ? ` (${newMedicine.strength})` : ""
         }`,
+        raw: newMedicine,
       };
-
-      setMedicines((prev) => [...prev, formattedMedicine]);
-      return newMedicine.id; // Return new medicine ID
+      console.log("Created medicine:", newMedicine);
+      // Verify creation
+      const verifyRes = await axios.get(
+        "https://patient-management-backend-nine.vercel.app/api/medicines"
+      );
+      const createdMedicine = verifyRes.data.find(
+        (m) => String(m.id) === String(newMedicine.id)
+      );
+      if (!createdMedicine) {
+        console.warn("Created medicine not found in database:", newMedicine);
+        toast.error("Medicine created but not saved. Please retry.");
+        return null;
+      }
+      // Update medicines via refresh
+      await refreshMedicines();
+      console.log("Verified created medicine:", createdMedicine);
+      toast.success(`Medicine "${inputValue}" created`);
+      return String(newMedicine.id);
     } catch (error) {
-      console.error("Creation failed:", error);
-      toast.error(error.response?.data?.error || "Invalid medicine format");
+      console.error("Medicine creation failed:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
+      toast.error(error.response?.data?.error || "Failed to create medicine");
       return null;
     } finally {
       setIsCreating(false);
     }
   };
 
-  const handleAddMedicine = () => {
+  const handleAddMedicine = async (inputValue = null) => {
+    let newId = null;
+    if (inputValue) {
+      newId = await handleCreateMedicine(inputValue);
+      if (!newId) return;
+    }
     setSelectedMedicines((prev) => [
       ...prev,
       {
-        medicine_id: "",
+        medicine_id: newId || "",
         form: "Tablet",
-        ...MEDICINE_DEFAULTS.Tablet,
         dosage_en: MEDICINE_DEFAULTS.Tablet.dosage_en,
         dosage_urdu: MEDICINE_DEFAULTS.Tablet.dosage_urdu,
         frequency_en: MEDICINE_DEFAULTS.Tablet.frequency_en,
@@ -102,6 +118,29 @@ const PrescriptionManagementSection = ({
         instructions_urdu: MEDICINE_DEFAULTS.Tablet.instructions_urdu,
       },
     ]);
+    console.log("Added medicine with medicine_id:", newId || "empty");
+  };
+
+  const validateMedicines = () => {
+    if (selectedMedicines.length === 0) return true;
+    const invalid = selectedMedicines.some((med) => {
+      if (!med.medicine_id || med.medicine_id === "") {
+        console.warn("Empty medicine_id in:", med);
+        return true;
+      }
+      if (!medicines.some((m) => m.value === String(med.medicine_id))) {
+        console.warn("Invalid medicine_id not in medicines:", med);
+        return true;
+      }
+      return false;
+    });
+    if (invalid) {
+      toast.error(
+        "Some medicines are invalid or not recognized. Please select valid medicines or remove entries."
+      );
+      return false;
+    }
+    return true;
   };
 
   return (
@@ -113,11 +152,20 @@ const PrescriptionManagementSection = ({
         </h3>
       </div>
 
-      {isFetchingMedicines || isCreating ? (
-        <Loader
-          message={isCreating ? "Creating medicine..." : "Loading medicines..."}
-          color="purple-600"
-        />
+      {medicines.length === 0 && !isCreating ? (
+        <div className="text-center text-gray-600">
+          <p>No medicines available. Create a new medicine to proceed.</p>
+          <CreatableSelect
+            isLoading={isCreating}
+            loadingMessage={() => "Creating medicine..."}
+            options={[]}
+            value={null}
+            onCreateOption={(inputValue) => handleAddMedicine(inputValue)}
+            placeholder="Type to create a new medicine..."
+            isClearable
+            styles={customSelectStyles}
+          />
+        </div>
       ) : (
         <div className="space-y-4">
           {selectedMedicines.map((med, index) => (
@@ -133,9 +181,14 @@ const PrescriptionManagementSection = ({
                     loadingMessage={() => "Creating medicine..."}
                     options={medicines}
                     value={
-                      medicines.find(
-                        (m) => m.value === selectedMedicines[index]?.medicine_id
-                      ) || null
+                      med.medicine_id
+                        ? medicines.find(
+                            (m) => m.value === String(med.medicine_id)
+                          ) || {
+                            value: med.medicine_id,
+                            label: `Unknown (${med.medicine_id})`,
+                          }
+                        : null
                     }
                     onCreateOption={async (inputValue) => {
                       const newId = await handleCreateMedicine(inputValue);
@@ -145,17 +198,39 @@ const PrescriptionManagementSection = ({
                             i === index ? { ...item, medicine_id: newId } : item
                           )
                         );
+                        console.log(
+                          "Selected new medicine_id:",
+                          newId,
+                          "for index:",
+                          index
+                        );
                       }
                     }}
                     onChange={(selectedOption) => {
+                      const newId = selectedOption ? selectedOption.value : "";
+                      if (newId && !medicines.some((m) => m.value === newId)) {
+                        console.warn("Selected unknown medicine_id:", newId);
+                        toast.warn(
+                          `Medicine ID ${newId} is not recognized. Please create or select a valid medicine.`
+                        );
+                        return;
+                      }
                       setSelectedMedicines((prev) =>
                         prev.map((item, i) =>
-                          i === index
-                            ? { ...item, medicine_id: selectedOption.value }
-                            : item
+                          i === index ? { ...item, medicine_id: newId } : item
                         )
                       );
+                      console.log(
+                        "Medicine selected:",
+                        selectedOption,
+                        "new medicine_id:",
+                        newId,
+                        "for index:",
+                        index
+                      );
                     }}
+                    placeholder="Select or create medicine..."
+                    isClearable
                     styles={customSelectStyles}
                   />
                 </div>
@@ -166,76 +241,81 @@ const PrescriptionManagementSection = ({
                     Frequency
                   </label>
                   <Select
-                    options={[
+                     options={[
                       { value: "morning", label: "صبح" },
                       { value: "afternoon", label: "دوپہر" },
-                      { value: "evening", label: "شام " },
-                      { value: "night", label: "رات " },
-                      { value: "morning_evening", label: "صبح، شام " },
-                      { value: "morning_night", label: "صبح، رات " },
-                      { value: "afternoon_evening", label: "دوپہر، شام " },
-                      { value: "afternoon_night", label: "دوپہر، رات " },
+                      { value: "evening", label: "شام" },
+                      { value: "night", label: "رات" },
+                      { value: "morning_evening", label: "صبح، شام" },
+                      { value: "morning_night", label: "صبح، رات" },
+                      { value: "afternoon_evening", label: "دوپہر، شام" },
+                      { value: "afternoon_night", label: "دوپہر، رات" },
                       {
                         value: "morning_evening_night",
-                        label: "صبح، شام، رات ",
+                        label: "صبح، شام، رات",
                       },
                       {
                         value: "morning_afternoon_evening",
-                        label: "صبح، دوپہر، شام ",
+                        label: "صبح، دوپہر، شام",
                       },
                       { value: "as_needed", label: "حسب ضرورت" },
                       {
                         value: "morning_afternoon_night",
-                        label: "صبح، دوپہر، رات ",
+                        label: "صبح، دوپہر، رات",
                       },
                       {
                         value: "afternoon_evening_night",
-                        label: "دوپہر، شام، رات ",
+                        label: "دوپہر، شام، رات",
                       },
-                      { value: "early_morning", label: "صبح سویرے " },
-                      { value: "late_morning", label: "دیر صبح " },
-                      { value: "late_afternoon", label: "دیر دوپہر " },
-                      { value: "sunset", label: "غروب آفتاب " },
-                      { value: "midnight", label: "آدھی رات " },
-                      { value: "late_night", label: "رات دیر گئے " },
-                      { value: "morning_afternoon", label: "صبح، دوپہر " },
-                      { value: "evening_night", label: "شام، رات " },
+                      { value: "early_morning", label: "صبح سویرے" },
+                      { value: "late_morning", label: "دیر صبح" },
+                      { value: "late_afternoon", label: "دیر دوپہر" },
+                      { value: "sunset", label: "غروب آفتاب" },
+                      { value: "midnight", label: "آدھی رات" },
+                      { value: "late_night", label: "رات دیر گئے" },
+                      { value: "morning_afternoon", label: "صبح، دوپہر" },
+                      { value: "evening_night", label: "شام، رات" },
                       {
                         value: "early_morning_night",
-                        label: "صبح سویرے، رات ",
+                        label: "صبح سویرے، رات",
                       },
                       {
                         value: "morning_late_afternoon",
-                        label: "صبح، دیر دوپہر ",
+                        label: "صبح، دیر دوپہر",
                       },
                       {
                         value: "afternoon_sunset",
-                        label: "دوپہر، غروب آفتاب ",
+                        label: "دوپہر، غروب آفتاب",
                       },
-                      { value: "all_day", label: "پورا دن " },
-                      { value: "all_night", label: "پوری رات " },
-                      { value: "24_hours", label: "چوبیس گھنٹے " },
+                      { value: "all_day", label: "پورا دن" },
+                      { value: "all_night", label: "پوری رات" },
+                      { value: "24_hours", label: "چوبیس گھنٹے" },
                     ]}
-                    value={{
-                      value: med.frequency_en,
-                      label: med.frequency_urdu,
-                    }}
-                    className="react-select-container font-urdu"
-                    classNamePrefix="react-select"
-                    onChange={(e) => {
+                    value={
+                      med.frequency_en
+                        ? {
+                            value: med.frequency_en,
+                            label: med.frequency_urdu,
+                          }
+                        : null
+                    }
+                    onChange={(option) => {
                       setSelectedMedicines((prev) =>
                         prev.map((item, i) =>
                           i === index
                             ? {
                                 ...item,
-                                frequency_en: e.value,
-                                frequency_urdu: e.label,
+                                frequency_en: option ? option.value : "",
+                                frequency_urdu: option ? option.label : "",
                               }
                             : item
                         )
                       );
                     }}
+                    placeholder="Select frequency..."
+                    isClearable
                     styles={customSelectStyles}
+                    className="font-urdu"
                   />
                 </div>
 
@@ -246,95 +326,94 @@ const PrescriptionManagementSection = ({
                   </label>
                   <Select
                     options={[
-                      { value: "0.25", label: "ایک چوتھائی گولی " },
-                      { value: "0.5", label: "آدھی گولی " },
+                      { value: "0.25", label: "ایک چوتھائی گولی" },
+                      { value: "0.5", label: "آدھی گولی" },
                       { value: "headache_severe", label: "شدید سر درد کے لیے" },
-                      { value: "0.75", label: "تین چوتھائی گولی " },
+                      { value: "0.75", label: "تین چوتھائی گولی" },
                       { value: "1", label: "ایک گولی" },
-                      { value: "1.5", label: "ڈیڑھ گولی " },
-                      { value: "2", label: "دو گولیاں " },
+                      { value: "1.5", label: "ڈیڑھ گولی" },
+                      { value: "2", label: "دو گولیاں" },
                       { value: "2.5", label: "ڈھائی گولیاں" },
-                      { value: "3", label: "تین گولیاں " },
-                      { value: "3.5", label: "ساڑھے تین گولیاں " },
-                      { value: "4", label: "چار گولیاں " },
+                      { value: "3", label: "تین گولیاں" },
+                      { value: "3.5", label: "ساڑھے تین گولیاں" },
+                      { value: "4", label: "چار گولیاں" },
                       { value: "5", label: "پانچ گولیاں" },
-                      { value: "6", label: "چھ گولیاں " },
-                      { value: "7", label: "سات گولیاں " },
-                      { value: "8", label: "آٹھ گولیاں " },
-                      { value: "10", label: "دس گولیاں " },
-                      { value: "half_spoon", label: "آدھا چمچ " },
+                      { value: "6", label: "چھ گولیاں" },
+                      { value: "7", label: "سات گولیاں" },
+                      { value: "8", label: "آٹھ گولیاں" },
+                      { value: "10", label: "دس گولیاں" },
+                      { value: "half_spoon", label: "آدھا چمچ" },
                       { value: "one_spoon", label: "ایک چمچ" },
-                      { value: "one_and_half_spoon", label: "ڈیڑھ چمچ " },
+                      { value: "one_and_half_spoon", label: "ڈیڑھ چمچ" },
                       { value: "two_spoons", label: "دو چمچ" },
-                      { value: "three_spoons", label: "تین چمچ " },
-                      { value: "1_ml", label: "ایک ملی لیٹر " },
-                      { value: "2_ml", label: "دو ملی لیٹر " },
-                      { value: "2.5_ml", label: "ڈھائی ملی لیٹر " },
-                      { value: "5_ml", label: "پانچ ملی لیٹر " },
-                      { value: "7.5_ml", label: "ساڑھے سات ملی لیٹر " },
-                      { value: "10_ml", label: "دس ملی لیٹر " },
-                      { value: "15_ml", label: "پندرہ ملی لیٹر " },
-                      { value: "20_ml", label: "بیس ملی لیٹر " },
-                      { value: "25_ml", label: "پچیس ملی لیٹر " },
-                      { value: "30_ml", label: "تیس ملی لیٹر " },
-                      { value: "3_ml", label: "تین ملی لیٹر " },
-                      { value: "4_ml", label: "چار ملی لیٹر " },
-                      { value: "6_ml", label: "چھہ ملی لیٹر " },
-                      { value: "8_ml", label: "آٹھ ملی لیٹر " },
-                      { value: "9_ml", label: "نو ملی لیٹر " },
-                      { value: "12.5_ml", label: "ساڑھے بارہ ملی لیٹر " },
-                      { value: "50_ml", label: "پچاس ملی لیٹر " },
-                      { value: "100_ml", label: "سو ملی لیٹر " },
-                      { value: "3_ml", label: "تین ملی لیٹر " },
-                      { value: "3.5_ml", label: "ساڑھے تین ملی لیٹر " },
-                      { value: "4_ml", label: "چار ملی لیٹر " },
-                      { value: "4.5_ml", label: "ساڑھے چار ملی لیٹر " },
-                      { value: "5_ml", label: "پانچ ملی لیٹر " },
-                      { value: "one_droplet", label: "ایک قطرہ " },
-                      { value: "two_droplets", label: "دو قطرے " },
-                      { value: "three_droplets", label: "تین قطرے " },
-                      { value: "five_droplets", label: "پانچ قطرے " },
-                      { value: "ten_droplets", label: "دس قطرے " },
-                      { value: "half_injection", label: "آدھا ٹیکہ " },
-                      { value: "one_injection", label: "ایک ٹیکہ " },
-                      { value: "two_injections", label: "دو ٹیکے " },
-                      { value: "three_injections", label: "تین ٹیکے " },
-                      { value: "half_sachet", label: "آدھا ساشے " },
-                      { value: "one_sachet", label: "ایک ساشے " },
-                      { value: "two_sachets", label: "دو ساشے " },
-                      { value: "three_sachets", label: "تین ساشے " },
-                      { value: "as_needed", label: "ضرورت کے مطابق " },
-                      { value: "before_meal", label: "کھانے سے پہلے " },
-                      { value: "after_meal", label: "کھانے کے بعد " },
-                      { value: "every_6_hours", label: "ہر 6 گھنٹے بعد " },
-                      { value: "every_8_hours", label: "ہر 8 گھنٹے بعد " },
-                      { value: "every_12_hours", label: "ہر 12 گھنٹے بعد " },
-                      { value: "once_a_day", label: "دن میں ایک بار " },
-                      { value: "twice_a_day", label: "دن میں دو بار " },
-                      { value: "three_times_a_day", label: "دن میں تین بار " },
-                      { value: "four_times_a_day", label: "دن میں چار بار " },
+                      { value: "three_spoons", label: "تین چمچ" },
+                      { value: "1_ml", label: "ایک ملی لیٹر" },
+                      { value: "2_ml", label: "دو ملی لیٹر" },
+                      { value: "2.5_ml", label: "ڈھائی ملی لیٹر" },
+                      { value: "5_ml", label: "پانچ ملی لیٹر" },
+                      { value: "7.5_ml", label: "ساڑھے سات ملی لیٹر" },
+                      { value: "10_ml", label: "دس ملی لیٹر" },
+                      { value: "15_ml", label: "پندرہ ملی لیٹر" },
+                      { value: "20_ml", label: "بیس ملی لیٹر" },
+                      { value: "25_ml", label: "پچیس ملی لیٹر" },
+                      { value: "30_ml", label: "تیس ملی لیٹر" },
+                      { value: "3_ml", label: "تین ملی لیٹر" },
+                      { value: "4_ml", label: "چار ملی لیٹر" },
+                      { value: "6_ml", label: "چھ ملی لیٹر" },
+                      { value: "8_ml", label: "آٹھ ملی لیٹر" },
+                      { value: "9_ml", label: "نو ملی لیٹر" },
+                      { value: "12.5_ml", label: "ساڑھے بارہ ملی لیٹر" },
+                      { value: "50_ml", label: "پچاس ملی لیٹر" },
+                      { value: "100_ml", label: "سو ملی لیٹر" },
+                      { value: "one_droplet", label: "ایک قطرہ" },
+                      { value: "two_droplets", label: "دو قطرے" },
+                      { value: "three_droplets", label: "تین قطرے" },
+                      { value: "five_droplets", label: "پانچ قطرے" },
+                      { value: "ten_droplets", label: "دس قطرے" },
+                      { value: "half_injection", label: "آدھا ٹیکہ" },
+                      { value: "one_injection", label: "ایک ٹیکہ" },
+                      { value: "two_injections", label: "دو ٹیکے" },
+                      { value: "three_injections", label: "تین ٹیکے" },
+                      { value: "half_sachet", label: "آدھا ساشے" },
+                      { value: "one_sachet", label: "ایک ساشے" },
+                      { value: "two_sachets", label: "دو ساشے" },
+                      { value: "three_sachets", label: "تین ساشے" },
+                      { value: "as_needed", label: "ضرورت کے مطابق" },
+                      { value: "before_meal", label: "کھانے سے پہلے" },
+                      { value: "after_meal", label: "کھانے کے بعد" },
+                      { value: "every_6_hours", label: "ہر 6 گھنٹے بعد" },
+                      { value: "every_8_hours", label: "ہر 8 گھنٹے بعد" },
+                      { value: "every_12_hours", label: "ہر 12 گھنٹے بعد" },
+                      { value: "once_a_day", label: "دن میں ایک بار" },
+                      { value: "twice_a_day", label: "دن میں دو بار" },
+                      { value: "three_times_a_day", label: "دن میں تین بار" },
+                      { value: "four_times_a_day", label: "دن میں چار بار" },
                     ]}
-                    className="react-select-container font-urdu"
-                    classNamePrefix="react-select"
-                    value={{
-                      value: selectedMedicines[index]?.dosage_en || "1",
-                      label:
-                        selectedMedicines[index]?.dosage_urdu || "ایک گولی",
-                    }}
-                    onChange={(e) => {
+                    value={
+                      med.dosage_en
+                        ? {
+                            value: med.dosage_en,
+                            label: med.dosage_urdu,
+                          }
+                        : null
+                    }
+                    onChange={(option) => {
                       setSelectedMedicines((prev) =>
                         prev.map((item, i) =>
                           i === index
                             ? {
                                 ...item,
-                                dosage_en: e.value,
-                                dosage_urdu: e.label,
+                                dosage_en: option ? option.value : "",
+                                dosage_urdu: option ? option.label : "",
                               }
                             : item
                         )
                       );
                     }}
+                    placeholder="Select dosage..."
+                    isClearable
                     styles={customSelectStyles}
+                    className="font-urdu"
                   />
                 </div>
 
@@ -376,30 +455,38 @@ const PrescriptionManagementSection = ({
                       { value: "3_months", label: "3 مہینے" },
                       { value: "4_months", label: "4 مہینے" },
                       { value: "5_months", label: "5 مہینے" },
-                      { value: "6_months", label: "6 مہینے " },
+                      { value: "6_months", label: "6 مہینے" },
                       { value: "9_months", label: "9 مہینے" },
-                      { value: "12_months", label: "12 مہینے " },
+                      { value: "12_months", label: "12 مہینے" },
                       { value: "as_needed", label: "ضرورت کے مطابق" },
                       { value: "long_term", label: "طویل مدتی علاج" },
                       { value: "short_term", label: "مختصر مدتی علاج" },
                     ]}
-                    value={{ value: med.duration_en, label: med.duration_urdu }}
-                    className="react-select-container font-urdu"
-                    classNamePrefix="react-select"
-                    onChange={(e) => {
+                    value={
+                      med.duration_en
+                        ? {
+                            value: med.duration_en,
+                            label: med.duration_urdu,
+                          }
+                        : null
+                    }
+                    onChange={(option) => {
                       setSelectedMedicines((prev) =>
                         prev.map((item, i) =>
                           i === index
                             ? {
                                 ...item,
-                                duration_en: e.value,
-                                duration_urdu: e.label,
+                                duration_en: option ? option.value : "",
+                                duration_urdu: option ? option.label : "",
                               }
                             : item
                         )
                       );
                     }}
+                    placeholder="Select duration..."
+                    isClearable
                     styles={customSelectStyles}
+                    className="font-urdu"
                   />
                 </div>
 
@@ -437,36 +524,41 @@ const PrescriptionManagementSection = ({
                       { value: "without_dairy", label: "ڈیری مصنوعات کے بغیر" },
                       { value: "avoid_caffeine", label: "کیفین سے بچیں" },
                     ]}
-                    value={{
-                      value: med.instructions_en,
-                      label: med.instructions_urdu,
-                    }}
-                    className="react-select-container font-urdu"
-                    classNamePrefix="react-select"
-                    onChange={(e) => {
+                    value={
+                      med.instructions_en
+                        ? {
+                            value: med.instructions_en,
+                            label: med.instructions_urdu,
+                          }
+                        : null
+                    }
+                    onChange={(option) => {
                       setSelectedMedicines((prev) =>
                         prev.map((item, i) =>
                           i === index
                             ? {
                                 ...item,
-                                instructions_en: e.value,
-                                instructions_urdu: e.label,
+                                instructions_en: option ? option.value : "",
+                                instructions_urdu: option ? option.label : "",
                               }
                             : item
                         )
                       );
                     }}
+                    placeholder="Select instruction..."
+                    isClearable
                     styles={customSelectStyles}
+                    className="font-urdu"
                   />
                 </div>
               </div>
 
-              {/* Remove Medicine */}
               <button
                 onClick={() => {
                   setSelectedMedicines((prev) =>
                     prev.filter((_, i) => i !== index)
                   );
+                  console.log("Removed medicine at index:", index);
                 }}
                 className="text-red-500 hover:text-red-700 mt-4"
               >
@@ -475,10 +567,10 @@ const PrescriptionManagementSection = ({
             </div>
           ))}
 
-          {/* Add New Medicine */}
           <button
-            onClick={handleAddMedicine}
+            onClick={() => handleAddMedicine()}
             className="w-full mt-4 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-200 text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 p-4 transition-all"
+            disabled={isCreating}
           >
             <AiOutlinePlus className="w-5 h-5" />
             Add New Medication

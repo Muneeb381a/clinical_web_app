@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import { useNavigate, useParams } from "react-router-dom";
@@ -6,7 +6,7 @@ import PatientInfoHeader from "./PatientInfoHeader";
 import ConsultationForm from "./ConsultationForm";
 import PrescriptionsPopup from "./PrescriptionsPopup";
 import printConsultation from "../utils/printConsultation";
-import { v4 as uuidv4 } from 'uuid';
+import { v4 as uuidv4 } from "uuid";
 
 const neuroExamFields = [
   "motor_function",
@@ -122,7 +122,6 @@ const PatientConsultation = () => {
         if (error.response?.status >= 400 && error.response?.status < 600) {
           if (attempt < retries) {
             const delay = 1000 * Math.pow(2, attempt);
-            // toast.info(`Failed to fetch ${resourceName}. Retrying in ${delay / 1000}s...`);
             await new Promise((resolve) => setTimeout(resolve, delay));
             attempt++;
           } else {
@@ -141,12 +140,52 @@ const PatientConsultation = () => {
     }
   };
 
+  const refreshMedicines = useCallback(async () => {
+    try {
+      const medicinesData = await fetchWithRetry(
+        "/api/medicines",
+        "medicines",
+        (data) =>
+          data.map((med) => ({
+            value: String(med.id), // Normalize to string
+            label: `${med.form || ""} ${med.brand_name}${
+              med.strength ? ` (${med.strength})` : ""
+            }`.trim(),
+            raw: med,
+          }))
+      );
+      setMedicines(medicinesData || []);
+      console.log("Refreshed medicines:", medicinesData.map((m) => m.value));
+
+      // Clean invalid selectedMedicines
+      const validIds = medicinesData.map((m) => m.value);
+      const invalidMedicines = selectedMedicines.filter(
+        (med) => med.medicine_id && !validIds.includes(String(med.medicine_id))
+      );
+      if (invalidMedicines.length > 0) {
+        console.warn("Invalid medicines found:", invalidMedicines);
+        toast.warn(
+          `Removed unrecognized medicines (IDs: ${invalidMedicines
+            .map((m) => m.medicine_id)
+            .join(", ")}). Please reselect.`
+        );
+        setSelectedMedicines((prev) =>
+          prev.filter((med) =>
+            validIds.includes(String(med.medicine_id))
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Failed to refresh medicines:", error);
+      toast.error("Failed to load medicines. Please try again.");
+    }
+  }, [selectedMedicines]);
+
   const fetchData = async () => {
     setLoading(true);
     setFetchError(null);
 
     try {
-      // Fetch patient data first (critical dependency)
       const patientData = await fetchWithRetry(
         `/api/patients/${patientId}`,
         "patient",
@@ -157,29 +196,15 @@ const PatientConsultation = () => {
         throw new Error("Invalid patient data received");
       }
       setPatient(patientData);
-      console.log("Patient state set to:", patientData);
 
-      // Parallelize independent fetches
-      const fetchPromises = [
-        fetchWithRetry("/api/medicines", "medicines", (data) =>
-          data.map((med) => ({
-            value: med.id,
-            label: `${med.form || ""} ${med.brand_name}${
-              med.strength ? ` (${med.strength})` : ""
-            }`.trim(),
-          }))
-        ).then((medicinesData) => {
-          setMedicines(medicinesData || []);
-          console.log("Medicines set:", medicinesData);
-        }),
-
+      await Promise.all([
+        refreshMedicines(),
         fetchWithRetry("/api/symptoms", "symptoms", (data) =>
           data.map((sym) => ({ value: sym.id, label: sym.name }))
         ).then((symptomsData) => {
           setSymptomsOptions(symptomsData || []);
           console.log("Symptoms set:", symptomsData);
         }),
-
         fetchWithRetry("/api/tests", "tests", (data) =>
           data.map((test) => ({
             value: test.id,
@@ -189,7 +214,6 @@ const PatientConsultation = () => {
           setTests(testsData || []);
           console.log("Tests set:", testsData);
         }),
-
         fetchWithRetry(
           `/api/prescriptions/patient/${patientId}`,
           "prescriptions",
@@ -198,8 +222,6 @@ const PatientConsultation = () => {
           setPrescriptions(prescriptionsData || []);
           console.log("Prescriptions set:", prescriptionsData);
         }),
-
-        // Fetch all neuro-options in parallel
         Promise.all(
           neuroExamFields.map((field) =>
             fetchWithRetry(
@@ -214,25 +236,15 @@ const PatientConsultation = () => {
             neuroOptionsMap[field] = neuroResults[index] || [];
           });
           setNeuroOptions(neuroOptionsMap);
-          // console.log("Neuro options set:", neuroOptionsMap);
+          console.log("Neuro options set:", neuroOptionsMap);
         }),
-      ];
-
-      // Wait for all parallel fetches to complete
-      await Promise.all(fetchPromises);
+      ]);
       console.log("All data fetched successfully");
     } catch (error) {
       console.error("Critical fetch error:", error);
       setFetchError(`Failed to load data: ${error.message}`);
-      // toast.error(`Failed to load data: ${error.message}`);
     } finally {
       setLoading(false);
-      console.log(
-        "Loading complete, patient state:",
-        patient,
-        "fetchError:",
-        fetchError
-      );
     }
   };
 
@@ -242,21 +254,39 @@ const PatientConsultation = () => {
 
   useEffect(() => {
     console.log("Patient state updated:", patient);
-  }, [patient]);
+    console.log("Current selectedMedicines:", selectedMedicines);
+  }, [patient, selectedMedicines]);
 
-  const handleReturnHome = () => {
-    setPatient(null);
-    navigate("/");
-  };
+  const handlePrint = async () => {
+    if (selectedMedicines.length === 0) {
+      toast.warn("No medicines selected to print.");
+      return;
+    }
 
-  const handlePrint = () => {
+    await refreshMedicines(); // Ensure medicines are up-to-date
+
+    const validIds = medicines.map((m) => String(m.value));
+    const invalidMedicines = selectedMedicines.filter(
+      (med) => med.medicine_id && !validIds.includes(String(med.medicine_id))
+    );
+    if (invalidMedicines.length > 0) {
+      toast.error(
+        `Cannot print: Unrecognized medicines (IDs: ${invalidMedicines
+          .map((m) => m.medicine_id)
+          .join(", ")}). Please reselect.`
+      );
+      return;
+    }
+
+    console.log("Triggering print with:", { selectedMedicines, medicines });
     printConsultation({
       patient,
       selectedMedicines,
       medicines,
       vitalSigns,
-      selectedSymptoms,
       selectedTests,
+      tests,
+      selectedSymptoms,
       neuroExamData,
       followUpDate,
       followUpNotes,
@@ -264,121 +294,176 @@ const PatientConsultation = () => {
   };
 
   const submitConsultation = async () => {
-    if (!patient || submissionLoading) {
-      toast.error(
-        "Please wait for data to load or ongoing submission to complete."
-      );
+    if (!patient || !patient.id) {
+      toast.error("Patient data is missing or invalid.");
+      return;
+    }
+    if (submissionLoading) {
+      toast.error("Please wait for the ongoing submission to complete.");
+      return;
+    }
+    if (!navigator.onLine) {
+      toast.error("No internet connection. Please check your network.");
       return;
     }
 
     setSubmissionLoading(true);
 
     try {
-      // Step 1: Create Consultation (Core)
+      await refreshMedicines(); // Sync medicines before submission
+
+      const validIds = medicines.map((m) => String(m.value));
+      const invalidMedicines = selectedMedicines.filter(
+        (med) => med.medicine_id && !validIds.includes(String(med.medicine_id))
+      );
+      if (invalidMedicines.length > 0) {
+        toast.error(
+          `Cannot submit: Unrecognized medicines (IDs: ${invalidMedicines
+            .map((m) => m.medicine_id)
+            .join(", ")}). Please reselect.`
+        );
+        return;
+      }
+
       const consultationPayload = {
-        patient_id: patient.id,
+        patient_id: String(patient.id),
         doctor_name: "Dr. Abdul Rauf",
-        diagnosis: neuroExamData.diagnosis || null,
-        notes: neuroExamData.treatment_plan || null,
+        diagnosis: neuroExamData?.diagnosis?.trim() || null,
+        notes: neuroExamData?.treatment_plan?.trim() || null,
         consultation_date: new Date().toISOString().split("T")[0],
         status: "completed",
       };
 
+      console.log("Creating consultation with payload:", consultationPayload);
       const consultationRes = await axios.post(
         `${BASE_URL}/api/consultations`,
         consultationPayload,
         { timeout: 15000 }
       );
-      const consultationId = consultationRes.data.id;
+      const consultationId = consultationRes.data?.id;
+      if (!consultationId) {
+        throw new Error("Server did not return a consultation ID.");
+      }
+      console.log("Consultation created with ID:", consultationId);
 
-      // Retry handler for non-critical requests
-      const withRetry = async (fn, retries = 3) => {
+      const withRetry = async (fn, stepName, retries = 2) => {
         try {
-          return await fn();
+          const result = await fn();
+          console.log(`${stepName} succeeded`);
+          return result;
         } catch (error) {
-          if (retries <= 0) throw error;
-          await new Promise((resolve) =>
-            setTimeout(resolve, 500 * (3 - retries))
-          );
-          return withRetry(fn, retries - 1);
+          console.warn(`${stepName} attempt ${3 - retries} failed:`, error);
+          if (
+            retries <= 0 ||
+            error.response?.status === 400 ||
+            error.response?.status === 404
+          ) {
+            throw error;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 500 * (2 - retries)));
+          return withRetry(fn, stepName, retries - 1);
         }
       };
 
-      const requests = [];
+      const failedSteps = [];
 
-      // Step 2: Vitals
-      if (Object.values(vitalSigns).some((v) => v)) {
+      // Vitals
+      if (
+        vitalSigns &&
+        Object.values(vitalSigns).some((v) => v && v !== "")
+      ) {
         const vitalsPayload = {
           consultation_id: consultationId,
-          patient_id: patient.id,
+          patient_id: String(patient.id),
           pulse_rate: Number(vitalSigns.pulseRate) || null,
-          blood_pressure: vitalSigns.bloodPressure || null,
+          blood_pressure: vitalSigns.bloodPressure?.trim() || null,
           temperature: Number(vitalSigns.temperature) || null,
           spo2_level: Number(vitalSigns.spo2) || null,
           nihss_score: Number(vitalSigns.nihss) || null,
           fall_assessment: vitalSigns.fall_assessment || "Done",
         };
-
-        requests.push(
-          withRetry(() =>
-            axios
-              .post(`${BASE_URL}/api/vitals`, vitalsPayload)
-              .catch((error) => console.error("Vitals failed silently"))
-          )
-        );
+        await withRetry(
+          () =>
+            axios.post(`${BASE_URL}/api/vitals`, vitalsPayload, {
+              timeout: 15000,
+            }),
+          "Vitals"
+        ).catch((e) => failedSteps.push(`Vitals: ${e.message}`));
       }
 
-      // Step 3: Symptoms
-      if (selectedSymptoms.length > 0) {
-        const symptomsPayload = {
-          symptom_ids: selectedSymptoms.map((s) => s.value).filter(Boolean),
-        };
-
-        requests.push(
-          withRetry(() =>
-            axios
-              .post(
+      // Symptoms
+      if (Array.isArray(selectedSymptoms) && selectedSymptoms.length > 0) {
+        // Validate against symptomsOptions
+        const validSymptomIds = symptomsOptions.map((s) => String(s.value));
+        const symptomIds = selectedSymptoms
+          .map((s) => s?.value && String(s.value))
+          .filter((id) => id && validSymptomIds.includes(id));
+  
+        if (symptomIds.length === 0) {
+          console.warn("No valid symptom IDs after validation:", {
+            selectedSymptoms,
+            validSymptomIds,
+          });
+          failedSteps.push("Symptoms: No valid symptoms selected");
+        } else {
+          const symptomsPayload = { symptom_ids: symptomIds };
+          console.log("Submitting symptoms payload:", symptomsPayload);
+          await withRetry(
+            () =>
+              axios.post(
                 `${BASE_URL}/api/consultations/${consultationId}/symptoms`,
-                symptomsPayload
-              )
-              .catch((error) => console.error("Symptoms failed silently"))
-          )
-        );
+                symptomsPayload,
+                { timeout: 15000 }
+              ),
+            "Symptoms"
+          ).catch((error) => {
+            const errorMessage =
+              error.response?.data?.message ||
+              error.message ||
+              "Unknown error submitting symptoms";
+            console.error("Symptoms submission failed:", {
+              status: error.response?.status,
+              data: error.response?.data,
+              payload: symptomsPayload,
+            });
+            failedSteps.push(`Symptoms: ${errorMessage}`);
+          });
+        }
+      } else {
+        console.log("No symptoms selected, skipping submission");
       }
 
-      // Step 4: Prescriptions
-      if (selectedMedicines.length > 0) {
+      // Prescriptions
+      if (Array.isArray(selectedMedicines) && selectedMedicines.length > 0) {
         const prescriptionsPayload = {
-          consultation_id: consultationId,
-          medicines: selectedMedicines
-            .map((med) => ({
-              medicine_id: med.medicine_id,
-              dosage_en: med.dosage_en || "",
-              dosage_urdu: med.dosage_urdu || "",
-              frequency_en: med.frequency_en || "",
-              frequency_urdu: med.frequency_urdu || "",
-              duration_en: med.duration_en || "",
-              duration_urdu: med.duration_urdu || "",
-              instructions_en: med.instructions_en || "",
-              instructions_urdu: med.instructions_urdu || "",
-            }))
-            .filter((m) => m.medicine_id),
+          consultation_id: String(consultationId),
+          medicines: selectedMedicines.map((med) => ({
+            medicine_id: String(med.medicine_id),
+            dosage_en: med.dosage_en?.trim() || "",
+            dosage_urdu: med.dosage_urdu?.trim() || "",
+            frequency_en: med.frequency_en?.trim() || "",
+            frequency_urdu: med.frequency_urdu?.trim() || "",
+            duration_en: med.duration_en?.trim() || "",
+            duration_urdu: med.duration_urdu?.trim() || "",
+            instructions_en: med.instructions_en?.trim() || "",
+            instructions_urdu: med.instructions_urdu?.trim() || "",
+          })),
         };
-
-        requests.push(
-          withRetry(() =>
-            axios
-              .post(`${BASE_URL}/api/prescriptions`, prescriptionsPayload)
-              .catch((error) => console.error("Prescriptions failed silently"))
-          )
-        );
+        console.log("Prescriptions payload:", prescriptionsPayload);
+        await withRetry(
+          () =>
+            axios.post(`${BASE_URL}/api/prescriptions`, prescriptionsPayload, {
+              timeout: 15000,
+            }),
+          "Prescriptions"
+        ).catch((e) => failedSteps.push(`Prescriptions: ${e.message}`));
       }
 
-      // Step 5: Neuro Exam
-      if (Object.keys(neuroExamData).length > 0) {
+      // Neuro Exam
+      if (neuroExamData && Object.keys(neuroExamData).length > 0) {
         const neuroPayload = {
           consultation_id: consultationId,
-          patient_id: patient.id,
+          patient_id: String(patient.id),
           ...neuroExamData,
           pain_sensation: !!neuroExamData.pain_sensation,
           vibration_sense: !!neuroExamData.vibration_sense,
@@ -395,66 +480,70 @@ const PatientConsultation = () => {
             ? parseInt(neuroExamData.gcs_score)
             : null,
         };
-
-        requests.push(
-          withRetry(() =>
-            axios
-              .post(`${BASE_URL}/api/examination`, neuroPayload)
-              .catch((error) => console.error("Neuro exam failed silently"))
-          )
-        );
+        await withRetry(
+          () =>
+            axios.post(`${BASE_URL}/api/examination`, neuroPayload, {
+              timeout: 15000,
+            }),
+          "Neuro Exam"
+        ).catch((e) => failedSteps.push(`Neuro Exam: ${e.message}`));
       }
 
-      // Step 6: Tests
-      if (selectedTests.length > 0) {
+      // Tests
+      if (Array.isArray(selectedTests) && selectedTests.length > 0) {
         const testIds = selectedTests
-          .map(
-            (test) =>
-              tests.find((t) => t.label === test || t.value === test)?.value
-          )
-          .filter(Boolean);
-
+          .map((id) => String(id))
+          .filter((id) => id && typeof id === "string");
         if (testIds.length > 0) {
           const testsPayload = {
             test_ids: testIds,
             consultation_id: consultationId,
           };
-
-          requests.push(
-            withRetry(() =>
-              axios
-                .post(`${BASE_URL}/api/tests/assign`, testsPayload)
-                .catch((error) => console.error("Tests failed silently"))
-            )
-          );
+          await withRetry(
+            () =>
+              axios.post(`${BASE_URL}/api/tests/assign`, testsPayload, {
+                timeout: 15000,
+              }),
+            "Tests"
+          ).catch((e) => failedSteps.push(`Tests: ${e.message}`));
         }
       }
 
-      // Step 7: Follow-Up
-      if (selectedDuration && followUpDate) {
-        const followUpPayload = {
-          follow_up_date: followUpDate.toISOString().split("T")[0],
-          notes: followUpNotes || "عام چیک اپ",
-          duration_days: Number(selectedDuration) || 7,
-        };
-
-        requests.push(
-          withRetry(() =>
-            axios
-              .post(
+      // Follow-Up
+      if (
+        selectedDuration &&
+        followUpDate &&
+        followUpDate instanceof Date &&
+        !isNaN(followUpDate)
+      ) {
+        const durationDays = Number(selectedDuration);
+        if (!isNaN(durationDays) && durationDays > 0) {
+          const followUpPayload = {
+            follow_up_date: followUpDate.toISOString().split("T")[0],
+            notes: followUpNotes?.trim() || "عام چیک اپ",
+            duration_days: durationDays,
+          };
+          await withRetry(
+            () =>
+              axios.post(
                 `${BASE_URL}/api/followups/consultations/${consultationId}/followups`,
-                followUpPayload
-              )
-              .catch((error) => console.error("Follow-up failed silently"))
-          )
-        );
+                followUpPayload,
+                { timeout: 15000 }
+              ),
+            "Follow-Up"
+          ).catch((e) => failedSteps.push(`Follow-Up: ${e.message}`));
+        }
       }
 
-      // Execute all requests with failure tolerance
-      await Promise.all(requests.map((p) => p.catch((e) => e)));
+      if (failedSteps.length > 0) {
+        console.warn("Failed steps:", failedSteps);
+        toast.warn(
+          `Consultation saved, but some steps failed: ${failedSteps.join(", ")}.`
+        );
+      } else {
+        toast.success("Consultation processed successfully!");
+      }
 
-      // Success handling
-      toast.success("Consultation processed successfully");
       setVitalSigns({
         pulseRate: "",
         bloodPressure: "",
@@ -466,319 +555,33 @@ const PatientConsultation = () => {
       setFollowUpDate(null);
       setFollowUpNotes("");
       setSelectedDuration(null);
-      handlePrint();
+
+      try {
+        await handlePrint();
+      } catch (printError) {
+        console.warn("Print failed:", printError);
+        toast.warn("Consultation saved, but printing failed.");
+      }
       navigate("/");
     } catch (error) {
-      console.error("Main error:", error);
-      toast.error(error.response?.data?.message || "Submission error occurred");
+      console.error("Submission error:", error);
+      let errorMessage =
+        error.response?.data?.message || error.message || "Submission error";
+      if (error.code === "ECONNABORTED") {
+        errorMessage = "Request timed out. Please check your network.";
+      } else if (error.response?.status >= 500) {
+        errorMessage = "Server error. Please try again later.";
+      } else if (error.response?.status === 400) {
+        errorMessage = `Invalid data: ${
+          error.response?.data?.message || "Check your inputs."
+        }`;
+      }
+      toast.error(errorMessage);
     } finally {
       setSubmissionLoading(false);
     }
   };
 
-
-  // const submitConsultation = async () => {
-  //   // Early validation for patient and submission state
-  //   if (!patient || !patient.id) {
-  //     toast.error('Patient data is missing or invalid. Please select a patient.');
-  //     return;
-  //   }
-  //   if (submissionLoading) {
-  //     toast.error('Please wait for the ongoing submission to complete.');
-  //     return;
-  //   }
-  //   if (!navigator.onLine) {
-  //     toast.error('No internet connection. Please check your network and try again.');
-  //     return;
-  //   }
-  
-  //   setSubmissionLoading(true);
-  
-  //   try {
-  //     // Step 1: Create Consultation (Core)
-  //     const consultationPayload = {
-  //       patient_id: String(patient.id), // Normalize ID to string
-  //       doctor_name: 'Dr. Abdul Rauf',
-  //       diagnosis: neuroExamData?.diagnosis?.trim() || null,
-  //       notes: neuroExamData?.treatment_plan?.trim() || null,
-  //       consultation_date: new Date().toISOString().split('T')[0],
-  //       status: 'completed',
-  //     };
-  
-  //     console.log('Creating consultation with payload:', consultationPayload); // Debug log
-  //     const consultationRes = await axios.post(
-  //       `${BASE_URL}/api/consultations`,
-  //       consultationPayload,
-  //       { timeout: 15000 }
-  //     ).catch((error) => {
-  //       if (error.code === 'ECONNABORTED') {
-  //         throw new Error('Consultation creation timed out. Please check your network.');
-  //       }
-  //       throw error;
-  //     });
-  
-  //     const consultationId = consultationRes.data?.id;
-  //     if (!consultationId) {
-  //       throw new Error('Server did not return a consultation ID.');
-  //     }
-  
-  //     // Retry handler for non-critical requests with improved error handling
-  //     const withRetry = async (fn, stepName, retries = 3) => {
-  //       try {
-  //         return await fn();
-  //       } catch (error) {
-  //         console.warn(`${stepName} attempt ${4 - retries} failed:`, error.message);
-  //         if (retries <= 0 || error.response?.status === 400 || error.response?.status === 404) {
-  //           console.error(`${stepName} failed after retries:`, error.message);
-  //           return { error: true, message: error.message }; // Return error object instead of throwing
-  //         }
-  //         await new Promise((resolve) => setTimeout(resolve, 500 * (3 - retries)));
-  //         return withRetry(fn, stepName, retries - 1);
-  //       }
-  //     };
-  
-  //     const requests = [];
-  
-  //     // Step 2: Vitals
-  //     if (vitalSigns && Object.values(vitalSigns).some((v) => v && v !== '')) {
-  //       const vitalsPayload = {
-  //         consultation_id: consultationId,
-  //         patient_id: String(patient.id),
-  //         pulse_rate:
-  //           vitalSigns.pulseRate && !isNaN(Number(vitalSigns.pulseRate))
-  //             ? Number(vitalSigns.pulseRate)
-  //             : null,
-  //         blood_pressure: vitalSigns.bloodPressure?.trim() || null,
-  //         temperature:
-  //           vitalSigns.temperature && !isNaN(Number(vitalSigns.temperature))
-  //             ? Number(vitalSigns.temperature)
-  //             : null,
-  //         spo2_level:
-  //           vitalSigns.spo2 && !isNaN(Number(vitalSigns.spo2))
-  //             ? Number(vitalSigns.spo2)
-  //             : null,
-  //         nihss_score:
-  //           vitalSigns.nihss && !isNaN(Number(vitalSigns.nihss))
-  //             ? Number(vitalSigns.nihss)
-  //             : null,
-  //         fall_assessment: vitalSigns.fall_assessment || 'Done',
-  //       };
-  
-  //       if (!Object.values(vitalsPayload).some((v) => v !== null && v !== 'Done')) {
-  //         console.warn('Skipping vitals: No valid data provided');
-  //       } else {
-  //         requests.push(
-  //           withRetry(
-  //             () =>
-  //               axios.post(`${BASE_URL}/api/vitals`, vitalsPayload, { timeout: 15000 }),
-  //             'Vitals'
-  //           )
-  //         );
-  //       }
-  //     }
-  
-  //     // Step 3: Symptoms
-  //     if (Array.isArray(selectedSymptoms) && selectedSymptoms.length > 0) {
-  //       const symptomIds = selectedSymptoms
-  //         .map((s) => s?.value)
-  //         .filter(Boolean);
-  //       if (symptomIds.length === 0) {
-  //         console.warn('Skipping symptoms: No valid symptom IDs');
-  //       } else {
-  //         const symptomsPayload = { symptom_ids: symptomIds };
-  //         requests.push(
-  //           withRetry(
-  //             () =>
-  //               axios.post(
-  //                 `${BASE_URL}/api/consultations/${consultationId}/symptoms`,
-  //                 symptomsPayload,
-  //                 { timeout: 15000 }
-  //               ),
-  //             'Symptoms'
-  //           )
-  //         );
-  //       }
-  //     }
-  
-  //     // Step 4: Prescriptions
-  //     if (Array.isArray(selectedMedicines) && selectedMedicines.length > 0) {
-  //       const medicines = selectedMedicines
-  //         .map((med) => ({
-  //           medicine_id: med?.medicine_id,
-  //           dosage_en: med?.dosage_en?.trim() || '',
-  //           dosage_urdu: med?.dosage_urdu?.trim() || '',
-  //           frequency_en: med?.frequency_en?.trim() || '',
-  //           frequency_urdu: med?.frequency_urdu?.trim() || '',
-  //           duration_en: med?.duration_en?.trim() || '',
-  //           duration_urdu: med?.duration_urdu?.trim() || '',
-  //           instructions_en: med?.instructions_en?.trim() || '',
-  //           instructions_urdu: med?.instructions_urdu?.trim() || '',
-  //         }))
-  //         .filter((m) => m.medicine_id);
-  //       if (medicines.length === 0) {
-  //         console.warn('Skipping prescriptions: No valid medicines');
-  //       } else {
-  //         const prescriptionsPayload = {
-  //           consultation_id: consultationId,
-  //           medicines,
-  //         };
-  //         requests.push(
-  //           withRetry(
-  //             () =>
-  //               axios.post(`${BASE_URL}/api/prescriptions`, prescriptionsPayload, {
-  //                 timeout: 15000,
-  //               }),
-  //             'Prescriptions'
-  //           )
-  //         );
-  //       }
-  //     }
-  
-  //     // Step 5: Neuro Exam
-  //     if (neuroExamData && Object.keys(neuroExamData).length > 0) {
-  //       const neuroPayload = {
-  //         consultation_id: consultationId,
-  //         patient_id: String(patient.id),
-  //         ...neuroExamData,
-  //         pain_sensation: !!neuroExamData.pain_sensation,
-  //         vibration_sense: !!neuroExamData.vibration_sense,
-  //         proprioception: !!neuroExamData.proprioception,
-  //         temperature_sensation: !!neuroExamData.temperature_sensation,
-  //         brudzinski_sign: !!neuroExamData.brudzinski_sign,
-  //         kernig_sign: !!neuroExamData.kernig_sign,
-  //         facial_sensation: !!neuroExamData.facial_sensation,
-  //         swallowing_function: !!neuroExamData.swallowing_function,
-  //         mmse_score:
-  //           neuroExamData.mmse_score && !isNaN(parseInt(neuroExamData.mmse_score))
-  //             ? parseInt(neuroExamData.mmse_score)
-  //             : null,
-  //         gcs_score:
-  //           neuroExamData.gcs_score && !isNaN(parseInt(neuroExamData.gcs_score))
-  //             ? parseInt(neuroExamData.gcs_score)
-  //             : null,
-  //       };
-  
-  //       if (!Object.values(neuroPayload).some((v) => v !== null && v !== false)) {
-  //         console.warn('Skipping neuro exam: No valid data provided');
-  //       } else {
-  //         requests.push(
-  //           withRetry(
-  //             () =>
-  //               axios.post(`${BASE_URL}/api/examination`, neuroPayload, {
-  //                 timeout: 15000,
-  //               }),
-  //             'Neuro Exam'
-  //           )
-  //         );
-  //       }
-  //     }
-  
-  //     // Step 6: Tests
-  //     if (Array.isArray(selectedTests) && selectedTests.length > 0) {
-  //       const testIds = selectedTests
-  //         .map((test) => tests?.find((t) => t.label === test || t.value === test)?.value)
-  //         .filter(Boolean);
-  //       if (testIds.length === 0) {
-  //         console.warn('Skipping tests: No valid test IDs');
-  //       } else {
-  //         const testsPayload = {
-  //           test_ids: testIds,
-  //           consultation_id: consultationId,
-  //         };
-  //         requests.push(
-  //           withRetry(
-  //             () =>
-  //               axios.post(`${BASE_URL}/api/tests/assign`, testsPayload, {
-  //                 timeout: 15000,
-  //               }),
-  //             'Tests'
-  //           )
-  //         );
-  //       }
-  //     }
-  
-  //     // Step 7: Follow-Up
-  //     if (selectedDuration && followUpDate && followUpDate instanceof Date && !isNaN(followUpDate)) {
-  //       const durationDays = Number(selectedDuration);
-  //       if (isNaN(durationDays) || durationDays <= 0) {
-  //         console.warn('Skipping follow-up: Invalid duration or date');
-  //       } else {
-  //         const followUpPayload = {
-  //           follow_up_date: followUpDate.toISOString().split('T')[0],
-  //           notes: followUpNotes?.trim() || 'عام چیک اپ',
-  //           duration_days: durationDays,
-  //         };
-  //         requests.push(
-  //           withRetry(
-  //             () =>
-  //               axios.post(
-  //                 `${BASE_URL}/api/followups/consultations/${consultationId}/followups`,
-  //                 followUpPayload,
-  //                 { timeout: 15000 }
-  //               ),
-  //             'Follow-Up'
-  //           )
-  //         );
-  //       }
-  //     }
-  
-  //     // Execute all requests with failure tolerance
-  //     const results = await Promise.all(
-  //       requests.map((req) => req.catch((e) => ({ error: true, message: e.message })))
-  //     );
-  
-  //     // Check for non-critical failures
-  //     const failedRequests = results.filter((r) => r?.error);
-  //     if (failedRequests.length > 0) {
-  //       console.warn('Non-critical request failures:', failedRequests);
-  //       toast.warn(
-  //         `Consultation saved, but ${failedRequests.length} step(s) (e.g., vitals, symptoms) failed. Please verify.`
-  //       );
-  //     } else {
-  //       toast.success('Consultation processed successfully!');
-  //     }
-  
-  //     // Reset form state
-  //     setVitalSigns({
-  //       pulseRate: '',
-  //       bloodPressure: '',
-  //       temperature: '',
-  //       spo2: '',
-  //       nihss: '',
-  //       fall_assessment: 'Done',
-  //     });
-  //     setFollowUpDate(null);
-  //     setFollowUpNotes('');
-  //     setSelectedDuration(null);
-  
-  //     // Print and navigate
-  //     try {
-  //       await handlePrint(); // Assumes async; remove await if synchronous
-  //     } catch (printError) {
-  //       console.warn('Print failed:', printError.message);
-  //       toast.warn('Consultation saved, but printing failed.');
-  //     }
-  //     navigate('/');
-  //   } catch (error) {
-  //     console.error('Submission error:', {
-  //       message: error.message,
-  //       status: error.response?.status,
-  //       data: error.response?.data,
-  //     });
-  //     let errorMessage = error.response?.data?.message || error.message || 'Submission error occurred';
-  //     if (error.code === 'ECONNABORTED') {
-  //       errorMessage = 'Request timed out. Please check your network and try again.';
-  //     } else if (error.response?.status >= 500) {
-  //       errorMessage = 'Server error occurred. Please try again later.';
-  //     } else if (error.response?.status === 400) {
-  //       errorMessage = `Invalid data sent: ${error.response?.data?.message || 'Check your inputs.'}`;
-  //     }
-  //     toast.error(errorMessage);
-  //   } finally {
-  //     setSubmissionLoading(false);
-  //   }
-  // };
- 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -787,14 +590,12 @@ const PatientConsultation = () => {
     );
   }
 
-  console.log("Rendering UI, patient:", patient, "fetchError:", fetchError);
-
   if (fetchError) {
     return (
       <div className="min-h-screen flex items-center justify-center flex-col">
         <p className="text-lg text-red-600">{fetchError}</p>
         <button
-          onClick={handleReturnHome}
+          onClick={() => navigate("/")}
           className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
         >
           Return to Home
@@ -815,9 +616,8 @@ const PatientConsultation = () => {
           <>
             <PatientInfoHeader
               patient={patient}
-              onReturnHome={handleReturnHome}
+              onReturnHome={() => navigate("/")}
               setShowPopup={setShowPopup}
-              // prescriptions={prescriptions}
             />
             <ConsultationForm
               vitalSigns={vitalSigns}
@@ -845,6 +645,7 @@ const PatientConsultation = () => {
               onPrint={handlePrint}
               medicines={medicines}
               symptomsOptions={symptomsOptions}
+              refreshMedicines={refreshMedicines} // Pass refresh function
             />
             {showPopup && (
               <PrescriptionsPopup
@@ -859,7 +660,7 @@ const PatientConsultation = () => {
               No patient data loaded. Please try again or return home.
             </p>
             <button
-              onClick={handleReturnHome}
+              onClick={() => navigate("/")}
               className="mt-4 bg-blue-500 text-white px-4 py-2 rounded"
             >
               Return to Home
