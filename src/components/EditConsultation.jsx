@@ -1301,7 +1301,6 @@ const EditConsultation = () => {
             </div>
           </div>
           {/* // followup section */}
-          {/* Add this section somewhere in your form */}
           <div className="bg-gray-50 p-4 rounded-lg mt-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Follow-ups</h3>
