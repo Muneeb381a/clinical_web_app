@@ -424,8 +424,8 @@ const EditConsultation = () => {
           id: null, // Mark as new entry
           follow_up_date: "",
           notes: "",
-          created_at: new Date().toISOString()
-        }
+          created_at: new Date().toISOString(),
+        },
       ],
     }));
   };
@@ -721,13 +721,21 @@ const EditConsultation = () => {
               <div>
                 <p className="text-red-600">{testsError}</p>
                 <p className="text-yellow-600">
+                  Invalid test IDs:{" "}
+                  {editFormData.tests
+                    .filter((id) => !allTests.some((test) => test.id === id))
+                    .join(", ")}
+                </p>
+                <p className="text-yellow-600">
                   Raw tests: {JSON.stringify(editFormData?.tests || [])}
                 </p>
               </div>
             ) : (
               <TestsSelector
                 allTests={allTests}
-                selectedTests={editFormData?.tests || []}
+                selectedTests={editFormData.tests.filter((id) =>
+                  allTests.some((test) => test.id === id)
+                )}
                 onSelect={(selected) => {
                   console.log("Selected Tests:", selected);
                   handleFormChange("tests", selected);
@@ -1123,7 +1131,10 @@ const EditConsultation = () => {
                       options={[
                         { value: "0.25", label: "ایک چوتھائی گولی" },
                         { value: "0.5", label: "آدھی گولی" },
-                        { value: "headache_severe", label: "شدید سر درد کے لیے" },
+                        {
+                          value: "headache_severe",
+                          label: "شدید سر درد کے لیے",
+                        },
                         { value: "0.75", label: "تین چوتھائی گولی" },
                         { value: "1", label: "ایک گولی" },
                         { value: "1.5", label: "ڈیڑھ گولی" },
