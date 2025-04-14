@@ -132,55 +132,116 @@ const SelectField = ({ label, value, onChange, options, urdu = false }) => (
 const dosageOptions = [
   { value: "0.25", label: "ایک چوتھائی گولی" },
   { value: "0.5", label: "آدھی گولی" },
+  { value: "0.75", label: "تین چوتھائی گولی" },
   { value: "1", label: "ایک گولی" },
   { value: "1.5", label: "ڈیڑھ گولی" },
   { value: "2", label: "دو گولیاں" },
+  { value: "3", label: "تین گولیاں" },
+  { value: "4", label: "چار گولیاں" },
+  { value: "5", label: "پانچ گولیاں" },
+  { value: "1_capsule", label: "ایک کیپسول" },
+  { value: "2_capsules", label: "دو کیپسول" },
+  { value: "3_capsules", label: "تین کیپسول" },
+  { value: "2.5_ml", label: "ڈھائی ملی لیٹر" },
   { value: "5_ml", label: "پانچ ملی لیٹر" },
+  { value: "7.5_ml", label: "ساڑھے سات ملی لیٹر" },
   { value: "10_ml", label: "دس ملی لیٹر" },
+  { value: "15_ml", label: "پندرہ ملی لیٹر" },
+  { value: "20_ml", label: "بیس ملی لیٹر" },
+  { value: "1_drop", label: "ایک قطرہ" },
+  { value: "2_drops", label: "دو قطرے" },
+  { value: "5_drops", label: "پانچ قطرے" },
+  { value: "1_tsp", label: "ایک چائے کا چمچ" },
+  { value: "2_tsp", label: "دو چائے کے چمچ" },
 ];
 
-// Create dosageValueToLabel lookup object
-const dosageValueToLabel = Object.fromEntries(
-  dosageOptions.map(({ value, label }) => [value, label])
-);
+const dosageValueToLabel = {
+  0.25: "ایک چوتھائی گولی",
+  0.5: "آدھی گولی",
+  0.75: "تین چوتھائی گولی",
+  1: "ایک گولی",
+  1.5: "ڈیڑھ گولی",
+  2: "دو گولیاں",
+  3: "تین گولیاں",
+  4: "چار گولیاں",
+  5: "پانچ گولیاں",
+  "1_capsule": "ایک کیپسول",
+  "2_capsules": "دو کیپسول",
+  "3_capsules": "تین کیپسول",
+  "2.5_ml": "ڈھائی ملی لیٹر",
+  "5_ml": "پانچ ملی لیٹر",
+  "7.5_ml": "ساڑھے سات ملی لیٹر",
+  "10_ml": "دس ملی لیٹر",
+  "15_ml": "پندرہ ملی لیٹر",
+  "20_ml": "بیس ملی لیٹر",
+  "1_drop": "ایک قطرہ",
+  "2_drops": "دو قطرے",
+  "5_drops": "پانچ قطرے",
+  "1_tsp": "ایک چائے کا چمچ",
+  "2_tsp": "دو چائے کے چمچ",
+};
 
-// Similarly for other options:
 const frequencyOptions = [
   { value: "morning", label: "صبح" },
+  { value: "evening", label: "شام" },
   { value: "once_a_day", label: "دن میں ایک بار" },
   { value: "twice_a_day", label: "دن میں دو بار" },
   { value: "three_times_a_day", label: "دن میں تین بار" },
+  { value: "every_6_hours", label: "ہر چھ گھنٹے بعد" },
   { value: "as_needed", label: "ضرورت کے مطابق" },
 ];
+
+const frequencyValueToLabel = {
+  morning: "صبح",
+  evening: "شام",
+  once_a_day: "دن میں ایک بار",
+  twice_a_day: "دن میں دو بار",
+  three_times_a_day: "دن میں تین بار",
+  every_6_hours: "ہر چھ گھنٹے بعد",
+  as_needed: "ضرورت کے مطابق",
+};
 
 const durationOptions = [
   { value: "1_day", label: "ایک دن" },
   { value: "3_days", label: "تین دن" },
+  { value: "5_days", label: "پانچ دن" },
   { value: "7_days", label: "سات دن" },
-  { value: "7_days_alt", label: "1 ہفتہ" },
+  { value: "7_days_alt", label: "ایک ہفتہ" },
   { value: "14_days", label: "چودہ دن" },
+  { value: "21_days", label: "ایکویں دن" },
   { value: "30_days", label: "تیس دن" },
+  { value: "30_days_alt", label: "ایک ماہ" },
 ];
+
+const durationValueToLabel = {
+  "1_day": "ایک دن",
+  "3_days": "تین دن",
+  "5_days": "پانچ دن",
+  "7_days": "سات دن",
+  "7_days_alt": "ایک ہفتہ",
+  "14_days": "چودہ دن",
+  "21_days": "ایکویں دن",
+  "30_days": "تیس دن",
+  "30_days_alt": "ایک ماہ",
+};
 
 const instructionsOptions = [
   { value: "before_meal", label: "کھانے سے پہلے" },
   { value: "after_meal", label: "کھانے کے بعد" },
+  { value: "with_meal", label: "کھانے کے ساتھ" },
   { value: "with_water", label: "پانی کے ساتھ" },
+  { value: "on_empty_stomach", label: "خالی پیٹ" },
   { value: "as_needed", label: "ضرورت کے مطابق" },
 ];
 
-// Create lookup objects for other categories if needed
-const frequencyValueToLabel = Object.fromEntries(
-  frequencyOptions.map(({ value, label }) => [value, label])
-);
-
-const durationValueToLabel = Object.fromEntries(
-  durationOptions.map(({ value, label }) => [value, label])
-);
-
-const instructionsValueToLabel = Object.fromEntries(
-  instructionsOptions.map(({ value, label }) => [value, label])
-);
+const instructionsValueToLabel = {
+  before_meal: "کھانے سے پہلے",
+  after_meal: "کھانے کے بعد",
+  with_meal: "کھانے کے ساتھ",
+  with_water: "پانی کے ساتھ",
+  on_empty_stomach: "خالی پیٹ",
+  as_needed: "ضرورت کے مطابق",
+};
 
 const EditConsultation = () => {
   const { patientId, consultationId } = useParams();
@@ -203,26 +264,55 @@ const EditConsultation = () => {
     const abortController = new AbortController();
     let isMounted = true;
 
-    const normalizeValue = (value, options, isDosage = false) => {
+    const normalizeValue = (value, options, fieldType = null) => {
       if (!value) return "";
-      if (isDosage && value in dosageValueToLabel) {
-        return dosageValueToLabel[value]; // Map "1.5" to "ڈیڑھ گولی"
+
+      const valueToLabelMaps = {
+        dosage: dosageValueToLabel,
+        frequency: frequencyValueToLabel,
+        duration: durationValueToLabel,
+        instructions: instructionsValueToLabel,
+      };
+
+      // Map English values to Urdu labels for prescription fields
+      if (
+        fieldType &&
+        valueToLabelMaps[fieldType] &&
+        value in valueToLabelMaps[fieldType]
+      ) {
+        return valueToLabelMaps[fieldType][value];
       }
+
+      // Match by value or label
       const exactMatch = options.find(
         (opt) => opt.value === value || opt.label === value
       );
-      if (exactMatch) return isDosage ? exactMatch.label : exactMatch.value;
+      if (exactMatch) return exactMatch.label; // Always return label for prescriptions
+
       const labelMatch = options.find(
         (opt) => opt.label === value || value.includes(opt.label)
       );
-      if (labelMatch) return isDosage ? labelMatch.label : labelMatch.value;
+      if (labelMatch) return labelMatch.label;
+
       // Handle duration aliases
-      const durationAliases = {
-        "سات دن": "7_days_alt",
-        "1 ہفتہ": "7_days_alt",
-      };
-      if (!isDosage && value in durationAliases) return durationAliases[value];
-      console.warn(`No match for value "${value}" in options`, options);
+      if (fieldType === "duration") {
+        const durationAliases = {
+          "سات دن": "ایک ہفتہ",
+          "1 ہفتہ": "ایک ہفتہ",
+          "تیس دن": "ایک ماہ",
+          "1 ماہ": "ایک ماہ",
+        };
+        if (value in durationAliases) return durationAliases[value];
+      }
+
+      // Handle Urdu labels already in data
+      const urduMatch = options.find((opt) => opt.label === value);
+      if (urduMatch) return urduMatch.label;
+
+      console.warn(
+        `No match for value "${value}" in options for ${fieldType}`,
+        options
+      );
       return "";
     };
 
@@ -1197,16 +1287,10 @@ const EditConsultation = () => {
                     label="خوراک"
                     value={med.dosage_urdu}
                     onChange={(val) =>
-                      updateField(
-                        "prescriptions",
-                        index,
-                        "dosage_urdu",
-                        dosageOptions.find((opt) => opt.label === val)?.label ||
-                          val
-                      )
+                      updateField("prescriptions", index, "dosage_urdu", val)
                     }
                     options={dosageOptions.map((opt) => ({
-                      value: opt.label, // Use label as value
+                      value: opt.label,
                       label: opt.label,
                     }))}
                     urdu
@@ -1218,7 +1302,10 @@ const EditConsultation = () => {
                     onChange={(val) =>
                       updateField("prescriptions", index, "frequency_urdu", val)
                     }
-                    options={frequencyOptions}
+                    options={frequencyOptions.map((opt) => ({
+                      value: opt.label,
+                      label: opt.label,
+                    }))}
                     urdu
                     className="flex-1 min-w-[150px]"
                   />
@@ -1228,7 +1315,10 @@ const EditConsultation = () => {
                     onChange={(val) =>
                       updateField("prescriptions", index, "duration_urdu", val)
                     }
-                    options={durationOptions}
+                    options={durationOptions.map((opt) => ({
+                      value: opt.label,
+                      label: opt.label,
+                    }))}
                     urdu
                     className="flex-1 min-w-[150px]"
                   />
@@ -1243,13 +1333,16 @@ const EditConsultation = () => {
                         val
                       )
                     }
-                    options={instructionsOptions}
+                    options={instructionsOptions.map((opt) => ({
+                      value: opt.label,
+                      label: opt.label,
+                    }))}
                     urdu
                     className="flex-1 min-w-[150px]"
                   />
                   <button
                     type="button"
-                    onClick={() => removeMedicine(index)}
+                    onChange={() => removeMedicine(index)}
                     className="text-red-500 hover:text-red-700 transition transform hover:scale-110"
                   >
                     <FaTrash className="w-5 h-5" />
@@ -1263,7 +1356,7 @@ const EditConsultation = () => {
                 disabled={allMedicines.length === 0}
               >
                 <FaPlus />
-                دوائی شامل کریں
+                Add Medicine
               </button>
               {allMedicines.length === 0 && (
                 <p className="mt-2 text-sm text-yellow-600 font-urdu">
