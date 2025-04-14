@@ -130,42 +130,57 @@ const SelectField = ({ label, value, onChange, options, urdu = false }) => (
 );
 
 const dosageOptions = [
-  { value: "0.25", label: "ایک چوتھائی گولی", label_en: "0.25" },
-  { value: "0.5", label: "آدھی گولی", label_en: "0.5" },
-  { value: "1", label: "ایک گولی", label_en: "1" },
-  { value: "1.5", label: "ڈیڑھ گولی", label_en: "1.5" },
-  { value: "2", label: "دو گولیاں", label_en: "2" },
-  { value: "5_ml", label: "پانچ ملی لیٹر", label_en: "5 ml" },
-  { value: "10_ml", label: "دس ملی لیٹر", label_en: "10 ml" },
+  { value: "0.25", label: "ایک چوتھائی گولی" },
+  { value: "0.5", label: "آدھی گولی" },
+  { value: "1", label: "ایک گولی" },
+  { value: "1.5", label: "ڈیڑھ گولی" },
+  { value: "2", label: "دو گولیاں" },
+  { value: "5_ml", label: "پانچ ملی لیٹر" },
+  { value: "10_ml", label: "دس ملی لیٹر" },
 ];
 
+// Create dosageValueToLabel lookup object
+const dosageValueToLabel = Object.fromEntries(
+  dosageOptions.map(({ value, label }) => [value, label])
+);
+
+// Similarly for other options:
 const frequencyOptions = [
-  { value: "morning", label: "صبح", label_en: "Morning" },
-  { value: "once_a_day", label: "دن میں ایک بار", label_en: "Once a day" },
-  { value: "twice_a_day", label: "دن میں دو بار", label_en: "Twice a day" },
-  {
-    value: "three_times_a_day",
-    label: "دن میں تین بار",
-    label_en: "Three times a day",
-  },
-  { value: "as_needed", label: "ضرورت کے مطابق", label_en: "As needed" },
+  { value: "morning", label: "صبح" },
+  { value: "once_a_day", label: "دن میں ایک بار" },
+  { value: "twice_a_day", label: "دن میں دو بار" },
+  { value: "three_times_a_day", label: "دن میں تین بار" },
+  { value: "as_needed", label: "ضرورت کے مطابق" },
 ];
 
 const durationOptions = [
-  { value: "1_day", label: "ایک دن", label_en: "1 day" },
-  { value: "3_days", label: "تین دن", label_en: "3 days" },
-  { value: "7_days", label: "سات دن", label_en: "7 days" },
-  { value: "7_days_alt", label: "1 ہفتہ", label_en: "7 days" },
-  { value: "14_days", label: "چودہ دن", label_en: "14 days" },
-  { value: "30_days", label: "تیس دن", label_en: "30 days" },
+  { value: "1_day", label: "ایک دن" },
+  { value: "3_days", label: "تین دن" },
+  { value: "7_days", label: "سات دن" },
+  { value: "7_days_alt", label: "1 ہفتہ" },
+  { value: "14_days", label: "چودہ دن" },
+  { value: "30_days", label: "تیس دن" },
 ];
 
 const instructionsOptions = [
-  { value: "before_meal", label: "کھانے سے پہلے", label_en: "Before meal" },
-  { value: "after_meal", label: "کھانے کے بعد", label_en: "After meal" },
-  { value: "with_water", label: "پانی کے ساتھ", label_en: "With water" },
-  { value: "as_needed", label: "ضرورت کے مطابق", label_en: "As needed" },
+  { value: "before_meal", label: "کھانے سے پہلے" },
+  { value: "after_meal", label: "کھانے کے بعد" },
+  { value: "with_water", label: "پانی کے ساتھ" },
+  { value: "as_needed", label: "ضرورت کے مطابق" },
 ];
+
+// Create lookup objects for other categories if needed
+const frequencyValueToLabel = Object.fromEntries(
+  frequencyOptions.map(({ value, label }) => [value, label])
+);
+
+const durationValueToLabel = Object.fromEntries(
+  durationOptions.map(({ value, label }) => [value, label])
+);
+
+const instructionsValueToLabel = Object.fromEntries(
+  instructionsOptions.map(({ value, label }) => [value, label])
+);
 
 const EditConsultation = () => {
   const { patientId, consultationId } = useParams();
@@ -188,14 +203,25 @@ const EditConsultation = () => {
     const abortController = new AbortController();
     let isMounted = true;
 
-    const normalizeValue = (value, options) => {
+    const normalizeValue = (value, options, isDosage = false) => {
       if (!value) return "";
-      const exactMatch = options.find((opt) => opt.value === value);
-      if (exactMatch) return exactMatch.value;
+      if (isDosage && value in dosageValueToLabel) {
+        return dosageValueToLabel[value]; // Map "1.5" to "ڈیڑھ گولی"
+      }
+      const exactMatch = options.find(
+        (opt) => opt.value === value || opt.label === value
+      );
+      if (exactMatch) return isDosage ? exactMatch.label : exactMatch.value;
       const labelMatch = options.find(
         (opt) => opt.label === value || value.includes(opt.label)
       );
-      if (labelMatch) return labelMatch.value;
+      if (labelMatch) return isDosage ? labelMatch.label : labelMatch.value;
+      // Handle duration aliases
+      const durationAliases = {
+        "سات دن": "7_days_alt",
+        "1 ہفتہ": "7_days_alt",
+      };
+      if (!isDosage && value in durationAliases) return durationAliases[value];
       console.warn(`No match for value "${value}" in options`, options);
       return "";
     };
@@ -362,46 +388,28 @@ const EditConsultation = () => {
             notes: consultationData.notes || "",
             prescriptions: prescriptions
               .filter((p) => p)
-              .map((pres) => {
-                const dosage_urdu = normalizeValue(
+              .map((pres) => ({
+                medicine_id: pres.medicine_id || "",
+                brand_name: pres.brand_name || "",
+                dosage_urdu: normalizeValue(
                   pres.dosage_urdu,
-                  dosageOptions
-                );
-                const frequency_urdu = normalizeValue(
+                  dosageOptions,
+                  true
+                ),
+                frequency_urdu: normalizeValue(
                   pres.frequency_urdu,
                   frequencyOptions
-                );
-                const duration_urdu = normalizeValue(
+                ),
+                duration_urdu: normalizeValue(
                   pres.duration_urdu,
                   durationOptions
-                );
-                const instructions_urdu = normalizeValue(
+                ),
+                instructions_urdu: normalizeValue(
                   pres.instructions_urdu,
                   instructionsOptions
-                );
-                return {
-                  medicine_id: pres.medicine_id || "",
-                  brand_name: pres.brand_name || "",
-                  dosage_urdu,
-                  dosage_en:
-                    dosageOptions.find((opt) => opt.value === dosage_urdu)
-                      ?.label_en || "",
-                  frequency_urdu,
-                  frequency_en:
-                    frequencyOptions.find((opt) => opt.value === frequency_urdu)
-                      ?.label_en || "",
-                  duration_urdu,
-                  duration_en:
-                    durationOptions.find((opt) => opt.value === duration_urdu)
-                      ?.label_en || "",
-                  instructions_urdu,
-                  instructions_en:
-                    instructionsOptions.find(
-                      (opt) => opt.value === instructions_urdu
-                    )?.label_en || "",
-                  prescribed_at: pres.prescribed_at || new Date().toISOString(),
-                };
-              }),
+                ),
+                prescribed_at: pres.prescribed_at || new Date().toISOString(),
+              })),
             vital_signs: consultationData.vital_signs?.length
               ? consultationData.vital_signs
               : [createNewVitalSign()],
@@ -586,7 +594,7 @@ const EditConsultation = () => {
       }
 
       if (response.status >= 200 && response.status < 300) {
-        handlePrint()
+        handlePrint();
         navigate(`/patients/${patientId}`);
       }
     } catch (error) {
@@ -612,7 +620,6 @@ const EditConsultation = () => {
       alert("Pop-up blocked! Allow pop-ups for this site.");
     }
   };
-
 
   if (editLoading) {
     return (
@@ -1123,7 +1130,6 @@ const EditConsultation = () => {
             </motion.div>
 
             {/* Prescriptions */}
-            {/* Prescriptions */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -1143,7 +1149,7 @@ const EditConsultation = () => {
                   className="mb-4 p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition flex items-center gap-4 flex-wrap"
                 >
                   <div className="flex-1 min-w-[200px]">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                    <label className="block text-sm font-medium text-gray-700 mb-1 font-urdu">
                       دوائی
                     </label>
                     <select
@@ -1191,9 +1197,18 @@ const EditConsultation = () => {
                     label="خوراک"
                     value={med.dosage_urdu}
                     onChange={(val) =>
-                      updateField("prescriptions", index, "dosage_urdu", val)
+                      updateField(
+                        "prescriptions",
+                        index,
+                        "dosage_urdu",
+                        dosageOptions.find((opt) => opt.label === val)?.label ||
+                          val
+                      )
                     }
-                    options={dosageOptions}
+                    options={dosageOptions.map((opt) => ({
+                      value: opt.label, // Use label as value
+                      label: opt.label,
+                    }))}
                     urdu
                     className="flex-1 min-w-[150px]"
                   />
@@ -1248,7 +1263,7 @@ const EditConsultation = () => {
                 disabled={allMedicines.length === 0}
               >
                 <FaPlus />
-                Add Medicine
+                دوائی شامل کریں
               </button>
               {allMedicines.length === 0 && (
                 <p className="mt-2 text-sm text-yellow-600 font-urdu">
