@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useNavigate } from "react-router-dom";
 
 const patientSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -24,7 +25,7 @@ const AddPatientForm = ({ searchedMobile, onSuccess, onClose }) => {
   });
 
   const [loading, setLoading] = useState(false);
-
+  const navigate = useNavigate();
   useEffect(() => {
     if (searchedMobile) {
       setValue("mobile", searchedMobile);
@@ -41,10 +42,30 @@ const AddPatientForm = ({ searchedMobile, onSuccess, onClose }) => {
         mobile: data.mobile,
       });
 
+      const patientId = res.data.id || res.data._id;
+      console.log("AddPatientForm - Backend response:", res.data);
+      console.log("AddPatientForm - Patient ID:", patientId);
+
+      if (!patientId) {
+        throw new Error("Patient ID not found in response");
+      }
+
+      toast.success("Patient registered successfully!", {
+        position: "top-right",
+        autoClose: 2000,
+      });
       
 
       if (onSuccess) onSuccess(); // Trigger any additional success actions
       if (onClose) onClose(); // Close the popup after success
+
+      setTimeout(() => {
+        console.log(
+          "AddPatientForm - Navigating to:",
+          `/patients/${patientId}/consultations/new`
+        );
+        navigate(`/patients/${patientId}/consultations/new`, { replace: true });
+      }, 300);
 
       console.log("Patient Registered:", res.data);
     } catch (error) {

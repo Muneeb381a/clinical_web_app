@@ -319,11 +319,16 @@ const PatientSearch = () => {
     loadPatientFromURL();
   }, [navigate]);
 
-  const handleNewPatientAdded = () => onSearch({ mobile: searchedMobile });
+  // const handleNewPatientAdded = () => onSearch({ mobile: searchedMobile });
+  const handleNewPatientAdded = (patientId) => {
+    console.log("PatientSearch - New patient added with ID:", patientId);
+    setShowAddPatient(false); // Close modal
+    // No navigation or search; AddPatientForm handles it
+  };
   const handleAddConsultation = () => {
     setIsAddingConsultation(true); // Start loader
     const patientId = patient.id || patient._id;
-    // Simulate navigation delay (remove setTimeout in production if navigation is instant)
+    // Simulate navigation delay 
     setTimeout(() => {
       navigate(`/patients/${patientId}/consultations/new`);
       // setIsAddingConsultation(false); // Reset in useEffect or on page load if needed
