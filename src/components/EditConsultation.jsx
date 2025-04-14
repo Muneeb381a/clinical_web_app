@@ -11,57 +11,113 @@ import {
   FaPills,
   FaNotesMedical,
   FaSpinner,
-  FaPrint,
   FaPlus,
   FaTrash,
-  FaThermometerHalf,
-  FaTint,
 } from "react-icons/fa";
-import { SiOxygen } from "react-icons/si";
-import NeuroExamSelect from "./NeuroExamSelect";
+import { motion } from "framer-motion";
 import SymptomsSelector from "./SymptomsSelector";
 import TestsSelector from "./TestsSelector";
-import { motion } from "framer-motion";
+import NeuroExamSelect from "./NeuroExamSelect";
 
-const safeRequest = async (url, options = {}) => {
-  try {
-    const response = await axios({
-      url,
-      timeout: 10000,
-      ...options,
-    });
-    return { data: response.data, error: null };
-  } catch (error) {
-    return { data: null, error };
+const safeRequest = async (url, options = {}, retries = 3, delay = 1000) => {
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await axios({
+        url,
+        timeout: 15000,
+        ...options,
+      });
+      return { data: response.data, error: null };
+    } catch (error) {
+      if (attempt === retries || axios.isCancel(error)) {
+        return { data: null, error };
+      }
+      console.warn(
+        `Attempt ${attempt} failed for ${url}: ${error.message}. Retrying...`
+      );
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
   }
 };
 
-const FormField = ({ label, placeholder, value, onChange, urdu = false }) => (
-  <div>
+const getCachedData = (key) => {
+  try {
+    const data = sessionStorage.getItem(key);
+    return data ? JSON.parse(data) : null;
+  } catch {
+    return null;
+  }
+};
+
+const setCachedData = (key, data) => {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(data));
+  } catch (error) {
+    console.warn(`Failed to cache ${key}: ${error.message}`);
+  }
+};
+
+const FormField = ({
+  label,
+  placeholder,
+  value,
+  onChange,
+  urdu = false,
+  type = "text",
+  min,
+  max,
+}) => (
+  <div className="mb-4">
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {label}
     </label>
     <input
-      type="text"
-      value={value || ""}
-      onChange={(e) => onChange(e.target.value)}
+      type={type}
+      value={value ?? ""}
+      onChange={(e) => {
+        let newValue =
+          type === "number" ? e.target.valueAsNumber || 0 : e.target.value;
+        if (type === "number" && min !== undefined && newValue < min)
+          newValue = min;
+        if (type === "number" && max !== undefined && newValue > max)
+          newValue = max;
+        onChange(newValue);
+      }}
       placeholder={placeholder}
-      className={`w-full p-2 border rounded-md ${urdu ? "font-urdu" : ""}`}
-      dir={urdu ? "rtl" : "ltr"}
+      min={min}
+      max={max}
+      className={`w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition ${
+        urdu ? "font-urdu text-right" : ""
+      }`}
     />
   </div>
 );
 
+const CheckboxField = ({ label, checked, onChange }) => (
+  <div className="mb-4 flex items-center">
+    <input
+      type="checkbox"
+      checked={checked || false}
+      onChange={(e) => onChange(e.target.checked)}
+      className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+    />
+    <label className="ml-2 block text-sm font-medium text-gray-700">
+      {label}
+    </label>
+  </div>
+);
+
 const SelectField = ({ label, value, onChange, options, urdu = false }) => (
-  <div>
+  <div className="mb-4">
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {label}
     </label>
     <select
       value={value || ""}
       onChange={(e) => onChange(e.target.value)}
-      className={`w-full p-2 border rounded-lg ${urdu ? "font-urdu" : ""}`}
-      dir={urdu ? "rtl" : "ltr"}
+      className={`w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition ${
+        urdu ? "font-urdu text-right" : ""
+      }`}
     >
       <option value="">{urdu ? "تعدد منتخب کریں" : "Select Option"}</option>
       {options.map((opt) => (
@@ -73,36 +129,92 @@ const SelectField = ({ label, value, onChange, options, urdu = false }) => (
   </div>
 );
 
+const dosageOptions = [
+  { value: "0.25", label: "ایک چوتھائی گولی", label_en: "0.25" },
+  { value: "0.5", label: "آدھی گولی", label_en: "0.5" },
+  { value: "1", label: "ایک گولی", label_en: "1" },
+  { value: "1.5", label: "ڈیڑھ گولی", label_en: "1.5" },
+  { value: "2", label: "دو گولیاں", label_en: "2" },
+  { value: "5_ml", label: "پانچ ملی لیٹر", label_en: "5 ml" },
+  { value: "10_ml", label: "دس ملی لیٹر", label_en: "10 ml" },
+];
+
+const frequencyOptions = [
+  { value: "morning", label: "صبح", label_en: "Morning" },
+  { value: "once_a_day", label: "دن میں ایک بار", label_en: "Once a day" },
+  { value: "twice_a_day", label: "دن میں دو بار", label_en: "Twice a day" },
+  {
+    value: "three_times_a_day",
+    label: "دن میں تین بار",
+    label_en: "Three times a day",
+  },
+  { value: "as_needed", label: "ضرورت کے مطابق", label_en: "As needed" },
+];
+
+const durationOptions = [
+  { value: "1_day", label: "ایک دن", label_en: "1 day" },
+  { value: "3_days", label: "تین دن", label_en: "3 days" },
+  { value: "7_days", label: "سات دن", label_en: "7 days" },
+  { value: "7_days_alt", label: "1 ہفتہ", label_en: "7 days" },
+  { value: "14_days", label: "چودہ دن", label_en: "14 days" },
+  { value: "30_days", label: "تیس دن", label_en: "30 days" },
+];
+
+const instructionsOptions = [
+  { value: "before_meal", label: "کھانے سے پہلے", label_en: "Before meal" },
+  { value: "after_meal", label: "کھانے کے بعد", label_en: "After meal" },
+  { value: "with_water", label: "پانی کے ساتھ", label_en: "With water" },
+  { value: "as_needed", label: "ضرورت کے مطابق", label_en: "As needed" },
+];
+
 const EditConsultation = () => {
   const { patientId, consultationId } = useParams();
   const navigate = useNavigate();
   const [editFormData, setEditFormData] = useState(null);
-  const [editLoading, setEditLoading] = useState(false);
+  const [editLoading, setEditLoading] = useState(true);
   const [error, setError] = useState("");
-  const [allSymptoms, setAllSymptoms] = useState([]);
-  const [allTests, setAllTests] = useState([]);
-  const [allMedicines, setAllMedicines] = useState([]);
+  const [allSymptoms, setAllSymptoms] = useState(
+    getCachedData("symptoms") || []
+  );
+  const [allTests, setAllTests] = useState(getCachedData("tests") || []);
+  const [allMedicines, setAllMedicines] = useState(
+    getCachedData("medicines") || []
+  );
   const [symptomsError, setSymptomsError] = useState(null);
   const [testsError, setTestsError] = useState(null);
-
-  const handleBloodPressureChange = (value, index) => {
-    // Allow any input but sanitize
-    const sanitized = value
-      .replace(/[^0-9/]/g, "") // Remove non-numeric characters except /
-      .replace(/(\/.*)\//, "$1"); // Prevent multiple slashes
-    updateVitalSign(index, "blood_pressure", sanitized);
-  };
-
-  const handleNumberChange = (value, index, field, min, max) => {
-    // Allow empty or numeric values
-    if (value === "" || (!isNaN(value) && !isNaN(parseFloat(value)))) {
-      updateVitalSign(index, field, value);
-    }
-  };
+  const [prescriptionsError, setPrescriptionsError] = useState(null);
 
   useEffect(() => {
     const abortController = new AbortController();
     let isMounted = true;
+
+    const normalizeValue = (value, options) => {
+      if (!value) return "";
+      const exactMatch = options.find((opt) => opt.value === value);
+      if (exactMatch) return exactMatch.value;
+      const labelMatch = options.find(
+        (opt) => opt.label === value || value.includes(opt.label)
+      );
+      if (labelMatch) return labelMatch.value;
+      console.warn(`No match for value "${value}" in options`, options);
+      return "";
+    };
+
+    const mapSymptomsToIds = (symptoms, allSymptoms) => {
+      if (!Array.isArray(symptoms)) return [];
+      return symptoms
+        .map((symptom) => {
+          if (typeof symptom === "number") return symptom;
+          if (typeof symptom === "string") {
+            const match = allSymptoms.find(
+              (s) => s.name.toLowerCase() === symptom.toLowerCase()
+            );
+            return match ? match.id : null;
+          }
+          return symptom.id || null;
+        })
+        .filter((id) => id !== null);
+    };
 
     const createNewVitalSign = () => ({
       blood_pressure: "",
@@ -114,78 +226,13 @@ const EditConsultation = () => {
       recorded_at: new Date().toISOString(),
     });
 
-    const processItems = (items, reference, key) => {
-      if (!items || !Array.isArray(items)) {
-        console.log(`No ${key} items provided, returning empty array`);
-        return [];
-      }
-      if (!reference || !Array.isArray(reference)) {
-        console.log(`No ${key} reference data available`);
-        return [];
-      }
-
-      const normalizeString = (str) => str?.toString().trim().toLowerCase();
-
-      const processed = items
-        .map((item) => {
-          if (!item) return null;
-
-          // Handle null or invalid item
-          if (
-            typeof item === "object" &&
-            item[key] === null &&
-            item.test_id === null
-          ) {
-            console.log(`Skipping invalid ${key} item:`, item);
-            return null;
-          }
-
-          // Case 1: Item is an ID (number or string)
-          const itemAsId = typeof item === "string" ? parseInt(item, 10) : item;
-          if (typeof itemAsId === "number" && !isNaN(itemAsId)) {
-            const found = reference.find((r) => r && r.id === itemAsId);
-            if (found) return found.id;
-          }
-
-          // Case 2: Item is a string (e.g., "MRI")
-          if (typeof item === "string") {
-            const found = reference.find(
-              (r) => r && normalizeString(r[key]) === normalizeString(item)
-            );
-            if (found) return found.id;
-          }
-
-          // Case 3: Item is an object with id or key
-          if (typeof item === "object") {
-            if (item.id || item.test_id) {
-              const id = item.id || item.test_id;
-              const found = reference.find((r) => r && r.id === id);
-              if (found) return found.id;
-            }
-            if (item[key]) {
-              const found = reference.find(
-                (r) =>
-                  r && normalizeString(r[key]) === normalizeString(item[key])
-              );
-              if (found) return found.id;
-            }
-          }
-
-          console.log(`No match found for ${key} item:`, item);
-          return null;
-        })
-        .filter(Boolean);
-
-      console.log(`Processed ${key} items:`, processed);
-      return processed;
-    };
-
     const fetchData = async () => {
       try {
         setEditLoading(true);
         setError(null);
         setSymptomsError(null);
         setTestsError(null);
+        setPrescriptionsError(null);
 
         const { data: consultationData, error: consultationError } =
           await safeRequest(
@@ -197,86 +244,76 @@ const EditConsultation = () => {
             consultationError?.message || "Consultation not found"
           );
         }
-        console.log("Raw Consultation Data:", consultationData);
-        console.log("Raw Symptoms:", consultationData.symptoms);
-        console.log("Raw Tests:", consultationData.tests);
+        console.log(
+          "Raw Consultation Data:",
+          JSON.stringify(consultationData, null, 2)
+        );
+
+        const cachedSymptoms = getCachedData("symptoms");
+        const cachedTests = getCachedData("tests");
+        const cachedMedicines = getCachedData("medicines");
 
         const [
           { data: symptomsData, error: symptomsError },
           { data: testsData, error: testsError },
           { data: medicinesData, error: medicinesError },
         ] = await Promise.all([
-          safeRequest(
-            "https://patient-management-backend-nine.vercel.app/api/symptoms",
-            { signal: abortController.signal }
-          ),
-          safeRequest(
-            "https://patient-management-backend-nine.vercel.app/api/tests",
-            { signal: abortController.signal }
-          ),
-          safeRequest(
-            "https://patient-management-backend-nine.vercel.app/api/medicines",
-            { signal: abortController.signal }
-          ),
+          cachedSymptoms
+            ? Promise.resolve({ data: cachedSymptoms, error: null })
+            : safeRequest(
+                "https://patient-management-backend-nine.vercel.app/api/symptoms",
+                { signal: abortController.signal }
+              ),
+          cachedTests
+            ? Promise.resolve({ data: cachedTests, error: null })
+            : safeRequest(
+                "https://patient-management-backend-nine.vercel.app/api/tests",
+                { signal: abortController.signal }
+              ),
+          cachedMedicines
+            ? Promise.resolve({ data: cachedMedicines, error: null })
+            : safeRequest(
+                "https://patient-management-backend-nine.vercel.app/api/medicines",
+                { signal: abortController.signal }
+              ),
         ]);
 
-        if (symptomsError) setSymptomsError("Couldn't load symptoms list");
-        if (testsError) setTestsError("Couldn't load tests list");
-        if (medicinesError)
-          console.error("Medicines load error:", medicinesError);
-
         if (isMounted) {
+          if (symptomsError) setSymptomsError("Couldn't load symptoms list");
+          if (testsError) setTestsError("Couldn't load tests list");
+          if (medicinesError)
+            setError(
+              "Couldn't load medicines list. Existing prescriptions will be displayed."
+            );
+
           const referenceData = {
-            symptoms: symptomsData ? symptomsData.filter((s) => s != null) : [],
-            tests: testsData ? testsData.filter((t) => t != null) : [],
-            medicines: medicinesData
-              ? medicinesData.filter((m) => m != null)
-              : [],
+            symptoms: symptomsData ? symptomsData.filter(Boolean) : [],
+            tests: testsData ? testsData.filter(Boolean) : [],
+            medicines: medicinesData ? medicinesData.filter(Boolean) : [],
           };
-          console.log("Reference Symptoms:", referenceData.symptoms);
-          console.log("Reference Tests:", referenceData.tests);
+
+          if (symptomsData && !cachedSymptoms)
+            setCachedData("symptoms", symptomsData);
+          if (testsData && !cachedTests) setCachedData("tests", testsData);
+          if (medicinesData && !cachedMedicines)
+            setCachedData("medicines", medicinesData);
 
           const prescriptions = consultationData.prescriptions || [];
-          const tests = consultationData.tests || [];
-          const follow_ups = consultationData.follow_ups || [];
 
           setAllSymptoms(referenceData.symptoms);
           setAllTests(referenceData.tests);
           setAllMedicines(referenceData.medicines);
 
-          const processedSymptoms = processItems(
-            consultationData.symptoms || [],
-            referenceData.symptoms,
-            "name"
-          );
-          const processedTests = processItems(
-            consultationData.tests || [],
-            referenceData.tests,
-            "test_name"
-          );
-
-          // Filter out invalid test/symptom entries before setting state
-          const validTests = (consultationData.tests || []).filter(
-            (t) => t && (t.test_id !== null || t.test_name !== null)
-          );
-          const validSymptoms = (consultationData.symptoms || []).filter(
-            (s) => s && (s.id !== null || s.name !== null)
-          );
-
-          setEditFormData({
+          const newFormData = {
             ...consultationData,
-            symptoms:
-              processedSymptoms.length > 0
-                ? processedSymptoms
-                : validSymptoms.length > 0
-                ? validSymptoms.map((s) => s.id || s) // Fallback to raw IDs if present
-                : [],
-            tests:
-              processedTests.length > 0
-                ? processedTests
-                : validTests.length > 0
-                ? validTests.map((t) => t.test_id || t.id || t) // Fallback to raw IDs if present
-                : [],
+            symptoms: mapSymptomsToIds(
+              consultationData.symptoms || [],
+              referenceData.symptoms
+            ),
+            rawSymptoms: consultationData.symptoms || [],
+            tests: (consultationData.tests || [])
+              .filter((t) => t && (t.test_id || t.id || typeof t === "number"))
+              .map((t) => t.test_id || t.id || t),
             diagnosis: consultationData.neuro_diagnosis || "",
             treatment_plan: consultationData.neuro_treatment_plan || "",
             motor_function: consultationData.motor_function || "",
@@ -301,6 +338,16 @@ const EditConsultation = () => {
             abnormal_movements: consultationData.abnormal_movements || "",
             nystagmus: consultationData.nystagmus || "",
             fundoscopy: consultationData.fundoscopy || "",
+            finger_nose_test: consultationData.finger_nose_test || "",
+            heel_shin_test: consultationData.heel_shin_test || "",
+            eye_movements: consultationData.eye_movements || "",
+            straight_leg_raise_test:
+              consultationData.straight_leg_raise_test || "",
+            lasegue_test: consultationData.lasegue_test || "",
+            cognitive_assessment: consultationData.cognitive_assessment || "",
+            tremors: consultationData.tremors || "",
+            involuntary_movements: consultationData.involuntary_movements || "",
+            tongue_movement: consultationData.tongue_movement || "",
             brudzinski_sign: consultationData.brudzinski_sign || false,
             kernig_sign: consultationData.kernig_sign || false,
             temperature_sensation:
@@ -313,51 +360,81 @@ const EditConsultation = () => {
             mmse_score: consultationData.mmse_score || "",
             gcs_score: consultationData.gcs_score || "",
             notes: consultationData.notes || "",
-            prescriptions: prescriptions.map((pres) => ({
-              medicine_id:
-                referenceData.medicines.find(
-                  (m) => m && m.id === pres.medicine_id
-                )?.id ||
-                pres.medicine_id ||
-                "",
-              dosage_urdu: pres.dosage_urdu || "",
-              frequency_urdu: pres.frequency_urdu || "",
-              duration_urdu: pres.duration_urdu || "",
-              instructions_urdu: pres.instructions_urdu || "",
-              prescribed_at: pres.prescribed_at || new Date().toISOString(),
-            })),
+            prescriptions: prescriptions
+              .filter((p) => p)
+              .map((pres) => {
+                const dosage_urdu = normalizeValue(
+                  pres.dosage_urdu,
+                  dosageOptions
+                );
+                const frequency_urdu = normalizeValue(
+                  pres.frequency_urdu,
+                  frequencyOptions
+                );
+                const duration_urdu = normalizeValue(
+                  pres.duration_urdu,
+                  durationOptions
+                );
+                const instructions_urdu = normalizeValue(
+                  pres.instructions_urdu,
+                  instructionsOptions
+                );
+                return {
+                  medicine_id: pres.medicine_id || "",
+                  brand_name: pres.brand_name || "",
+                  dosage_urdu,
+                  dosage_en:
+                    dosageOptions.find((opt) => opt.value === dosage_urdu)
+                      ?.label_en || "",
+                  frequency_urdu,
+                  frequency_en:
+                    frequencyOptions.find((opt) => opt.value === frequency_urdu)
+                      ?.label_en || "",
+                  duration_urdu,
+                  duration_en:
+                    durationOptions.find((opt) => opt.value === duration_urdu)
+                      ?.label_en || "",
+                  instructions_urdu,
+                  instructions_en:
+                    instructionsOptions.find(
+                      (opt) => opt.value === instructions_urdu
+                    )?.label_en || "",
+                  prescribed_at: pres.prescribed_at || new Date().toISOString(),
+                };
+              }),
             vital_signs: consultationData.vital_signs?.length
               ? consultationData.vital_signs
               : [createNewVitalSign()],
-            follow_ups:
-              consultationData.follow_ups?.map((f) => ({
-                id: f.id || null, // Add ID for existing entries
-                follow_up_date: f.follow_up_date
-                  ? new Date(f.follow_up_date).toISOString().split("T")[0] // Format for date input
-                  : "",
-                notes: f.notes || "",
-                created_at: f.created_at || new Date().toISOString(), // Preserve creation timestamp
-              })) || [],
-          });
+            follow_ups: (consultationData.follow_ups || []).map((f) => ({
+              id: f.id || null,
+              follow_up_date: f.follow_up_date
+                ? new Date(f.follow_up_date).toISOString().split("T")[0]
+                : "",
+              notes: f.notes || "",
+              created_at: f.created_at || new Date().toISOString(),
+            })),
+          };
 
-          if (processedSymptoms.length === 0 && validSymptoms.length > 0) {
-            setSymptomsError(
-              "Previous symptoms not matched with reference data"
+          setEditFormData(newFormData);
+
+          if (
+            prescriptions.length > 0 &&
+            newFormData.prescriptions.every(
+              (p) =>
+                !p.dosage_urdu &&
+                !p.frequency_urdu &&
+                !p.duration_urdu &&
+                !p.instructions_urdu
+            )
+          ) {
+            setPrescriptionsError(
+              "No valid prescription values loaded (e.g., dosage, frequency)"
             );
-          }
-          if (processedTests.length === 0 && validTests.length > 0) {
-            setTestsError("Previous tests not matched with reference data");
-          }
-          if (consultationData.tests?.length && !validTests.length) {
-            setTestsError("Invalid test data received from consultation");
-          }
-          if (consultationData.symptoms?.length && !validSymptoms.length) {
-            setSymptomsError("Invalid symptom data received from consultation");
           }
         }
       } catch (error) {
         if (isMounted && !axios.isCancel(error)) {
-          setError(error.message);
+          setError(error.message || "Failed to load consultation data");
           console.error("Fetch error:", error);
         }
       } finally {
@@ -387,6 +464,7 @@ const EditConsultation = () => {
         ...(prev.prescriptions || []),
         {
           medicine_id: "",
+          brand_name: "",
           dosage_urdu: "",
           frequency_urdu: "",
           duration_urdu: "",
@@ -394,6 +472,13 @@ const EditConsultation = () => {
           prescribed_at: new Date().toISOString(),
         },
       ],
+    }));
+  };
+
+  const removeMedicine = (index) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      prescriptions: prev.prescriptions.filter((_, i) => i !== index),
     }));
   };
 
@@ -421,7 +506,6 @@ const EditConsultation = () => {
       follow_ups: [
         ...(prev.follow_ups || []),
         {
-          id: null, // Mark as new entry
           follow_up_date: "",
           notes: "",
           created_at: new Date().toISOString(),
@@ -431,25 +515,33 @@ const EditConsultation = () => {
   };
 
   const updateField = (section, index, field, value) => {
-    const newData = [...(editFormData[section] || [])];
-    newData[index][field] = value;
-    setEditFormData((prev) => ({ ...prev, [section]: newData }));
-  };
-
-  const updateVitalSign = (index, field, value) => {
     setEditFormData((prev) => {
-      const newVitalSigns = [...prev.vital_signs];
-      newVitalSigns[index] = {
-        ...newVitalSigns[index],
-        [field]: value,
-      };
-      return { ...prev, vital_signs: newVitalSigns };
+      const newData = [...(prev[section] || [])];
+      newData[index] = { ...newData[index], [field]: value };
+      return { ...prev, [section]: newData };
     });
   };
+
+  const removeSymptom = (symptomId) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      symptoms: prev.symptoms.filter((id) => id !== symptomId),
+    }));
+  };
+
+  const removeTest = (testId) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      tests: prev.tests.filter((id) => id !== testId),
+    }));
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       setEditLoading(true);
+      setError(null);
+      setPrescriptionsError(null);
 
       const payload = {
         ...editFormData,
@@ -457,14 +549,17 @@ const EditConsultation = () => {
         consultation_id: Number(consultationId),
         tests: editFormData.tests,
         prescriptions: editFormData.prescriptions.map((pres) => ({
-          ...pres,
           medicine_id: pres.medicine_id || null,
+          dosage_urdu: pres.dosage_urdu || null,
+          frequency_urdu: pres.frequency_urdu || null,
+          duration_urdu: pres.duration_urdu || null,
+          instructions_urdu: pres.instructions_urdu || null,
+          prescribed_at: pres.prescribed_at,
         })),
-        follow_ups:
-          editFormData.follow_ups?.map((f) => ({
-            follow_up_date: f.follow_up_date,
-            notes: f.notes || null,
-          })) || [],
+        follow_ups: editFormData.follow_ups.map((f) => ({
+          follow_up_date: f.follow_up_date,
+          notes: f.notes || null,
+        })),
       };
 
       const cleanedPayload = Object.fromEntries(
@@ -472,17 +567,10 @@ const EditConsultation = () => {
           ([_, v]) => v !== null && v !== undefined
         )
       );
-      if (cleanedPayload.follow_ups) {
-        const invalidFollowUp = cleanedPayload.follow_ups.find(
-          (f) => !f.follow_up_date
-        );
-        if (invalidFollowUp) {
-          setError("All follow-ups must have a date");
-          return;
-        }
-      }
-
-      console.log("Submitting payload:", cleanedPayload);
+      console.log(
+        "Submitting payload:",
+        JSON.stringify(cleanedPayload, null, 2)
+      );
 
       const response = await axios.put(
         `https://patient-management-backend-nine.vercel.app/api/patients/consultations/${consultationId}`,
@@ -497,9 +585,8 @@ const EditConsultation = () => {
         throw new Error(response.data.message || "Validation failed");
       }
 
-      // Only handle print and navigation on successful update
       if (response.status >= 200 && response.status < 300) {
-        handlePrint();
+        handlePrint()
         navigate(`/patients/${patientId}`);
       }
     } catch (error) {
@@ -509,9 +596,6 @@ const EditConsultation = () => {
           error.message ||
           "Update failed. Please check your input."
       );
-      if (error.response?.data?.code === "22P02") {
-        setError("Invalid data format. Please check numeric fields.");
-      }
     } finally {
       setEditLoading(false);
     }
@@ -529,869 +613,749 @@ const EditConsultation = () => {
     }
   };
 
-  return (
-    <div className="bg-white rounded-xl p-6 w-full max-w-6xl max-h-[90vh] mx-auto mt-10">
-      {editLoading && (
-        <div className="fixed inset-0 bg-white/90 backdrop-blur-sm flex items-center justify-center z-50">
+
+  if (editLoading) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+        <motion.div
+          className="bg-white rounded-2xl shadow-xl p-8 flex items-center gap-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
           <motion.div
             animate={{ rotate: 360 }}
             transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
           >
-            <FaSpinner className="w-12 h-12 text-blue-600" />
+            <FaSpinner className="w-12 h-12 text-teal-500" />
           </motion.div>
-          <p className="text-lg font-medium text-gray-700 ml-4">
-            {editFormData ? "Saving Changes..." : "Loading Consultation..."}
+          <p className="text-lg font-medium text-gray-800">
+            Loading consultation data...
           </p>
-        </div>
-      )}
-      {error && <div className="text-red-600 mb-4">{error}</div>}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-2xl font-bold">Edit Consultation</h2>
-        <button
-          onClick={handleCancel}
-          className="text-gray-500 hover:text-gray-700"
-        >
-          <FaTimes className="text-2xl" />
-        </button>
+        </motion.div>
       </div>
+    );
+  }
 
-      {editFormData ? (
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Patient Information */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <FaUser className="text-blue-500" />
-              Patient Information
-            </h3>
-            <div className="grid grid-cols-2 gap-4">
-              <FormField
-                label="Name"
-                value={editFormData.patient_name}
-                onChange={(val) => handleFormChange("patient_name", val)}
-              />
-              <FormField
-                label="Mobile"
-                value={editFormData.mobile}
-                onChange={(val) => handleFormChange("mobile", val)}
-              />
-            </div>
+  return (
+    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="bg-white rounded-2xl shadow-xl w-full max-w-7xl p-8 max-h-[90vh] overflow-y-auto"
+      >
+        {editLoading && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
+            >
+              <FaSpinner className="w-12 h-12 text-teal-500" />
+            </motion.div>
+            <p className="text-lg font-medium text-white ml-4">
+              Saving Changes...
+            </p>
           </div>
-          {/* Vital Signs Section */}
-          <div className="bg-gray-50 p-6 rounded-xl shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-semibold text-gray-800 flex items-center gap-3">
-                <FaHeartbeat
-                  className="text-red-500 text-xl"
-                  aria-hidden="true"
+        )}
+        {error && (
+          <div className="mb-6 p-4 bg-yellow-100 text-yellow-700 rounded-lg flex items-center gap-2">
+            <FaTimes className="text-yellow-700" />
+            {error}
+          </div>
+        )}
+        {symptomsError && (
+          <div className="mb-6 p-4 bg-yellow-100 text-yellow-700 rounded-lg flex items-center gap-2">
+            <FaTimes className="text-yellow-700" />
+            {symptomsError}
+          </div>
+        )}
+        {testsError && (
+          <div className="mb-6 p-4 bg-yellow-100 text-yellow-700 rounded-lg flex items-center gap-2">
+            <FaTimes className="text-yellow-700" />
+            {testsError}
+          </div>
+        )}
+        {prescriptionsError && (
+          <div className="mb-6 p-4 bg-yellow-100 text-yellow-700 rounded-lg flex items-center gap-2">
+            <FaTimes className="text-yellow-700" />
+            {prescriptionsError}
+          </div>
+        )}
+
+        <div className="flex justify-between items-center mb-8">
+          <h2 className="text-3xl font-bold text-gray-800">
+            Edit Consultation
+          </h2>
+          <button
+            onClick={handleCancel}
+            className="text-gray-500 hover:text-gray-700 transition transform hover:scale-110"
+          >
+            <FaTimes className="text-2xl" />
+          </button>
+        </div>
+
+        {editFormData ? (
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Patient Information */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+            >
+              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
+                <FaUser className="text-teal-600 w-6 h-6" />
+                Patient Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  label="Patient Name"
+                  value={editFormData.patient_name}
+                  onChange={(val) => handleFormChange("patient_name", val)}
+                  placeholder="Enter patient name"
                 />
+                <FormField
+                  label="Mobile"
+                  value={editFormData.mobile}
+                  onChange={(val) => handleFormChange("mobile", val)}
+                  placeholder="Enter mobile number"
+                />
+                <FormField
+                  label="Visit Date"
+                  type="date"
+                  value={editFormData.visit_date?.split("T")[0] || ""}
+                  onChange={(val) => handleFormChange("visit_date", val)}
+                />
+                <FormField
+                  label="Age"
+                  type="number"
+                  value={editFormData.age}
+                  onChange={(val) => handleFormChange("age", val)}
+                  placeholder="Enter age"
+                />
+                <SelectField
+                  label="Gender"
+                  value={editFormData.gender}
+                  onChange={(val) => handleFormChange("gender", val)}
+                  options={[
+                    { value: "Male", label: "Male" },
+                    { value: "Female", label: "Female" },
+                    { value: "Other", label: "Other" },
+                  ]}
+                />
+              </div>
+            </motion.div>
+
+            {/* Vital Signs */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+            >
+              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
+                <FaHeartbeat className="text-red-600 w-6 h-6" />
                 Vital Signs
               </h3>
-            </div>
-
-            {editFormData.vital_signs?.map((vital, index) => (
-              <div
-                key={`vital-${vital.recorded_at}-${index}`}
-                className="mb-4 p-4 bg-white rounded-lg border border-gray-200 shadow-xs"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-x-4 gap-y-4">
+              {editFormData.vital_signs?.map((vital, index) => (
+                <div
+                  key={index}
+                  className="mb-4 p-4 bg-white rounded-lg shadow-inner grid grid-cols-1 md:grid-cols-3 gap-4"
+                >
                   <FormField
-                    label="Blood Pressure (mmHg)"
-                    placeholder="120/80"
-                    value={vital.blood_pressure || ""}
-                    onChange={(val) => handleBloodPressureChange(val, index)}
-                    type="text"
-                    inputClassName="text-center"
-                    icon={
-                      <FaTint className="text-gray-400" aria-hidden="true" />
-                    }
-                    pattern="^\d{2,3}\/\d{2,3}$"
-                    errorMessage="Please use format 120/80"
-                  />
-
-                  <FormField
-                    label="Pulse Rate (bpm)"
-                    placeholder="e.g., 72"
-                    value={vital.pulse_rate || ""}
+                    label="Blood Pressure"
+                    placeholder="e.g., 120/80"
+                    value={vital.blood_pressure}
                     onChange={(val) =>
-                      handleNumberChange(val, index, "pulse_rate", 30, 200)
+                      updateField("vital_signs", index, "blood_pressure", val)
                     }
-                    type="number"
-                    inputClassName="text-center"
-                    icon={
-                      <FaHeartbeat
-                        className="text-gray-400"
-                        aria-hidden="true"
-                      />
-                    }
-                    min="30"
-                    max="200"
                   />
-
                   <FormField
-                    label="Temperature (°C)"
-                    placeholder="36.5"
-                    value={vital.temperature || ""}
+                    label="Pulse Rate"
+                    placeholder="e.g., 80"
+                    value={vital.pulse_rate}
                     onChange={(val) =>
-                      handleNumberChange(val, index, "temperature", 35, 42)
+                      updateField("vital_signs", index, "pulse_rate", val)
                     }
-                    type="number"
-                    step="0.1"
-                    inputClassName="text-center"
-                    icon={
-                      <FaThermometerHalf
-                        className="text-gray-400"
-                        aria-hidden="true"
-                      />
-                    }
-                    min="35"
-                    max="42"
                   />
-
                   <FormField
-                    label="SpO2 (%)"
-                    placeholder="98"
-                    value={vital.spo2_level || ""}
+                    label="Temperature"
+                    placeholder="e.g., 98.6"
+                    value={vital.temperature}
                     onChange={(val) =>
-                      handleNumberChange(val, index, "spo2_level", 70, 100)
+                      updateField("vital_signs", index, "temperature", val)
                     }
-                    type="number"
-                    inputClassName="text-center"
-                    icon={
-                      <SiOxygen className="text-gray-400" aria-hidden="true" />
-                    }
-                    min="70"
-                    max="100"
                   />
-
-                  {/* Additional Fields */}
+                  <FormField
+                    label="SpO2 Level"
+                    placeholder="e.g., 98"
+                    value={vital.spo2_level}
+                    onChange={(val) =>
+                      updateField("vital_signs", index, "spo2_level", val)
+                    }
+                  />
                   <FormField
                     label="NIHSS Score"
-                    placeholder="0-42"
+                    placeholder="e.g., 0"
                     value={vital.nihss_score}
                     onChange={(val) =>
-                      handleNumberChange(val, index, "nihss_score", 0, 42)
+                      updateField("vital_signs", index, "nihss_score", val)
                     }
-                    type="number"
-                    min="0"
-                    max="42"
                   />
-
-                  <FormField
-                    label="Fall Assessment Risk"
+                  <SelectField
+                    label="Fall Assessment"
                     value={vital.fall_assessment}
                     onChange={(val) =>
                       updateField("vital_signs", index, "fall_assessment", val)
                     }
-                    type="select"
-                    options={["Done", "Not Done"]}
+                    options={[
+                      { value: "Done", label: "Done" },
+                      { value: "Not Done", label: "Not Done" },
+                    ]}
                   />
                 </div>
-              </div>
-            ))}
-          </div>
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <FaStethoscope className="text-green-500" />
-              Symptoms
-            </h3>
+              ))}
+              <button
+                type="button"
+                onClick={addVitalSign}
+                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
+              >
+                <FaPlus />
+                Add Vital Sign
+              </button>
+            </motion.div>
 
-            <SymptomsSelector
-              allSymptoms={allSymptoms}
-              selectedSymptoms={editFormData?.symptoms || []}
-              onSelect={(selectedIds) => {
-                console.log("Selected Symptoms:", selectedIds);
-                handleFormChange("symptoms", [...new Set(selectedIds)]);
-              }}
-              onRemove={(removedId) => {
-                console.log("Removing Symptom:", removedId);
-                handleFormChange(
-                  "symptoms",
-                  editFormData.symptoms.filter((id) => id !== removedId)
-                );
-              }}
-            />
-          </div>
+            {/* Symptoms */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+            >
+              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
+                <FaStethoscope className="text-blue-600 w-6 h-6" />
+                Symptoms
+              </h3>
+              <SymptomsSelector
+                allSymptoms={allSymptoms}
+                selectedSymptoms={editFormData.symptoms}
+                rawSymptoms={editFormData.rawSymptoms || []}
+                onSelect={(val) => handleFormChange("symptoms", val)}
+                onRemove={removeSymptom}
+              />
+            </motion.div>
 
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <FaFlask className="text-purple-500" />
-              Tests
-            </h3>
-            {testsError ? (
-              <div>
-                <p className="text-red-600">{testsError}</p>
-                <p className="text-yellow-600">
-                  Invalid test IDs:{" "}
-                  {editFormData.tests
-                    .filter((id) => !allTests.some((test) => test.id === id))
-                    .join(", ")}
-                </p>
-                <p className="text-yellow-600">
-                  Raw tests: {JSON.stringify(editFormData?.tests || [])}
-                </p>
-              </div>
-            ) : (
+            {/* Tests */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+            >
+              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
+                <FaFlask className="text-green-600 w-6 h-6" />
+                Tests
+              </h3>
               <TestsSelector
                 allTests={allTests}
-                selectedTests={editFormData.tests.filter((id) =>
-                  allTests.some((test) => test.id === id)
-                )}
-                onSelect={(selected) => {
-                  console.log("Selected Tests:", selected);
-                  handleFormChange("tests", selected);
-                }}
-                onRemove={(testId) => {
-                  console.log("Removing Test:", testId);
-                  handleFormChange(
-                    "tests",
-                    editFormData.tests.filter((t) => t !== testId)
-                  );
-                }}
+                selectedTests={editFormData.tests}
+                onSelect={(val) => handleFormChange("tests", val)}
+                onRemove={removeTest}
               />
-            )}
-          </div>
-          {/* Neurological Examination Section */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
-              <FaBrain className="text-purple-600" />
-              Neurological Examination
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <NeuroExamSelect
-                field="motor_function"
-                value={editFormData.motor_function || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="muscle_tone"
-                value={editFormData.muscle_tone || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="muscle_strength"
-                value={editFormData.muscle_strength || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="coordination"
-                value={editFormData.coordination || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="deep_tendon_reflexes"
-                value={editFormData.deep_tendon_reflexes || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="gait_assessment"
-                value={editFormData.gait_assessment || ""}
-                onChange={handleFormChange}
-              />
+            </motion.div>
 
-              <NeuroExamSelect
-                field="cranial_nerves"
-                value={editFormData.cranial_nerves || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="romberg_test"
-                value={editFormData.romberg_test || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="plantar_reflex"
-                value={editFormData.plantar_reflex || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="straight_leg_raise_left"
-                value={editFormData.straight_leg_raise_left || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="straight_leg_raise_right"
-                value={editFormData.straight_leg_raise_right || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="speech_assessment"
-                value={editFormData.speech_assessment || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="pupillary_reaction"
-                value={editFormData.pupillary_reaction || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="sensory_examination"
-                value={editFormData.sensory_examination || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="cranial_nerves"
-                value={editFormData.cranial_nerves || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="mental_status"
-                value={editFormData.mental_status || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="cerebellar_function"
-                value={editFormData.cerebellar_function || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="muscle_wasting"
-                value={editFormData.muscle_wasting || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="abnormal_movements"
-                value={editFormData.abnormal_movements || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="nystagmus"
-                value={editFormData.nystagmus || ""}
-                onChange={handleFormChange}
-              />
-              <NeuroExamSelect
-                field="fundoscopy"
-                value={editFormData.fundoscopy || ""}
-                onChange={handleFormChange}
-              />
-            </div>
-            <div className="flex flex-col gap-4 w-full">
-              {/* Checkboxes Container */}
-              <div className="w-full flex flex-wrap p-2 bg-white rounded-xl border border-gray-200 shadow-sm">
-                {[
-                  { key: "brudzinski_sign", label: "Brudzinski's" },
-                  { key: "kernig_sign", label: "Kernig's" },
-                  { key: "temperature_sensation", label: "Temp Sense" },
-                  { key: "pain_sensation", label: "Pain Sense" },
-                  { key: "vibration_sense", label: "Vibration" },
-                  { key: "proprioception", label: "Proprioception" },
-                  { key: "facial_sensation", label: "Facial" },
-                  { key: "swallowing_function", label: "Swallowing" },
-                ].map(({ key, label }) => (
-                  <label
-                    key={key}
-                    className="flex items-center gap-1 p-2 rounded-md hover:bg-gray-50 transition-colors flex-1 min-w-[180px] max-w-[200px]"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={editFormData[key] || false}
-                      onChange={(e) => handleFormChange(key, e.target.checked)}
-                      className="form-checkbox h-4 w-4 text-purple-500 border-gray-300 rounded focus:ring-purple-500"
+            {/* Neurological Examination */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+            >
+              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
+                <FaBrain className="text-purple-600 w-6 h-6" />
+                Neurological Examination
+              </h3>
+              <div className="space-y-8">
+                {/* Dropdown Fields */}
+                <div>
+                  <h4 className="text-lg font-medium text-gray-700 mb-4">
+                    Examination Details
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <NeuroExamSelect
+                      field="motor_function"
+                      value={editFormData.motor_function}
+                      onChange={handleFormChange}
                     />
-                    <span className="text-sm text-gray-700 truncate">
-                      {label}
-                    </span>
-                  </label>
-                ))}
-              </div>
-
-              {/* Form Fields */}
-              <div className="w-full flex flex-col md:flex-row gap-4">
-                <div className="w-full md:w-1/2">
-                  <FormField
-                    label="MMSE Score (0-30)"
-                    placeholder="e.g., 28"
-                    value={editFormData?.mmse_score || ""}
-                    onChange={(val) => handleFormChange("mmse_score", val)}
-                  />
+                    <NeuroExamSelect
+                      field="muscle_tone"
+                      value={editFormData.muscle_tone}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="muscle_strength"
+                      value={editFormData.muscle_strength}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="coordination"
+                      value={editFormData.coordination}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="deep_tendon_reflexes"
+                      value={editFormData.deep_tendon_reflexes}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="gait_assessment"
+                      value={editFormData.gait_assessment}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="cranial_nerves"
+                      value={editFormData.cranial_nerves}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="romberg_test"
+                      value={editFormData.romberg_test}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="plantar_reflex"
+                      value={editFormData.plantar_reflex}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="straight_leg_raise_left"
+                      value={editFormData.straight_leg_raise_left}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="straight_leg_raise_right"
+                      value={editFormData.straight_leg_raise_right}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="pupillary_reaction"
+                      value={editFormData.pupillary_reaction}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="speech_assessment"
+                      value={editFormData.speech_assessment}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="sensory_examination"
+                      value={editFormData.sensory_examination}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="mental_status"
+                      value={editFormData.mental_status}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="cerebellar_function"
+                      value={editFormData.cerebellar_function}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="muscle_wasting"
+                      value={editFormData.muscle_wasting}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="abnormal_movements"
+                      value={editFormData.abnormal_movements}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="nystagmus"
+                      value={editFormData.nystagmus}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="fundoscopy"
+                      value={editFormData.fundoscopy}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="finger_nose_test"
+                      value={editFormData.finger_nose_test}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="heel_shin_test"
+                      value={editFormData.heel_shin_test}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="eye_movements"
+                      value={editFormData.eye_movements}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="straight_leg_raise_test"
+                      value={editFormData.straight_leg_raise_test}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="lasegue_test"
+                      value={editFormData.lasegue_test}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="cognitive_assessment"
+                      value={editFormData.cognitive_assessment}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="tremors"
+                      value={editFormData.tremors}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="involuntary_movements"
+                      value={editFormData.involuntary_movements}
+                      onChange={handleFormChange}
+                    />
+                    <NeuroExamSelect
+                      field="tongue_movement"
+                      value={editFormData.tongue_movement}
+                      onChange={handleFormChange}
+                    />
+                  </div>
                 </div>
-                <div className="w-full md:w-1/2">
-                  <FormField
-                    label="GCS Score (3-15)"
-                    placeholder="e.g., 15"
-                    value={editFormData?.gcs_score || ""}
-                    onChange={(val) => handleFormChange("gcs_score", val)}
-                  />
+
+                {/* Checkbox Fields */}
+                <div>
+                  <h4 className="text-lg font-medium text-gray-700 mb-4">
+                    Sensory and Neurological Signs
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <CheckboxField
+                      label="Brudzinski Sign"
+                      checked={editFormData.brudzinski_sign}
+                      onChange={(val) =>
+                        handleFormChange("brudzinski_sign", val)
+                      }
+                    />
+                    <CheckboxField
+                      label="Kernig Sign"
+                      checked={editFormData.kernig_sign}
+                      onChange={(val) => handleFormChange("kernig_sign", val)}
+                    />
+                    <CheckboxField
+                      label="Temperature Sensation"
+                      checked={editFormData.temperature_sensation}
+                      onChange={(val) =>
+                        handleFormChange("temperature_sensation", val)
+                      }
+                    />
+                    <CheckboxField
+                      label="Pain Sensation"
+                      checked={editFormData.pain_sensation}
+                      onChange={(val) =>
+                        handleFormChange("pain_sensation", val)
+                      }
+                    />
+                    <CheckboxField
+                      label="Vibration Sense"
+                      checked={editFormData.vibration_sense}
+                      onChange={(val) =>
+                        handleFormChange("vibration_sense", val)
+                      }
+                    />
+                    <CheckboxField
+                      label="Proprioception"
+                      checked={editFormData.proprioception}
+                      onChange={(val) =>
+                        handleFormChange("proprioception", val)
+                      }
+                    />
+                    <CheckboxField
+                      label="Facial Sensation"
+                      checked={editFormData.facial_sensation}
+                      onChange={(val) =>
+                        handleFormChange("facial_sensation", val)
+                      }
+                    />
+                    <CheckboxField
+                      label="Swallowing Function"
+                      checked={editFormData.swallowing_function}
+                      onChange={(val) =>
+                        handleFormChange("swallowing_function", val)
+                      }
+                    />
+                  </div>
+                </div>
+
+                {/* Score Fields */}
+                <div>
+                  <h4 className="text-lg font-medium text-gray-700 mb-4">
+                    Cognitive Scores
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      label="MMSE Score (0–30)"
+                      type="number"
+                      value={editFormData.mmse_score}
+                      onChange={(val) => handleFormChange("mmse_score", val)}
+                      placeholder="Enter MMSE score"
+                      min={0}
+                      max={30}
+                    />
+                    <FormField
+                      label="GCS Score (3–15)"
+                      type="number"
+                      value={editFormData.gcs_score}
+                      onChange={(val) => handleFormChange("gcs_score", val)}
+                      placeholder="Enter GCS score"
+                      min={3}
+                      max={15}
+                    />
+                  </div>
                 </div>
               </div>
-              <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Treatment Plan
-                </label>
-                <textarea
-                  value={editFormData.treatment_plan || ""}
-                  onChange={(e) =>
-                    handleFormChange("treatment_plan", e.target.value)
-                  }
-                  className="w-full p-3 border rounded-lg"
-                  rows="3"
-                  placeholder="Additional examination findings..."
-                />
-              </div>
-            </div>
-          </div>
-          {/* Prescriptions Section */}
-          <div className="bg-gray-50 p-6 rounded-xl shadow-sm">
-            <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-gray-800">
-              <FaPills className="text-purple-600 w-6 h-6" />
-              Prescription
-            </h3>
+            </motion.div>
 
-            {editFormData.prescriptions?.map((med, index) => (
-              <div
-                key={index}
-                className="mb-5 p-5 bg-white rounded-xl border border-gray-200 shadow-xs hover:shadow-sm transition-shadow"
-              >
-                <div className="grid grid-cols-1 md:grid-cols-6 gap-2 items-start">
-                  {/* Medicine Selection */}
-                  <div className="md:col-span-2">
-                    <label className="block text-sm font-semibold text-gray-700 mb-2">
-                      Medication Selection
+            {/* Prescriptions */}
+            {/* Prescriptions */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+            >
+              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
+                <FaPills className="text-indigo-600 w-6 h-6" />
+                Prescriptions
+              </h3>
+              {editFormData.prescriptions?.map((med, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="mb-4 p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition flex items-center gap-4 flex-wrap"
+                >
+                  <div className="flex-1 min-w-[200px]">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      دوائی
                     </label>
                     <select
                       value={med.medicine_id || ""}
-                      onChange={(e) =>
+                      onChange={(e) => {
+                        const selectedMedicine = allMedicines.find(
+                          (m) => m.id === parseInt(e.target.value)
+                        );
                         updateField(
                           "prescriptions",
                           index,
                           "medicine_id",
                           e.target.value
-                        )
-                      }
-                      className="w-full px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+                        );
+                        updateField(
+                          "prescriptions",
+                          index,
+                          "brand_name",
+                          selectedMedicine?.brand_name || ""
+                        );
+                      }}
+                      className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition font-urdu text-right"
+                      disabled={allMedicines.length === 0 && !med.brand_name}
                     >
-                      <option value="" className="text-gray-400">
-                        Choose Medication
+                      <option value="">
+                        {allMedicines.length === 0 && med.brand_name
+                          ? med.brand_name
+                          : "دوائی منتخب کریں"}
                       </option>
-                      {allMedicines.map((medicine) => (
-                        <option
-                          key={medicine.id}
-                          value={medicine.id}
-                          className="text-gray-700"
-                        >
-                          {medicine.form} {medicine.brand_name}
-                          {medicine.strength && ` (${medicine.strength})`}
-                          {medicine.generic_name &&
-                            ` - ${medicine.generic_name}`}
-                        </option>
-                      ))}
+                      {allMedicines.length > 0
+                        ? allMedicines.map((medicine) => (
+                            <option key={medicine.id} value={medicine.id}>
+                              {medicine.form || ""} {medicine.brand_name || ""}{" "}
+                              {medicine.strength || ""}
+                            </option>
+                          ))
+                        : med.brand_name && (
+                            <option value={med.medicine_id}>
+                              {med.brand_name}
+                            </option>
+                          )}
                     </select>
                   </div>
-
-                  {/* Dosage Field */}
-                  <div className="md:col-span-1">
-                    <SelectField
-                      label="Dosage (Urdu)"
-                      value={med.dosage_urdu}
-                      onChange={(val) =>
-                        updateField("prescriptions", index, "dosage_urdu", val)
-                      }
-                      options={[
-                        { value: "0.25", label: "ایک چوتھائی گولی " },
-                        { value: "0.5", label: "آدھی گولی " },
-                        {
-                          value: "headache_severe",
-                          label: "شدید سر درد کے لیے",
-                        },
-                        { value: "0.75", label: "تین چوتھائی گولی " },
-                        { value: "1", label: "ایک گولی" },
-                        { value: "1.5", label: "ڈیڑھ گولی " },
-                        { value: "2", label: "دو گولیاں " },
-                        { value: "2.5", label: "ڈھائی گولیاں" },
-                        { value: "3", label: "تین گولیاں " },
-                        { value: "3.5", label: "ساڑھے تین گولیاں " },
-                        { value: "4", label: "چار گولیاں " },
-                        { value: "5", label: "پانچ گولیاں" },
-                        { value: "6", label: "چھ گولیاں " },
-                        { value: "7", label: "سات گولیاں " },
-                        { value: "8", label: "آٹھ گولیاں " },
-                        { value: "10", label: "دس گولیاں " },
-                        { value: "half_spoon", label: "آدھا چمچ " },
-                        { value: "one_spoon", label: "ایک چمچ" },
-                        { value: "one_and_half_spoon", label: "ڈیڑھ چمچ " },
-                        { value: "two_spoons", label: "دو چمچ" },
-                        { value: "three_spoons", label: "تین چمچ " },
-                        { value: "1_ml", label: "ایک ملی لیٹر " },
-                        { value: "2_ml", label: "دو ملی لیٹر " },
-                        { value: "2.5_ml", label: "ڈھائی ملی لیٹر " },
-                        { value: "5_ml", label: "پانچ ملی لیٹر " },
-                        { value: "7.5_ml", label: "ساڑھے سات ملی لیٹر " },
-                        { value: "10_ml", label: "دس ملی لیٹر " },
-                        { value: "15_ml", label: "پندرہ ملی لیٹر " },
-                        { value: "20_ml", label: "بیس ملی لیٹر " },
-                        { value: "25_ml", label: "پچیس ملی لیٹر " },
-                        { value: "30_ml", label: "تیس ملی لیٹر " },
-                        { value: "3_ml", label: "تین ملی لیٹر " },
-                        { value: "4_ml", label: "چار ملی لیٹر " },
-                        { value: "6_ml", label: "چھہ ملی لیٹر " },
-                        { value: "8_ml", label: "آٹھ ملی لیٹر " },
-                        { value: "9_ml", label: "نو ملی لیٹر " },
-                        { value: "12.5_ml", label: "ساڑھے بارہ ملی لیٹر " },
-                        { value: "50_ml", label: "پچاس ملی لیٹر " },
-                        { value: "100_ml", label: "سو ملی لیٹر " },
-                        { value: "3_ml", label: "تین ملی لیٹر " },
-                        { value: "3.5_ml", label: "ساڑھے تین ملی لیٹر " },
-                        { value: "4_ml", label: "چار ملی لیٹر " },
-                        { value: "4.5_ml", label: "ساڑھے چار ملی لیٹر " },
-                        { value: "5_ml", label: "پانچ ملی لیٹر " },
-                        { value: "one_droplet", label: "ایک قطرہ " },
-                        { value: "two_droplets", label: "دو قطرے " },
-                        { value: "three_droplets", label: "تین قطرے " },
-                        { value: "five_droplets", label: "پانچ قطرے " },
-                        { value: "ten_droplets", label: "دس قطرے " },
-                        { value: "half_injection", label: "آدھا ٹیکہ " },
-                        { value: "one_injection", label: "ایک ٹیکہ " },
-                        { value: "two_injections", label: "دو ٹیکے " },
-                        { value: "three_injections", label: "تین ٹیکے " },
-                        { value: "half_sachet", label: "آدھا ساشے " },
-                        { value: "one_sachet", label: "ایک ساشے " },
-                        { value: "two_sachets", label: "دو ساشے " },
-                        { value: "three_sachets", label: "تین ساشے " },
-                        { value: "as_needed", label: "ضرورت کے مطابق " },
-                        { value: "before_meal", label: "کھانے سے پہلے " },
-                        { value: "after_meal", label: "کھانے کے بعد " },
-                        { value: "every_6_hours", label: "ہر 6 گھنٹے بعد " },
-                        { value: "every_8_hours", label: "ہر 8 گھنٹے بعد " },
-                        { value: "every_12_hours", label: "ہر 12 گھنٹے بعد " },
-                        { value: "once_a_day", label: "دن میں ایک بار " },
-                        { value: "twice_a_day", label: "دن میں دو بار " },
-                        {
-                          value: "three_times_a_day",
-                          label: "دن میں تین بار ",
-                        },
-                        { value: "four_times_a_day", label: "دن میں چار بار " },
-                      ]}
-                      urdu
-                      selectClassName="px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-lg direction-rtl hover:border-gray-300 transition-colors"
-                    />
-                  </div>
-
-                  {/* Frequency Field */}
-                  <div className="md:col-span-1">
-                    <SelectField
-                      label="Frequency (Urdu)"
-                      value={med.frequency_urdu}
-                      onChange={(val) =>
-                        updateField(
-                          "prescriptions",
-                          index,
-                          "frequency_urdu",
-                          val
-                        )
-                      }
-                      options={[
-                        { label: "صبح", value: "صبح" },
-                        { label: "دوپہر", value: "دوپہر" },
-                        { label: "شام", value: "شام" },
-                        { label: "رات", value: "رات" },
-                        { label: "صبح، شام", value: "صبح، شام" },
-                        { label: "صبح، رات", value: "صبح، رات" },
-                        { label: "دوپہر، شام", value: "دوپہر، شام" },
-                        { label: "دوپہر، رات", value: "دوپہر، رات" },
-                        { label: "صبح، شام، رات", value: "صبح، شام، رات" },
-                        { label: "صبح، دوپہر، شام", value: "صبح، دوپہر، شام" },
-                        { label: "حسب ضرورت", value: "حسب ضرورت" },
-                        { label: "صبح، دوپہر، رات", value: "صبح، دوپہر، رات" },
-                        { label: "دوپہر، شام، رات", value: "دوپہر، شام، رات" },
-                        { label: "صبح سویرے", value: "صبح سویرے" },
-                        { label: "دیر صبح", value: "دیر صبح" },
-                        { label: "دیر دوپہر", value: "دیر دوپہر" },
-                        { label: "غروب آفتاب", value: "غروب آفتاب" },
-                        { label: "آدھی رات", value: "آدھی رات" },
-                        { label: "رات دیر گئے", value: "رات دیر گئے" },
-                        { label: "صبح، دوپہر", value: "صبح، دوپہر" },
-                        { label: "شام، رات", value: "شام، رات" },
-                        { label: "صبح سویرے، رات", value: "صبح سویرے، رات" },
-                        { label: "صبح، دیر دوپہر", value: "صبح، دیر دوپہر" },
-                        {
-                          label: "دوپہر، غروب آفتاب",
-                          value: "دوپہر، غروب آفتاب",
-                        },
-                        { label: "پورا دن", value: "پورا دن" },
-                        { label: "پوری رات", value: "پوری رات" },
-                        { label: "چوبیس گھنٹے", value: "چوبیس گھنٹے" },
-                      ]}
-                      urdu
-                      selectClassName="px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-lg direction-rtl hover:border-gray-300 transition-colors"
-                    />
-                  </div>
-
-                  {/* Duration Field */}
-                  <div className="md:col-span-1">
-                    <SelectField
-                      label="Duration (Urdu)"
-                      value={med.duration_urdu}
-                      onChange={(val) =>
-                        updateField(
-                          "prescriptions",
-                          index,
-                          "duration_urdu",
-                          val
-                        )
-                      }
-                      options={[
-                        { value: "0.25", label: "ایک چوتھائی گولی" },
-                        { value: "0.5", label: "آدھی گولی" },
-                        {
-                          value: "headache_severe",
-                          label: "شدید سر درد کے لیے",
-                        },
-                        { value: "0.75", label: "تین چوتھائی گولی" },
-                        { value: "1", label: "ایک گولی" },
-                        { value: "1.5", label: "ڈیڑھ گولی" },
-                        { value: "2", label: "دو گولیاں" },
-                        { value: "2.5", label: "ڈھائی گولیاں" },
-                        { value: "3", label: "تین گولیاں" },
-                        { value: "3.5", label: "ساڑھے تین گولیاں" },
-                        { value: "4", label: "چار گولیاں" },
-                        { value: "5", label: "پانچ گولیاں" },
-                        { value: "6", label: "چھ گولیاں" },
-                        { value: "7", label: "سات گولیاں" },
-                        { value: "8", label: "آٹھ گولیاں" },
-                        { value: "10", label: "دس گولیاں" },
-                        { value: "half_spoon", label: "آدھا چمچ" },
-                        { value: "one_spoon", label: "ایک چمچ" },
-                        { value: "one_and_half_spoon", label: "ڈیڑھ چمچ" },
-                        { value: "two_spoons", label: "دو چمچ" },
-                        { value: "three_spoons", label: "تین چمچ" },
-                        { value: "1_ml", label: "ایک ملی لیٹر" },
-                        { value: "2_ml", label: "دو ملی لیٹر" },
-                        { value: "2.5_ml", label: "ڈھائی ملی لیٹر" },
-                        { value: "5_ml", label: "پانچ ملی لیٹر" },
-                        { value: "7.5_ml", label: "ساڑھے سات ملی لیٹر" },
-                        { value: "10_ml", label: "دس ملی لیٹر" },
-                        { value: "15_ml", label: "پندرہ ملی لیٹر" },
-                        { value: "20_ml", label: "بیس ملی لیٹر" },
-                        { value: "25_ml", label: "پچیس ملی لیٹر" },
-                        { value: "30_ml", label: "تیس ملی لیٹر" },
-                        { value: "3_ml", label: "تین ملی لیٹر" },
-                        { value: "4_ml", label: "چار ملی لیٹر" },
-                        { value: "6_ml", label: "چھ ملی لیٹر" },
-                        { value: "8_ml", label: "آٹھ ملی لیٹر" },
-                        { value: "9_ml", label: "نو ملی لیٹر" },
-                        { value: "12.5_ml", label: "ساڑھے بارہ ملی لیٹر" },
-                        { value: "50_ml", label: "پچاس ملی لیٹر" },
-                        { value: "100_ml", label: "سو ملی لیٹر" },
-                        { value: "one_droplet", label: "ایک قطرہ" },
-                        { value: "two_droplets", label: "دو قطرے" },
-                        { value: "three_droplets", label: "تین قطرے" },
-                        { value: "five_droplets", label: "پانچ قطرے" },
-                        { value: "ten_droplets", label: "دس قطرے" },
-                        { value: "half_injection", label: "آدھا ٹیکہ" },
-                        { value: "one_injection", label: "ایک ٹیکہ" },
-                        { value: "two_injections", label: "دو ٹیکے" },
-                        { value: "three_injections", label: "تین ٹیکے" },
-                        { value: "half_sachet", label: "آدھا ساشے" },
-                        { value: "one_sachet", label: "ایک ساشے" },
-                        { value: "two_sachets", label: "دو ساشے" },
-                        { value: "three_sachets", label: "تین ساشے" },
-                        { value: "as_needed", label: "ضرورت کے مطابق" },
-                        { value: "before_meal", label: "کھانے سے پہلے" },
-                        { value: "after_meal", label: "کھانے کے بعد" },
-                        { value: "every_6_hours", label: "ہر 6 گھنٹے بعد" },
-                        { value: "every_8_hours", label: "ہر 8 گھنٹے بعد" },
-                        { value: "every_12_hours", label: "ہر 12 گھنٹے بعد" },
-                        { value: "once_a_day", label: "دن میں ایک بار" },
-                        { value: "twice_a_day", label: "دن میں دو بار" },
-                        { value: "three_times_a_day", label: "دن میں تین بار" },
-                        { value: "four_times_a_day", label: "دن میں چار بار" },
-                      ]}
-                      urdu
-                      selectClassName="px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-lg direction-rtl hover:border-gray-300 transition-colors"
-                    />
-                  </div>
-
-                  {/* Instructions Field */}
-                  <div className="md:col-span-1">
-                    <SelectField
-                      label="Instructions (Urdu)"
-                      value={med.instructions_urdu}
-                      onChange={(val) =>
-                        updateField(
-                          "prescriptions",
-                          index,
-                          "instructions_urdu",
-                          val
-                        )
-                      }
-                      options={[
-                        { value: "کھانے_سے_پہلے", label: "کھانے سے پہلے" },
-                        { value: "کھانے_کے_ساتھ", label: "کھانے کے ساتھ" },
-                        { value: "کھانے_کے_بعد", label: "کھانے کے بعد" },
-                        { value: "خالی_پیٹ", label: "خالی پیٹ" },
-                        { value: "ناشتے_سے_پہلے", label: "ناشتے سے پہلے" },
-                        { value: "ناشتے_کے_بعد", label: "ناشتے کے بعد" },
-                        {
-                          value: "دوپہر_کے_کھانے_سے_پہلے",
-                          label: "دوپہر کے کھانے سے پہلے",
-                        },
-                        {
-                          value: "دوپہر_کے_کھانے_کے_بعد",
-                          label: "دوپہر کے کھانے کے بعد",
-                        },
-                        {
-                          value: "رات_کے_کھانے_سے_پہلے",
-                          label: "رات کے کھانے سے پہلے",
-                        },
-                        {
-                          value: "رات_کے_کھانے_کے_بعد",
-                          label: "رات کے کھانے کے بعد",
-                        },
-                        { value: "دودھ_کے_ساتھ", label: "دودھ کے ساتھ" },
-                        { value: "چائے_سے_پہلے", label: "چائے سے پہلے" },
-                        { value: "چائے_کے_بعد", label: "چائے کے بعد" },
-                        { value: "ضرورت_کے_مطابق", label: "ضرورت کے مطابق" },
-                        { value: "پانی_کے_ساتھ", label: "پانی کے ساتھ" },
-                        { value: "جوس_کے_ساتھ", label: "جوس کے ساتھ" },
-                        { value: "دہی_کے_ساتھ", label: "دہی کے ساتھ" },
-                        {
-                          value: "چکنائی_والے_کھانے_کے_ساتھ",
-                          label: "چکنائی والے کھانے کے ساتھ",
-                        },
-                        {
-                          value: "ڈیری_مصنوعات_کے_بغیر",
-                          label: "ڈیری مصنوعات کے بغیر",
-                        },
-                        { value: "کیفین_سے_پرہیز", label: "کیفین سے پرہیز" },
-                      ]}
-                      urdu
-                      selectClassName="px-3 py-2.5 border-2 border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 text-lg direction-rtl hover:border-gray-300 transition-colors"
-                    />
-                  </div>
-
-                  {/* Delete Button */}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeMedicine(index)}
-                  className="p-1 text-red-400 hover:text-red-600 transition-all rounded-full hover:bg-red-50 relative"
-                >
-                  <FaTrash className="w-5 h-5 transition-transform hover:scale-110" />
-                  <span className="absolute -top-8 left-1/2 -translate-x-1/2 bg-red-600 text-white text-xs px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    Delete
-                  </span>
-                </button>
-              </div>
-            ))}
-
-            {/* Add Medicine Button */}
-            <div className="mt-6">
+                  <SelectField
+                    label="خوراک"
+                    value={med.dosage_urdu}
+                    onChange={(val) =>
+                      updateField("prescriptions", index, "dosage_urdu", val)
+                    }
+                    options={dosageOptions}
+                    urdu
+                    className="flex-1 min-w-[150px]"
+                  />
+                  <SelectField
+                    label="تعدد"
+                    value={med.frequency_urdu}
+                    onChange={(val) =>
+                      updateField("prescriptions", index, "frequency_urdu", val)
+                    }
+                    options={frequencyOptions}
+                    urdu
+                    className="flex-1 min-w-[150px]"
+                  />
+                  <SelectField
+                    label="مدت"
+                    value={med.duration_urdu}
+                    onChange={(val) =>
+                      updateField("prescriptions", index, "duration_urdu", val)
+                    }
+                    options={durationOptions}
+                    urdu
+                    className="flex-1 min-w-[150px]"
+                  />
+                  <SelectField
+                    label="ہدایات"
+                    value={med.instructions_urdu}
+                    onChange={(val) =>
+                      updateField(
+                        "prescriptions",
+                        index,
+                        "instructions_urdu",
+                        val
+                      )
+                    }
+                    options={instructionsOptions}
+                    urdu
+                    className="flex-1 min-w-[150px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeMedicine(index)}
+                    className="text-red-500 hover:text-red-700 transition transform hover:scale-110"
+                  >
+                    <FaTrash className="w-5 h-5" />
+                  </button>
+                </motion.div>
+              ))}
               <button
                 type="button"
                 onClick={addMedicine}
-                className="w-full md:w-auto px-5 py-3 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-all flex items-center gap-2 justify-center font-semibold hover:shadow-md"
+                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
+                disabled={allMedicines.length === 0}
               >
-                <FaPlus className="w-4 h-4" />
-                <span>Add New Medication</span>
+                <FaPlus />
+                Add Medicine
               </button>
-            </div>
-          </div>
-          {/* Diagnosis and Treatment Plan */}
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-              <FaNotesMedical className="text-teal-500" />
-              Diagnosis
-            </h3>
-            <div className="grid grid-cols-1 gap-4">
+              {allMedicines.length === 0 && (
+                <p className="mt-2 text-sm text-yellow-600 font-urdu">
+                  نوٹ: دوائیوں کی فہرست لوڈ ہونے تک نئی دوائیاں شامل نہیں کی جا
+                  سکتیں۔
+                </p>
+              )}
+            </motion.div>
+
+            {/* Diagnosis */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.7 }}
+              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+            >
+              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
+                <FaNotesMedical className="text-orange-600 w-6 h-6" />
+                Diagnosis
+              </h3>
               <FormField
-                label="Neurological Diagnosis"
-                placeholder="e.g., Migraine"
+                label="Diagnosis"
+                placeholder="Enter diagnosis"
                 value={editFormData.diagnosis}
                 onChange={(val) => handleFormChange("diagnosis", val)}
               />
-            </div>
-          </div>
-          {/* // followup section */}
-          <div className="bg-gray-50 p-4 rounded-lg mt-4">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">Follow-ups</h3>
+              <FormField
+                label="Treatment Plan"
+                placeholder="Enter treatment plan"
+                value={editFormData.treatment_plan}
+                onChange={(val) => handleFormChange("treatment_plan", val)}
+              />
+            </motion.div>
+
+            {/* Follow-ups */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+            >
+              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
+                <FaNotesMedical className="text-pink-600 w-6 h-6" />
+                Follow-ups
+              </h3>
+              {editFormData.follow_ups?.map((followUp, index) => (
+                <div
+                  key={index}
+                  className="mb-4 p-4 bg-white rounded-lg shadow-inner grid grid-cols-1 md:grid-cols-2 gap-4"
+                >
+                  <FormField
+                    label="Follow-up Date"
+                    type="date"
+                    value={followUp.follow_up_date}
+                    onChange={(val) =>
+                      updateField("follow_ups", index, "follow_up_date", val)
+                    }
+                  />
+                  <FormField
+                    label="Notes"
+                    placeholder="Enter notes"
+                    value={followUp.notes}
+                    onChange={(val) =>
+                      updateField("follow_ups", index, "notes", val)
+                    }
+                  />
+                </div>
+              ))}
               <button
                 type="button"
                 onClick={addFollowUp}
-                className="px-3 py-1 bg-blue-500 text-white rounded hover:bg-blue-600"
+                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
               >
+                <FaPlus />
                 Add Follow-up
               </button>
-            </div>
+            </motion.div>
 
-            {editFormData.follow_ups?.map((followUp, index) => (
-              <div
-                key={index}
-                className="bg-white p-4 rounded-lg mb-4 shadow-sm"
+            {/* Form Actions */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.9 }}
+              className="flex justify-end gap-4 mt-8"
+            >
+              <button
+                type="button"
+                onClick={handleCancel}
+                className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
               >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Follow-up Date
-                    </label>
-                    <input
-                      type="date"
-                      value={followUp.follow_up_date || ""}
-                      onChange={(e) =>
-                        updateField(
-                          "follow_ups",
-                          index,
-                          "follow_up_date",
-                          e.target.value
-                        )
-                      }
-                      className="w-full p-2 border rounded"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-1">
-                      Notes
-                    </label>
-                    <textarea
-                      value={followUp.notes || ""}
-                      onChange={(e) =>
-                        updateField(
-                          "follow_ups",
-                          index,
-                          "notes",
-                          e.target.value
-                        )
-                      }
-                      className="w-full p-2 border rounded"
-                      rows="2"
-                    />
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => {
-                    const newFollowUps = [...editFormData.follow_ups];
-                    newFollowUps.splice(index, 1);
-                    setEditFormData((prev) => ({
-                      ...prev,
-                      follow_ups: newFollowUps,
-                    }));
-                  }}
-                  className="mt-2 text-red-500 hover:text-red-700 text-sm"
-                >
-                  Remove Follow-up
-                </button>
-              </div>
-            ))}
-          </div>
-          <div className="mt-6 flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={editLoading}
-              className="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 disabled:opacity-50"
-            >
-              {editLoading ? "Saving..." : "Update Consultation"}
-            </button>
-          </div>
-        </form>
-      ) : null}
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={editLoading}
+                className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition disabled:opacity-50"
+              >
+                {editLoading ? "Saving..." : "Update Consultation"}
+              </button>
+            </motion.div>
+          </form>
+        ) : (
+          <p className="text-center text-gray-500">
+            No consultation data available.
+          </p>
+        )}
+      </motion.div>
     </div>
   );
 };
