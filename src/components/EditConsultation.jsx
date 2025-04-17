@@ -116,7 +116,7 @@ const SelectField = ({
   bilingual = false,
   englishField = null,
   onEnglishChange = null,
-  englishValue = null // Add englishValue prop
+  englishValue = null, // Add englishValue prop
 }) => {
   const handleChange = (selectedValue) => {
     if (bilingual) {
@@ -124,7 +124,7 @@ const SelectField = ({
       const selectedOption = options.find(
         (opt) => opt.label === selectedValue || opt.value === selectedValue
       );
-      
+
       // Update both Urdu and English values
       onChange(selectedOption ? selectedOption.label : selectedValue);
       if (englishField && onEnglishChange) {
@@ -139,12 +139,12 @@ const SelectField = ({
   };
 
   // For bilingual fields, display the Urdu label but store the English value
-  const displayValue = bilingual 
-    ? options.find(opt => opt.value === englishValue)?.label || value
+  const displayValue = bilingual
+    ? options.find((opt) => opt.value === englishValue)?.label || value
     : value;
 
   return (
-    <div className={`mb-4 ${urdu ? 'font-urdu' : ''}`}>
+    <div className={`mb-4 ${urdu ? "font-urdu" : ""}`}>
       <label className="block text-sm font-medium text-gray-700 mb-1">
         {label}
       </label>
@@ -152,7 +152,7 @@ const SelectField = ({
         value={displayValue || ""}
         onChange={(e) => handleChange(e.target.value)}
         className={`w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition ${
-          urdu ? 'text-right' : ''
+          urdu ? "text-right" : ""
         }`}
       >
         <option value="">{urdu ? "منتخب کریں" : "Select Option"}</option>
@@ -298,8 +298,8 @@ const instructionsValueToLabel = {
 
 // Helper function to get English value from Urdu label
 const getEnglishValue = (urduLabel, options) => {
-  if (!urduLabel) return '';
-  const option = options.find(opt => opt.label === urduLabel);
+  if (!urduLabel) return "";
+  const option = options.find((opt) => opt.label === urduLabel);
   return option ? option.value : urduLabel; // Fallback to original if not found
 };
 
@@ -493,30 +493,47 @@ const EditConsultation = () => {
           // const prescriptions = consultationData.prescriptions || [];
 
           // In your state initialization or fetch logic:
-          const prescriptions = (consultationData.prescriptions || []).map(pres => {
-            // Ensure we have both English and Urdu values
-            const dosage = pres.dosage || getEnglishValue(pres.dosage_urdu, dosageOptions);
-            const frequency = pres.frequency || getEnglishValue(pres.frequency_urdu, frequencyOptions);
-            const duration = pres.duration || getEnglishValue(pres.duration_urdu, durationOptions);
-            const instructions = pres.instructions || getEnglishValue(pres.instructions_urdu, instructionsOptions);
-          
-            return {
-              medicine_id: pres.medicine_id || "",
-              brand_name: pres.brand_name || "",
-              // English values
-              dosage,
-              frequency,
-              duration,
-              instructions,
-              // Urdu values
-              dosage_urdu: pres.dosage_urdu || dosageValueToLabel[dosage] || "",
-              frequency_urdu: pres.frequency_urdu || frequencyValueToLabel[frequency] || "",
-              duration_urdu: pres.duration_urdu || durationValueToLabel[duration] || "",
-              instructions_urdu: pres.instructions_urdu || instructionsValueToLabel[instructions] || "",
-              prescribed_at: pres.prescribed_at || new Date().toISOString()
-            };
-          });
-    
+          const prescriptions = (consultationData.prescriptions || []).map(
+            (pres) => {
+              // Ensure we have both English and Urdu values
+              const dosage_en =
+                pres.dosage_en ||
+                getEnglishValue(pres.dosage_urdu, dosageOptions);
+              const frequency_en =
+                pres.frequency_en ||
+                getEnglishValue(pres.frequency_urdu, frequencyOptions);
+              const duration_en =
+                pres.duration_en ||
+                getEnglishValue(pres.duration_urdu, durationOptions);
+              const instructions_en =
+                pres.instructions_en ||
+                getEnglishValue(pres.instructions_urdu, instructionsOptions);
+
+              return {
+                medicine_id: pres.medicine_id || "",
+                brand_name: pres.brand_name || "",
+                // English values
+                dosage_en,
+                frequency_en,
+                duration_en,
+                instructions_en,
+                // Urdu values
+                dosage_urdu:
+                  pres.dosage_urdu || dosageValueToLabel[dosage_en] || "",
+                frequency_urdu:
+                  pres.frequency_urdu ||
+                  frequencyValueToLabel[frequency_en] ||
+                  "",
+                duration_urdu:
+                  pres.duration_urdu || durationValueToLabel[duration_en] || "",
+                instructions_urdu:
+                  pres.instructions_urdu ||
+                  instructionsValueToLabel[instructions_en] ||
+                  "",
+                prescribed_at: pres.prescribed_at || new Date().toISOString(),
+              };
+            }
+          );
 
           setAllSymptoms(referenceData.symptoms);
           setAllTests(referenceData.tests);
@@ -556,16 +573,6 @@ const EditConsultation = () => {
             abnormal_movements: consultationData.abnormal_movements || "",
             nystagmus: consultationData.nystagmus || "",
             fundoscopy: consultationData.fundoscopy || "",
-            finger_nose_test: consultationData.finger_nose_test || "",
-            heel_shin_test: consultationData.heel_shin_test || "",
-            eye_movements: consultationData.eye_movements || "",
-            straight_leg_raise_test:
-              consultationData.straight_leg_raise_test || "",
-            lasegue_test: consultationData.lasegue_test || "",
-            cognitive_assessment: consultationData.cognitive_assessment || "",
-            tremors: consultationData.tremors || "",
-            involuntary_movements: consultationData.involuntary_movements || "",
-            tongue_movement: consultationData.tongue_movement || "",
             brudzinski_sign: consultationData.brudzinski_sign || false,
             kernig_sign: consultationData.kernig_sign || false,
             temperature_sensation:
@@ -665,14 +672,15 @@ const EditConsultation = () => {
         {
           medicine_id: "",
           brand_name: "",
-          dosage: "", // English value
-          dosage_urdu: "", // Urdu label
-          frequency: "", // English value
-          frequency_urdu: "", // Urdu label
-          duration: "", // English value
-          duration_urdu: "", // Urdu label
-          instructions: "", // English value
-          instructions_urdu: "", // Urdu label
+          dosage_en: "",
+          frequency_en: "",
+          duration_en: "",
+          instructions_en: "",
+          // Urdu fields
+          dosage_urdu: "",
+          frequency_urdu: "",
+          duration_urdu: "",
+          instructions_urdu: "",
           prescribed_at: new Date().toISOString(),
         },
       ],
@@ -680,6 +688,7 @@ const EditConsultation = () => {
   };
 
   const removeMedicine = (index) => {
+    console.log("Removing prescription at index:", index); // Debug log
     setEditFormData((prev) => ({
       ...prev,
       prescriptions: prev.prescriptions.filter((_, i) => i !== index),
@@ -752,20 +761,20 @@ const EditConsultation = () => {
         patient_id: Number(patientId),
         consultation_id: Number(consultationId),
         tests: editFormData.tests,
-        prescriptions: editFormData.prescriptions.map(pres => ({
+        prescriptions: editFormData.prescriptions.map((pres) => ({
           medicine_id: pres.medicine_id,
           brand_name: pres.brand_name,
-          // English values
-          dosage: pres.dosage,
-          frequency: pres.frequency,
-          duration: pres.duration,
-          instructions: pres.instructions,
-          // Urdu values
+          // English fields
+          dosage_en: pres.dosage_en,
+          frequency_en: pres.frequency_en,
+          duration_en: pres.duration_en,
+          instructions_en: pres.instructions_en,
+          // Urdu fields
           dosage_urdu: pres.dosage_urdu,
           frequency_urdu: pres.frequency_urdu,
           duration_urdu: pres.duration_urdu,
           instructions_urdu: pres.instructions_urdu,
-          prescribed_at: pres.prescribed_at
+          prescribed_at: pres.prescribed_at,
         })),
         follow_ups: editFormData.follow_ups.map((f) => ({
           follow_up_date: f.follow_up_date,
@@ -818,7 +827,7 @@ const EditConsultation = () => {
 
   const handlePrint = () => {
     const printUrl = `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}/consultations/${consultationId}/print?lang=urdu`;
-  window.open(printUrl, '_blank');
+    window.open(printUrl, "_blank");
     const printWindow = window.open(printUrl, "_blank");
     if (!printWindow) {
       alert("Pop-up blocked! Allow pop-ups for this site.");
@@ -848,12 +857,12 @@ const EditConsultation = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-white rounded-2xl shadow-xl w-full max-w-7xl p-8 max-h-[90vh] overflow-y-auto"
+        className=" w-full max-w-7xl p-8 max-h-[90vh]"
       >
         {editLoading && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -1193,51 +1202,6 @@ const EditConsultation = () => {
                       value={editFormData.fundoscopy}
                       onChange={handleFormChange}
                     />
-                    <NeuroExamSelect
-                      field="finger_nose_test"
-                      value={editFormData.finger_nose_test}
-                      onChange={handleFormChange}
-                    />
-                    <NeuroExamSelect
-                      field="heel_shin_test"
-                      value={editFormData.heel_shin_test}
-                      onChange={handleFormChange}
-                    />
-                    <NeuroExamSelect
-                      field="eye_movements"
-                      value={editFormData.eye_movements}
-                      onChange={handleFormChange}
-                    />
-                    <NeuroExamSelect
-                      field="straight_leg_raise_test"
-                      value={editFormData.straight_leg_raise_test}
-                      onChange={handleFormChange}
-                    />
-                    <NeuroExamSelect
-                      field="lasegue_test"
-                      value={editFormData.lasegue_test}
-                      onChange={handleFormChange}
-                    />
-                    <NeuroExamSelect
-                      field="cognitive_assessment"
-                      value={editFormData.cognitive_assessment}
-                      onChange={handleFormChange}
-                    />
-                    <NeuroExamSelect
-                      field="tremors"
-                      value={editFormData.tremors}
-                      onChange={handleFormChange}
-                    />
-                    <NeuroExamSelect
-                      field="involuntary_movements"
-                      value={editFormData.involuntary_movements}
-                      onChange={handleFormChange}
-                    />
-                    <NeuroExamSelect
-                      field="tongue_movement"
-                      value={editFormData.tongue_movement}
-                      onChange={handleFormChange}
-                    />
                   </div>
                 </div>
 
@@ -1424,15 +1388,14 @@ const EditConsultation = () => {
                     className="flex-1 min-w-[150px]"
                   />
                   <SelectField
-                    label="مدت"
+                    label="Duration (مدت)"
                     value={med.duration_urdu}
-                    englishValue={med.duration}
+                    englishValue={med.duration_en}
                     onChange={(val) =>
                       updateField("prescriptions", index, "duration_urdu", val)
                     }
-                    englishField="duration"
                     onEnglishChange={(field, val) =>
-                      updateField("prescriptions", index, field, val)
+                      updateField("prescriptions", index, "duration_en", val)
                     }
                     options={durationOptions}
                     urdu
@@ -1458,7 +1421,7 @@ const EditConsultation = () => {
                   />
                   <button
                     type="button"
-                    onChange={() => removeMedicine(index)}
+                    onClick={() => removeMedicine(index)} // Changed from onChange to onClick
                     className="text-red-500 hover:text-red-700 transition transform hover:scale-110"
                   >
                     <FaTrash className="w-5 h-5" />
