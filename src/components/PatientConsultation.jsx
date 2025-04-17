@@ -215,14 +215,6 @@ const PatientConsultation = () => {
           setTests(testsData || []);
           console.log("Tests set:", testsData);
         }),
-        fetchWithRetry(
-          `/api/prescriptions/patient/${patientId}`,
-          "prescriptions",
-          (data) => data
-        ).then((prescriptionsData) => {
-          setPrescriptions(prescriptionsData || []);
-          console.log("Prescriptions set:", prescriptionsData);
-        }),
         Promise.all(
           neuroExamFields.map((field) =>
             fetchWithRetry(
@@ -731,6 +723,7 @@ const PatientConsultation = () => {
       }
 
       // Prescriptions
+
       if (Array.isArray(selectedMedicines) && selectedMedicines.length > 0) {
         // Check for duplicate medicine_ids
         const medicineIds = selectedMedicines.map((med) =>
@@ -739,7 +732,15 @@ const PatientConsultation = () => {
         const duplicates = medicineIds.filter(
           (id, index) => id && medicineIds.indexOf(id) !== index
         );
-        if (duplicates.length > 0) {
+        // Validate medicine_id to prevent null/empty values
+        const invalidMedicines = selectedMedicines.filter(
+          (med) => !med.medicine_id || String(med.medicine_id).trim() === ""
+        );
+        if (invalidMedicines.length > 0) {
+          console.error("Invalid or missing medicine IDs:", invalidMedicines);
+          toast.error("Cannot submit prescriptions: Some medicines have invalid or missing IDs.");
+          failedSteps.push("Prescriptions: Invalid or missing medicine IDs");
+        } else if (duplicates.length > 0) {
           console.error("Duplicate medicine IDs:", duplicates);
           toast.error(
             `Cannot submit prescriptions: Duplicate medicines (IDs: ${[
@@ -763,7 +764,7 @@ const PatientConsultation = () => {
             })),
           };
           console.log(
-            "Prescriptions payload:",
+            "Submitting prescriptions payload:",
             JSON.stringify(prescriptionsPayload, null, 2)
           );
           requests.push(
@@ -776,21 +777,34 @@ const PatientConsultation = () => {
                     timeout: 10000,
                   }
                 ),
-              "Prescriptions"
+              "Prescriptions",
+              2 // Increase retries to 2 for database pool issues
             ).catch((error) => {
               const errorMessage =
+                error.response?.data?.error ||
                 error.response?.data?.message ||
                 error.message ||
                 "Unknown error submitting prescriptions";
               console.error("Prescriptions failed:", {
                 status: error.response?.status,
-                data: error.response?.data,
+                responseData: error.response?.data,
                 payload: prescriptionsPayload,
+                selectedMedicines,
+                axiosConfig: error.config, // Log request config for debugging
               });
               failedSteps.push(
                 `Prescriptions: ${errorMessage} (HTTP ${
                   error.response?.status || "unknown"
                 })`
+              );
+              // Handle specific database pool error
+              const isPoolError = errorMessage.includes("Cannot use a pool after calling end on the pool");
+              toast.error(
+                isPoolError
+                  ? "Failed to submit prescriptions: Server database issue. Please try again in a few moments."
+                  : error.response?.status === 400
+                    ? `Failed to submit prescriptions: ${errorMessage}. Please reselect medicines and try again.`
+                    : `Failed to submit prescriptions: ${errorMessage}`
               );
               throw error;
             })

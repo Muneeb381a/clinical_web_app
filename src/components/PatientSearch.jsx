@@ -197,13 +197,68 @@ const PatientSearch = () => {
   // };
 
   // In your PatientSearch component, modify the onSearch function
+  // const onSearch = async (data) => {
+  //   if (!data.mobile.trim()) {
+  //     toast.error("Please enter a valid mobile number.");
+  //     return;
+  //   }
+
+  //   const mobile = data.mobile.trim();
+  //   setIsSearching(true);
+  //   setPatient(null);
+  //   setConsultations([]);
+  //   setShowAddPatient(false);
+  //   setExpandedSections({});
+
+  //   try {
+  //     const patientRes = await axios.get(
+  //       `https://patient-management-backend-nine.vercel.app/api/patients/search?mobile=${encodeURIComponent(
+  //         mobile
+  //       )}`
+  //     );
+
+  //     if (patientRes.data?.exists) {
+  //       const patientData = patientRes.data.data;
+  //       const patientId = patientData.id || patientData._id;
+
+  //       // Update URL here
+  //       navigate(`/patients/${patientId}`, { replace: true });
+
+  //       setPatient(patientData);
+
+  //       const historyRes = await axios.get(
+  //         `https://patient-management-backend-nine.vercel.app/api/patient-history/${patientId}`,
+  //         { timeout: 10000 }
+  //       );
+  //       setConsultations(
+  //         Array.isArray(historyRes.data) ? historyRes.data : [historyRes.data]
+  //       );
+  //     } else {
+  //       setPatient(null);
+  //       setSearchedMobile(mobile);
+  //       setShowAddPatient(true);
+  //     }
+  //   } catch (error) {
+  //     console.error("Error fetching patient or history", error);
+  //     toast.error(
+  //       error.message || "Failed to fetch patient. Please try again."
+  //     );
+  //   } finally {
+  //     setIsSearching(false);
+  //   }
+  // };
+
+  // Update the useEffect to handle direct patient URLs
+
   const onSearch = async (data) => {
-    if (!data.mobile.trim()) {
-      toast.error("Please enter a valid mobile number.");
+    const mobile = data.mobile.trim();
+    const mobileRegex = /^[0-9]{11}$/; // Enforce exactly 11 digits
+
+    if (!mobile || !mobileRegex.test(mobile)) {
+      toast.error("Please enter a valid 11-digit mobile number.");
       return;
     }
 
-    const mobile = data.mobile.trim();
     setIsSearching(true);
     setPatient(null);
     setConsultations([]);
@@ -214,50 +269,58 @@ const PatientSearch = () => {
       const patientRes = await axios.get(
         `https://patient-management-backend-nine.vercel.app/api/patients/search?mobile=${encodeURIComponent(
           mobile
-        )}`
+        )}`,
+        { timeout: 10000 } // Added timeout
       );
 
       if (patientRes.data?.exists) {
         const patientData = patientRes.data.data;
-        const patientId = patientData.id || patientData._id;
+        const patientId = patientData?.id || patientData?._id;
+        if (!patientId) {
+          throw new Error("Patient ID not found in response");
+        }
 
-        // Update URL here
         navigate(`/patients/${patientId}`, { replace: true });
-
         setPatient(patientData);
 
         const historyRes = await axios.get(
           `https://patient-management-backend-nine.vercel.app/api/patient-history/${patientId}`,
           { timeout: 10000 }
         );
-        setConsultations(
-          Array.isArray(historyRes.data) ? historyRes.data : [historyRes.data]
-        );
+        setConsultations(Array.isArray(historyRes.data) ? historyRes.data : []);
       } else {
         setPatient(null);
         setSearchedMobile(mobile);
         setShowAddPatient(true);
       }
     } catch (error) {
-      console.error("Error fetching patient or history", error);
-      toast.error(
-        error.message || "Failed to fetch patient. Please try again."
-      );
+      console.error("Error fetching patient or history", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+        mobile: mobile, // Log the mobile number for debugging
+      });
+      const errorMessage =
+        error.response?.status === 500
+          ? "Server error. Please try again or contact support."
+          : error.response?.data?.message ||
+            error.message ||
+            "Failed to fetch patient. Please try again.";
+      toast.error(errorMessage);
     } finally {
       setIsSearching(false);
     }
   };
 
-  // Update the useEffect to handle direct patient URLs
   useEffect(() => {
     const loadPatientFromURL = async () => {
       const pathParts = window.location.pathname.split("/");
       const patientId = pathParts[2];
-  
+
       if (pathParts[1] === "patients" && patientId && patientId !== "new") {
         const maxRetries = 2;
         let attempt = 0;
-  
+
         const fetchPatient = async () => {
           try {
             setIsSearching(true);
@@ -265,7 +328,7 @@ const PatientSearch = () => {
               `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}`,
               { timeout: 15000 }
             );
-  
+
             if (patientRes.data) {
               setPatient(patientRes.data);
               const historyRes = await axios.get(
@@ -300,7 +363,7 @@ const PatientSearch = () => {
             setIsSearching(false);
           }
         };
-  
+
         await fetchPatient();
       } else if (pathParts[1] === "patients" && pathParts[2] === "new") {
         const urlParams = new URLSearchParams(window.location.search);
@@ -328,7 +391,7 @@ const PatientSearch = () => {
   const handleAddConsultation = () => {
     setIsAddingConsultation(true); // Start loader
     const patientId = patient.id || patient._id;
-    // Simulate navigation delay 
+    // Simulate navigation delay
     setTimeout(() => {
       navigate(`/patients/${patientId}/consultations/new`);
       // setIsAddingConsultation(false); // Reset in useEffect or on page load if needed

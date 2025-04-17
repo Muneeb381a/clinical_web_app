@@ -32,7 +32,7 @@ export default function SearchPatient({ onSelectPatient }) {
                 value={mobile} 
                 onChange={(e) => setMobile(e.target.value)}
             />
-            <button onClick={searchPatient} className="bg-blue-500 text-white p-2">Search</button>
+            <button onClick={searchPatient} className="bg-blue-500 text-white p-2 cursor-pointer">Search</button>
 
             {notFound && <p>Patient not found. Please create a new record.</p>}
             {patient && (

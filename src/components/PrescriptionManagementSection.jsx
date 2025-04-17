@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -143,6 +142,15 @@ const PrescriptionManagementSection = ({
     return true;
   };
 
+  // Filter available medicines to exclude those already selected
+  const getAvailableMedicines = (currentIndex) => {
+    const selectedIds = selectedMedicines
+      .filter((_, i) => i !== currentIndex) // Exclude the current medicine to allow editing
+      .map((med) => med.medicine_id)
+      .filter((id) => id); // Exclude empty IDs
+    return medicines.filter((medicine) => !selectedIds.includes(medicine.value));
+  };
+
   return (
     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
       <div className="flex items-center gap-3 mb-5">
@@ -179,7 +187,7 @@ const PrescriptionManagementSection = ({
                   <CreatableSelect
                     isLoading={isCreating}
                     loadingMessage={() => "Creating medicine..."}
-                    options={medicines}
+                    options={getAvailableMedicines(index)} // Filter out selected medicines
                     value={
                       med.medicine_id
                         ? medicines.find(
@@ -241,7 +249,7 @@ const PrescriptionManagementSection = ({
                     Frequency
                   </label>
                   <Select
-                     options={[
+                    options={[
                       { value: "morning", label: "صبح" },
                       { value: "afternoon", label: "دوپہر" },
                       { value: "evening", label: "شام" },

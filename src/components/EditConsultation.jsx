@@ -1352,7 +1352,7 @@ const EditConsultation = () => {
               <button
                 type="button"
                 onClick={addMedicine}
-                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
+                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2 cursor-pointer"
                 disabled={allMedicines.length === 0}
               >
                 <FaPlus />
@@ -1428,7 +1428,7 @@ const EditConsultation = () => {
               <button
                 type="button"
                 onClick={addFollowUp}
-                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
+                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2 cursor-pointer"
               >
                 <FaPlus />
                 Add Follow-up
@@ -1445,14 +1445,14 @@ const EditConsultation = () => {
               <button
                 type="button"
                 onClick={handleCancel}
-                className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
+                className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={editLoading}
-                className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition disabled:opacity-50"
+                className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition disabled:opacity-50 cursor-pointer"
               >
                 {editLoading ? "Saving..." : "Update Consultation"}
               </button>

@@ -42,7 +42,7 @@ const PatientSearchForm = ({ onSearch, isSearching }) => {
             <button
               type="submit"
               disabled={isSearching}
-              className="self-stretch px-8 bg-blue-700 text-white font-semibold rounded-xl shadow-md hover:bg-blue-800 transition-colors flex items-center justify-center"
+              className="self-stretch px-8 bg-blue-700 text-white font-semibold rounded-xl shadow-md hover:bg-blue-800 transition-colors flex items-center justify-center cursor-pointer"
             >
               {isSearching ? (
                 <div className="flex items-center gap-2">
