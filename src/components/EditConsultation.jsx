@@ -107,27 +107,64 @@ const CheckboxField = ({ label, checked, onChange }) => (
   </div>
 );
 
-const SelectField = ({ label, value, onChange, options, urdu = false }) => (
-  <div className="mb-4">
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      {label}
-    </label>
-    <select
-      value={value || ""}
-      onChange={(e) => onChange(e.target.value)}
-      className={`w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition ${
-        urdu ? "font-urdu text-right" : ""
-      }`}
-    >
-      <option value="">{urdu ? "تعدد منتخب کریں" : "Select Option"}</option>
-      {options.map((opt) => (
-        <option key={opt.value} value={opt.value}>
-          {opt.label}
-        </option>
-      ))}
-    </select>
-  </div>
-);
+const SelectField = ({
+  label,
+  value,
+  onChange,
+  options,
+  urdu = false,
+  bilingual = false,
+  englishField = null,
+  onEnglishChange = null,
+  englishValue = null // Add englishValue prop
+}) => {
+  const handleChange = (selectedValue) => {
+    if (bilingual) {
+      // Find the selected option
+      const selectedOption = options.find(
+        (opt) => opt.label === selectedValue || opt.value === selectedValue
+      );
+      
+      // Update both Urdu and English values
+      onChange(selectedOption ? selectedOption.label : selectedValue);
+      if (englishField && onEnglishChange) {
+        onEnglishChange(
+          englishField,
+          selectedOption ? selectedOption.value : selectedValue
+        );
+      }
+    } else {
+      onChange(selectedValue);
+    }
+  };
+
+  // For bilingual fields, display the Urdu label but store the English value
+  const displayValue = bilingual 
+    ? options.find(opt => opt.value === englishValue)?.label || value
+    : value;
+
+  return (
+    <div className={`mb-4 ${urdu ? 'font-urdu' : ''}`}>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label}
+      </label>
+      <select
+        value={displayValue || ""}
+        onChange={(e) => handleChange(e.target.value)}
+        className={`w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition ${
+          urdu ? 'text-right' : ''
+        }`}
+      >
+        <option value="">{urdu ? "منتخب کریں" : "Select Option"}</option>
+        {options.map((opt) => (
+          <option key={opt.value} value={bilingual ? opt.label : opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+};
 
 const dosageOptions = [
   { value: "0.25", label: "ایک چوتھائی گولی" },
@@ -205,24 +242,40 @@ const durationOptions = [
   { value: "1_day", label: "ایک دن" },
   { value: "3_days", label: "تین دن" },
   { value: "5_days", label: "پانچ دن" },
-  { value: "7_days", label: "سات دن" },
-  { value: "7_days_alt", label: "ایک ہفتہ" },
+  { value: "7_days", label: "ایک ہفتہ" },
   { value: "14_days", label: "چودہ دن" },
   { value: "21_days", label: "ایکویں دن" },
-  { value: "30_days", label: "تیس دن" },
-  { value: "30_days_alt", label: "ایک ماہ" },
+  { value: "30_days", label: "ایک ماہ" },
 ];
 
+// Expanded mapping to handle all possible stored values
 const durationValueToLabel = {
+  // English keys
   "1_day": "ایک دن",
   "3_days": "تین دن",
   "5_days": "پانچ دن",
-  "7_days": "سات دن",
+  "7_days": "ایک ہفتہ",
   "7_days_alt": "ایک ہفتہ",
   "14_days": "چودہ دن",
   "21_days": "ایکویں دن",
-  "30_days": "تیس دن",
+  "30_days": "ایک ماہ",
   "30_days_alt": "ایک ماہ",
+
+  // Urdu labels and variants
+  "سات دن": "ایک ہفتہ",
+  "1 ہفتہ": "ایک ہفتہ",
+  "تیس دن": "ایک ماہ",
+  "1 ماہ": "ایک ماہ",
+};
+
+const labelToDurationValue = {
+  "ایک دن": "1_day",
+  "تین دن": "3_days",
+  "پانچ دن": "5_days",
+  "ایک ہفتہ": "7_days",
+  "چودہ دن": "14_days",
+  "ایکویں دن": "21_days",
+  "ایک ماہ": "30_days",
 };
 
 const instructionsOptions = [
@@ -241,6 +294,13 @@ const instructionsValueToLabel = {
   with_water: "پانی کے ساتھ",
   on_empty_stomach: "خالی پیٹ",
   as_needed: "ضرورت کے مطابق",
+};
+
+// Helper function to get English value from Urdu label
+const getEnglishValue = (urduLabel, options) => {
+  if (!urduLabel) return '';
+  const option = options.find(opt => opt.label === urduLabel);
+  return option ? option.value : urduLabel; // Fallback to original if not found
 };
 
 const EditConsultation = () => {
@@ -263,6 +323,22 @@ const EditConsultation = () => {
   useEffect(() => {
     const abortController = new AbortController();
     let isMounted = true;
+
+    const normalizeDurationValue = (value) => {
+      if (!value) return "";
+
+      // First check direct mapping
+      if (value in durationValueToLabel) {
+        return durationValueToLabel[value];
+      }
+
+      // Then try to find in options
+      const option = durationOptions.find(
+        (opt) => opt.value === value || opt.label === value
+      );
+
+      return option ? option.label : value;
+    };
 
     const normalizeValue = (value, options, fieldType = null) => {
       if (!value) return "";
@@ -414,7 +490,33 @@ const EditConsultation = () => {
           if (medicinesData && !cachedMedicines)
             setCachedData("medicines", medicinesData);
 
-          const prescriptions = consultationData.prescriptions || [];
+          // const prescriptions = consultationData.prescriptions || [];
+
+          // In your state initialization or fetch logic:
+          const prescriptions = (consultationData.prescriptions || []).map(pres => {
+            // Ensure we have both English and Urdu values
+            const dosage = pres.dosage || getEnglishValue(pres.dosage_urdu, dosageOptions);
+            const frequency = pres.frequency || getEnglishValue(pres.frequency_urdu, frequencyOptions);
+            const duration = pres.duration || getEnglishValue(pres.duration_urdu, durationOptions);
+            const instructions = pres.instructions || getEnglishValue(pres.instructions_urdu, instructionsOptions);
+          
+            return {
+              medicine_id: pres.medicine_id || "",
+              brand_name: pres.brand_name || "",
+              // English values
+              dosage,
+              frequency,
+              duration,
+              instructions,
+              // Urdu values
+              dosage_urdu: pres.dosage_urdu || dosageValueToLabel[dosage] || "",
+              frequency_urdu: pres.frequency_urdu || frequencyValueToLabel[frequency] || "",
+              duration_urdu: pres.duration_urdu || durationValueToLabel[duration] || "",
+              instructions_urdu: pres.instructions_urdu || instructionsValueToLabel[instructions] || "",
+              prescribed_at: pres.prescribed_at || new Date().toISOString()
+            };
+          });
+    
 
           setAllSymptoms(referenceData.symptoms);
           setAllTests(referenceData.tests);
@@ -490,7 +592,7 @@ const EditConsultation = () => {
                   pres.frequency_urdu,
                   frequencyOptions
                 ),
-                duration_urdu: normalizeValue(
+                duration_urdu: normalizeDurationValue(
                   pres.duration_urdu,
                   durationOptions
                 ),
@@ -563,10 +665,14 @@ const EditConsultation = () => {
         {
           medicine_id: "",
           brand_name: "",
-          dosage_urdu: "",
-          frequency_urdu: "",
-          duration_urdu: "",
-          instructions_urdu: "",
+          dosage: "", // English value
+          dosage_urdu: "", // Urdu label
+          frequency: "", // English value
+          frequency_urdu: "", // Urdu label
+          duration: "", // English value
+          duration_urdu: "", // Urdu label
+          instructions: "", // English value
+          instructions_urdu: "", // Urdu label
           prescribed_at: new Date().toISOString(),
         },
       ],
@@ -646,13 +752,20 @@ const EditConsultation = () => {
         patient_id: Number(patientId),
         consultation_id: Number(consultationId),
         tests: editFormData.tests,
-        prescriptions: editFormData.prescriptions.map((pres) => ({
-          medicine_id: pres.medicine_id || null,
-          dosage_urdu: pres.dosage_urdu || null,
-          frequency_urdu: pres.frequency_urdu || null,
-          duration_urdu: pres.duration_urdu || null,
-          instructions_urdu: pres.instructions_urdu || null,
-          prescribed_at: pres.prescribed_at,
+        prescriptions: editFormData.prescriptions.map(pres => ({
+          medicine_id: pres.medicine_id,
+          brand_name: pres.brand_name,
+          // English values
+          dosage: pres.dosage,
+          frequency: pres.frequency,
+          duration: pres.duration,
+          instructions: pres.instructions,
+          // Urdu values
+          dosage_urdu: pres.dosage_urdu,
+          frequency_urdu: pres.frequency_urdu,
+          duration_urdu: pres.duration_urdu,
+          instructions_urdu: pres.instructions_urdu,
+          prescribed_at: pres.prescribed_at
         })),
         follow_ups: editFormData.follow_ups.map((f) => ({
           follow_up_date: f.follow_up_date,
@@ -704,7 +817,8 @@ const EditConsultation = () => {
   };
 
   const handlePrint = () => {
-    const printUrl = `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}/consultations/${consultationId}/print`;
+    const printUrl = `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}/consultations/${consultationId}/print?lang=urdu`;
+  window.open(printUrl, '_blank');
     const printWindow = window.open(printUrl, "_blank");
     if (!printWindow) {
       alert("Pop-up blocked! Allow pop-ups for this site.");
@@ -1312,15 +1426,17 @@ const EditConsultation = () => {
                   <SelectField
                     label="مدت"
                     value={med.duration_urdu}
+                    englishValue={med.duration}
                     onChange={(val) =>
                       updateField("prescriptions", index, "duration_urdu", val)
                     }
-                    options={durationOptions.map((opt) => ({
-                      value: opt.label,
-                      label: opt.label,
-                    }))}
+                    englishField="duration"
+                    onEnglishChange={(field, val) =>
+                      updateField("prescriptions", index, field, val)
+                    }
+                    options={durationOptions}
                     urdu
-                    className="flex-1 min-w-[150px]"
+                    bilingual={true}
                   />
                   <SelectField
                     label="ہدایات"
@@ -1352,11 +1468,10 @@ const EditConsultation = () => {
               <button
                 type="button"
                 onClick={addMedicine}
-                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2 cursor-pointer"
+                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
                 disabled={allMedicines.length === 0}
               >
-                <FaPlus />
-                Add Medicine
+                <FaPlus />+ Add Medicine
               </button>
               {allMedicines.length === 0 && (
                 <p className="mt-2 text-sm text-yellow-600 font-urdu">
@@ -1428,7 +1543,7 @@ const EditConsultation = () => {
               <button
                 type="button"
                 onClick={addFollowUp}
-                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2 cursor-pointer"
+                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
               >
                 <FaPlus />
                 Add Follow-up
@@ -1445,14 +1560,14 @@ const EditConsultation = () => {
               <button
                 type="button"
                 onClick={handleCancel}
-                className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition cursor-pointer"
+                className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={editLoading}
-                className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition disabled:opacity-50 cursor-pointer"
+                className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition disabled:opacity-50"
               >
                 {editLoading ? "Saving..." : "Update Consultation"}
               </button>

@@ -2,7 +2,7 @@ import React from "react";
 import Select from "react-select";
 import { FaFlask, FaSearch, FaTimes, FaPlus } from "react-icons/fa";
 
-const TestsSelector = ({ allTests = [], selectedTests = [], onSelect, onRemove }) => {
+const TestsSelector = ({ allTests, selectedTests, onSelect, onRemove }) => {
   const testOptions = allTests.map((test) => ({
     label: test.test_name || "Unknown Test",
     value: test.id,
@@ -19,6 +19,7 @@ const TestsSelector = ({ allTests = [], selectedTests = [], onSelect, onRemove }
     onSelect(newSelectedIds);
   };
 
+  // Custom styles for react-select
   const customStyles = {
     control: (base) => ({
       ...base,
@@ -57,16 +58,16 @@ const TestsSelector = ({ allTests = [], selectedTests = [], onSelect, onRemove }
           <FaFlask className="text-purple-600" />
           Select Diagnostic Tests
         </label>
+        
         <Select
           options={testOptions}
           value={selectedTestOptions}
           onChange={handleChange}
           isMulti
-          isDisabled={!allTests.length}
           placeholder={
             <div className="flex items-center gap-2 text-gray-400">
               <FaSearch />
-              <span>{allTests.length ? "Search diagnostic tests..." : "No tests available"}</span>
+              <span>Search diagnostic tests...</span>
             </div>
           }
           styles={customStyles}
@@ -87,6 +88,7 @@ const TestsSelector = ({ allTests = [], selectedTests = [], onSelect, onRemove }
               {selectedTests.length} selected
             </span>
           </div>
+          
           <div className="flex flex-wrap gap-2">
             {selectedTestOptions.map((test) => (
               <div
