@@ -114,9 +114,9 @@ const SelectField = ({
   options,
   urdu = false,
   bilingual = false,
-  englishField = null,
   onEnglishChange = null,
-  englishValue = null, // Add englishValue prop
+  englishValue = null,
+  className = "",
 }) => {
   const handleChange = (selectedValue) => {
     if (bilingual) {
@@ -125,13 +125,12 @@ const SelectField = ({
         (opt) => opt.label === selectedValue || opt.value === selectedValue
       );
 
-      // Update both Urdu and English values
+      // Update Urdu value
       onChange(selectedOption ? selectedOption.label : selectedValue);
-      if (englishField && onEnglishChange) {
-        onEnglishChange(
-          englishField,
-          selectedOption ? selectedOption.value : selectedValue
-        );
+
+      // Update English value
+      if (onEnglishChange) {
+        onEnglishChange(selectedOption ? selectedOption.value : selectedValue);
       }
     } else {
       onChange(selectedValue);
@@ -144,7 +143,7 @@ const SelectField = ({
     : value;
 
   return (
-    <div className={`mb-4 ${urdu ? "font-urdu" : ""}`}>
+    <div className={`mb-4 ${urdu ? "font-urdu" : ""} ${className}`}>
       <label className="block text-sm font-medium text-gray-700 mb-1">
         {label}
       </label>
@@ -676,7 +675,6 @@ const EditConsultation = () => {
           frequency_en: "",
           duration_en: "",
           instructions_en: "",
-          // Urdu fields
           dosage_urdu: "",
           frequency_urdu: "",
           duration_urdu: "",
@@ -764,12 +762,10 @@ const EditConsultation = () => {
         prescriptions: editFormData.prescriptions.map((pres) => ({
           medicine_id: pres.medicine_id,
           brand_name: pres.brand_name,
-          // English fields
           dosage_en: pres.dosage_en,
           frequency_en: pres.frequency_en,
           duration_en: pres.duration_en,
           instructions_en: pres.instructions_en,
-          // Urdu fields
           dosage_urdu: pres.dosage_urdu,
           frequency_urdu: pres.frequency_urdu,
           duration_urdu: pres.duration_urdu,
@@ -1298,137 +1294,135 @@ const EditConsultation = () => {
             </motion.div>
 
             {/* Prescriptions */}
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.6 }}
-              className="bg-gray-50 p-6 rounded-xl shadow-sm"
-            >
-              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
-                <FaPills className="text-indigo-600 w-6 h-6" />
-                Prescriptions
-              </h3>
-              {editFormData.prescriptions?.map((med, index) => (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: index * 0.1 }}
-                  className="mb-4 p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition flex items-center gap-4 flex-wrap"
-                >
-                  <div className="flex-1 min-w-[200px]">
-                    <label className="block text-sm font-medium text-gray-700 mb-1 font-urdu">
-                      دوائی
-                    </label>
-                    <select
-                      value={med.medicine_id || ""}
-                      onChange={(e) => {
-                        const selectedMedicine = allMedicines.find(
-                          (m) => m.id === parseInt(e.target.value)
-                        );
-                        updateField(
-                          "prescriptions",
-                          index,
-                          "medicine_id",
-                          e.target.value
-                        );
-                        updateField(
-                          "prescriptions",
-                          index,
-                          "brand_name",
-                          selectedMedicine?.brand_name || ""
-                        );
-                      }}
-                      className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition font-urdu text-right"
-                      disabled={allMedicines.length === 0 && !med.brand_name}
-                    >
-                      <option value="">
-                        {allMedicines.length === 0 && med.brand_name
-                          ? med.brand_name
-                          : "دوائی منتخب کریں"}
-                      </option>
-                      {allMedicines.length > 0
-                        ? allMedicines.map((medicine) => (
-                            <option key={medicine.id} value={medicine.id}>
-                              {medicine.form || ""} {medicine.brand_name || ""}{" "}
-                              {medicine.strength || ""}
-                            </option>
-                          ))
-                        : med.brand_name && (
-                            <option value={med.medicine_id}>
-                              {med.brand_name}
-                            </option>
-                          )}
-                    </select>
-                  </div>
-                  <SelectField
-                    label="خوراک"
-                    value={med.dosage_urdu}
-                    onChange={(val) =>
-                      updateField("prescriptions", index, "dosage_urdu", val)
-                    }
-                    options={dosageOptions.map((opt) => ({
-                      value: opt.label,
-                      label: opt.label,
-                    }))}
-                    urdu
-                    className="flex-1 min-w-[150px]"
-                  />
-                  <SelectField
-                    label="تعدد"
-                    value={med.frequency_urdu}
-                    onChange={(val) =>
-                      updateField("prescriptions", index, "frequency_urdu", val)
-                    }
-                    options={frequencyOptions.map((opt) => ({
-                      value: opt.label,
-                      label: opt.label,
-                    }))}
-                    urdu
-                    className="flex-1 min-w-[150px]"
-                  />
-                  <SelectField
-                    label="Duration (مدت)"
-                    value={med.duration_urdu}
-                    englishValue={med.duration_en}
-                    onChange={(val) =>
-                      updateField("prescriptions", index, "duration_urdu", val)
-                    }
-                    onEnglishChange={(field, val) =>
-                      updateField("prescriptions", index, "duration_en", val)
-                    }
-                    options={durationOptions}
-                    urdu
-                    bilingual={true}
-                  />
-                  <SelectField
-                    label="ہدایات"
-                    value={med.instructions_urdu}
-                    onChange={(val) =>
+            {editFormData.prescriptions?.map((med, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: index * 0.1 }}
+                className="mb-4 p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition flex items-center gap-4 flex-wrap"
+              >
+                <div className="flex-1 min-w-[200px]">
+                  <label className="block text-sm font-medium text-gray-700 mb-1 font-urdu">
+                    دوائی
+                  </label>
+                  <select
+                    value={med.medicine_id || ""}
+                    onChange={(e) => {
+                      const selectedMedicine = allMedicines.find(
+                        (m) => m.id === parseInt(e.target.value)
+                      );
                       updateField(
                         "prescriptions",
                         index,
-                        "instructions_urdu",
-                        val
-                      )
-                    }
-                    options={instructionsOptions.map((opt) => ({
-                      value: opt.label,
-                      label: opt.label,
-                    }))}
-                    urdu
-                    className="flex-1 min-w-[150px]"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => removeMedicine(index)} // Changed from onChange to onClick
-                    className="text-red-500 hover:text-red-700 transition transform hover:scale-110"
+                        "medicine_id",
+                        e.target.value
+                      );
+                      updateField(
+                        "prescriptions",
+                        index,
+                        "brand_name",
+                        selectedMedicine?.brand_name || ""
+                      );
+                    }}
+                    className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition font-urdu text-right"
+                    disabled={allMedicines.length === 0 && !med.brand_name}
                   >
-                    <FaTrash className="w-5 h-5" />
-                  </button>
-                </motion.div>
-              ))}
-              <button
+                    <option value="">
+                      {allMedicines.length === 0 && med.brand_name
+                        ? med.brand_name
+                        : "دوائی منتخب کریں"}
+                    </option>
+                    {allMedicines.length > 0
+                      ? allMedicines.map((medicine) => (
+                          <option key={medicine.id} value={medicine.id}>
+                            {medicine.form || ""} {medicine.brand_name || ""}{" "}
+                            {medicine.strength || ""}
+                          </option>
+                        ))
+                      : med.brand_name && (
+                          <option value={med.medicine_id}>
+                            {med.brand_name}
+                          </option>
+                        )}
+                  </select>
+                </div>
+                <SelectField
+                  label="خوراک"
+                  value={med.dosage_urdu}
+                  englishValue={med.dosage_en}
+                  onChange={(val) =>
+                    updateField("prescriptions", index, "dosage_urdu", val)
+                  }
+                  onEnglishChange={(val) =>
+                    updateField("prescriptions", index, "dosage_en", val)
+                  }
+                  options={dosageOptions}
+                  urdu
+                  bilingual={true}
+                  className="flex-1 min-w-[150px]"
+                />
+                <SelectField
+                  label="تعدد"
+                  value={med.frequency_urdu}
+                  englishValue={med.frequency_en}
+                  onChange={(val) =>
+                    updateField("prescriptions", index, "frequency_urdu", val)
+                  }
+                  onEnglishChange={(val) =>
+                    updateField("prescriptions", index, "frequency_en", val)
+                  }
+                  options={frequencyOptions}
+                  urdu
+                  bilingual={true}
+                  className="flex-1 min-w-[150px]"
+                />
+                <SelectField
+                  label="مدت"
+                  value={med.duration_urdu}
+                  englishValue={med.duration_en}
+                  onChange={(val) =>
+                    updateField("prescriptions", index, "duration_urdu", val)
+                  }
+                  onEnglishChange={(val) =>
+                    updateField("prescriptions", index, "duration_en", val)
+                  }
+                  options={durationOptions}
+                  urdu
+                  bilingual={true}
+                  className="flex-1 min-w-[150px]"
+                />
+                <SelectField
+                  label="ہدایات"
+                  value={med.instructions_urdu}
+                  englishValue={med.instructions_en}
+                  onChange={(val) =>
+                    updateField(
+                      "prescriptions",
+                      index,
+                      "instructions_urdu",
+                      val
+                    )
+                  }
+                  onEnglishChange={(val) =>
+                    updateField("prescriptions", index, "instructions_en", val)
+                  }
+                  options={instructionsOptions}
+                  urdu
+                  bilingual={true}
+                  className="flex-1 min-w-[150px]"
+                />
+                <button
+                  type="button"
+                  onClick={() => removeMedicine(index)}
+                  className="text-red-500 hover:text-red-700 transition transform hover:scale-110"
+                >
+                  <FaTrash className="w-5 h-5" />
+                </button>
+              </motion.div>
+            ))}
+            <motion.div>
+            <button
                 type="button"
                 onClick={addMedicine}
                 className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
@@ -1443,7 +1437,6 @@ const EditConsultation = () => {
                 </p>
               )}
             </motion.div>
-
             {/* Diagnosis */}
             <motion.div
               initial={{ opacity: 0 }}
