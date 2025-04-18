@@ -753,12 +753,24 @@ const EditConsultation = () => {
       setEditLoading(true);
       setError(null);
       setPrescriptionsError(null);
+      const validTestIds = editFormData.tests.filter((testId) =>
+        allTests.some((test) => test.id === testId)
+      );
+      if (editFormData.tests.length !== validTestIds.length) {
+        console.warn(
+          "Invalid test IDs found:",
+          editFormData.tests.filter((id) => !validTestIds.includes(id))
+        );
+        setError("Some selected tests are invalid. Please reselect tests.");
+        setEditLoading(false);
+        return;
+      }
 
       const payload = {
         ...editFormData,
         patient_id: Number(patientId),
         consultation_id: Number(consultationId),
-        tests: editFormData.tests,
+        tests: validTestIds,
         prescriptions: editFormData.prescriptions.map((pres) => ({
           medicine_id: pres.medicine_id,
           brand_name: pres.brand_name,
@@ -782,6 +794,10 @@ const EditConsultation = () => {
         Object.entries(payload).filter(
           ([_, v]) => v !== null && v !== undefined
         )
+      );
+      console.log(
+        "Submitting payload (tests):",
+        JSON.stringify(payload.tests, null, 2)
       );
       console.log(
         "Submitting payload:",
@@ -1075,8 +1091,15 @@ const EditConsultation = () => {
               <TestsSelector
                 allTests={allTests}
                 selectedTests={editFormData.tests}
-                onSelect={(val) => handleFormChange("tests", val)}
-                onRemove={removeTest}
+                onSelect={(newTestIds) =>
+                  setEditFormData({ ...editFormData, tests: newTestIds })
+                }
+                onRemove={(testId) =>
+                  setEditFormData({
+                    ...editFormData,
+                    tests: editFormData.tests.filter((id) => id !== testId),
+                  })
+                }
               />
             </motion.div>
 
@@ -1422,7 +1445,7 @@ const EditConsultation = () => {
               </motion.div>
             ))}
             <motion.div>
-            <button
+              <button
                 type="button"
                 onClick={addMedicine}
                 className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
