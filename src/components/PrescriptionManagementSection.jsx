@@ -577,7 +577,7 @@ const PrescriptionManagementSection = ({
 
           <button
             onClick={() => handleAddMedicine()}
-            className="w-full mt-4 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-200 text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 p-4 transition-all"
+            className="w-full mt-4 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-blue-200 text-blue-600 hover:border-blue-400 hover:bg-blue-50/50 p-4 transition-all cursor-pointer"
             disabled={isCreating}
           >
             <AiOutlinePlus className="w-5 h-5" />

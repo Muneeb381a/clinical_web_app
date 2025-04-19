@@ -920,7 +920,7 @@ const EditConsultation = () => {
           </h2>
           <button
             onClick={handleCancel}
-            className="text-gray-500 hover:text-gray-700 transition transform hover:scale-110"
+            className="text-green-400 hover:text-green-700 transition transform hover:scale-110 bg-gray-500 rounded-full p-2 cursor-pointer hover:bg-white hover:border hover:rotate-90"
           >
             <FaTimes className="text-2xl" />
           </button>
@@ -1047,14 +1047,6 @@ const EditConsultation = () => {
                   />
                 </div>
               ))}
-              <button
-                type="button"
-                onClick={addVitalSign}
-                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
-              >
-                <FaPlus />
-                Add Vital Sign
-              </button>
             </motion.div>
 
             {/* Symptoms */}
@@ -1348,7 +1340,7 @@ const EditConsultation = () => {
                         selectedMedicine?.brand_name || ""
                       );
                     }}
-                    className="w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition font-urdu text-right"
+                    className="w-full p-3 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition"
                     disabled={allMedicines.length === 0 && !med.brand_name}
                   >
                     <option value="">
@@ -1438,7 +1430,7 @@ const EditConsultation = () => {
                 <button
                   type="button"
                   onClick={() => removeMedicine(index)}
-                  className="text-red-500 hover:text-red-700 transition transform hover:scale-110"
+                  className="text-red-500 hover:text-red-900 transition transform hover:scale-110 cursor-pointer"
                 >
                   <FaTrash className="w-5 h-5" />
                 </button>
@@ -1448,10 +1440,10 @@ const EditConsultation = () => {
               <button
                 type="button"
                 onClick={addMedicine}
-                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
+                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2 cursor-pointer"
                 disabled={allMedicines.length === 0}
               >
-                <FaPlus />+ Add Medicine
+                <FaPlus /> Add Medicine
               </button>
               {allMedicines.length === 0 && (
                 <p className="mt-2 text-sm text-yellow-600 font-urdu">
@@ -1519,14 +1511,6 @@ const EditConsultation = () => {
                   />
                 </div>
               ))}
-              <button
-                type="button"
-                onClick={addFollowUp}
-                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
-              >
-                <FaPlus />
-                Add Follow-up
-              </button>
             </motion.div>
 
             {/* Form Actions */}

@@ -16,7 +16,7 @@ const PrescriptionButton = ({ patient, consultation }) => {
         onClick={handleOpenPrescription}
         title="Open PDF Prescription"
       >
-        <FaFilePdf className="text-red-600 text-xl hover:text-red-800" />
+        <FaFilePdf className="text-red-600 text-xl hover:text-red-800 cursor-pointer" />
       </motion.button>
     );
   };

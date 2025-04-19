@@ -454,7 +454,7 @@ const PatientSearch = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleBackToHome}
-                className="mb-6 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold transition-colors duration-200 shadow-sm hover:shadow-md"
+                className="mb-6 flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold transition-colors duration-200 shadow-sm hover:shadow-md cursor-pointer"
               >
                 <FaArrowLeft className="text-lg" />
                 Back to Home
@@ -539,7 +539,7 @@ const PatientSearch = () => {
                   className={`
         relative bg-gradient-to-r from-blue-600 to-purple-600 text-white 
         px-8 py-4 rounded-xl shadow-lg transition-all flex items-center gap-3
-        w-full md:w-auto justify-center overflow-hidden
+        w-full md:w-auto justify-center overflow-hidden cursor-pointer
         ${isAddingConsultation ? "opacity-80 cursor-not-allowed" : ""}
       `}
                 >
@@ -633,9 +633,9 @@ const PatientSearch = () => {
                             title="Toggle Details"
                           >
                             {expandedSections[index] ? (
-                              <FaChevronUp className="text-blue-600 hover:text-blue-800 text-xl" />
+                              <FaChevronUp className="text-blue-600 hover:text-blue-800 text-xl cursor-pointer" />
                             ) : (
-                              <FaEye className="text-blue-600 hover:text-blue-800 text-xl" />
+                              <FaEye className="text-blue-600 hover:text-blue-800 text-xl cursor-pointer" />
                             )}
                           </motion.button>
                           <motion.button
@@ -646,7 +646,7 @@ const PatientSearch = () => {
                             }
                             title="Edit Consultation"
                           >
-                            <FaEdit className="text-green-600 hover:text-green-800 text-xl" />
+                            <FaEdit className="text-green-600 hover:text-green-800 text-xl cursor-pointer" />
                           </motion.button>
                         </div>
                       </div>
@@ -907,7 +907,7 @@ const PatientSearch = () => {
                                           </p>
                                         </div>
                                         <span className="bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full text-xs font-semibold">
-                                          {prescription.duration_en ||
+                                          {prescription.duration_ ||
                                             "No duration"}
                                         </span>
                                       </div>

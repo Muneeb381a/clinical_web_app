@@ -7,7 +7,7 @@ const PatientInfoHeader = ({ patient, onReturnHome, prescriptions, setShowPopup 
     <div className="flex items-center justify-between mb-8 px-6 py-4 bg-gradient-to-r from-gray-50 to-white shadow-md rounded-2xl">
       <button
         onClick={onReturnHome}
-        className="group flex items-center gap-2 px-4 py-2 bg-white text-gray-600 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 rounded-xl font-medium text-sm shadow-sm hover:shadow-md transition-all duration-200"
+        className="group flex items-center gap-2 px-4 py-2 bg-white text-gray-600 hover:text-gray-800 hover:bg-gray-100 border border-gray-200 rounded-xl font-medium text-sm shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer"
       >
         <AiOutlineArrowLeft className="w-5 h-5 transition-transform duration-200 group-hover:-translate-x-1" />
         Back to Search
@@ -16,7 +16,7 @@ const PatientInfoHeader = ({ patient, onReturnHome, prescriptions, setShowPopup 
         {Array.isArray(prescriptions) && prescriptions.length > 0 && (
           <button
             onClick={() => setShowPopup(true)}
-            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all duration-300"
+            className="flex items-center gap-2 px-5 py-2.5 bg-indigo-600 text-white font-semibold rounded-xl shadow-md hover:bg-indigo-700 hover:shadow-lg transition-all duration-300 cursor-pointer"
           >
             <AiOutlineHistory className="w-5 h-5" />
             Previous Prescriptions

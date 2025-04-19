@@ -1,8 +1,8 @@
 import React, { useMemo } from "react";
 import Select from "react-select";
-import { FaFlask, FaSearch, FaTimes, FaPlus } from "react-icons/fa";
+import { FaFlask, FaSearch } from "react-icons/fa";
 
-const TestsSelector = ({ allTests, selectedTests, onSelect, onRemove }) => {
+const TestsSelector = ({ allTests, selectedTests, onSelect }) => {
   // Validate and map allTests to testOptions
   const testOptions = useMemo(() => {
     if (!Array.isArray(allTests)) {
@@ -32,56 +32,98 @@ const TestsSelector = ({ allTests, selectedTests, onSelect, onRemove }) => {
     const newSelectedIds = selectedOptions
       ? selectedOptions.map((option) => option.value)
       : [];
-    console.log("Selected test IDs:", newSelectedIds);
     onSelect(newSelectedIds);
   };
 
   // Custom styles for react-select
   const customStyles = {
-    control: (base) => ({
+    control: (base, state) => ({
       ...base,
-      minHeight: "44px",
-      borderColor: "#e5e7eb",
-      "&:hover": { borderColor: "#9ca3af" },
-      boxShadow: "none",
+      minHeight: "48px",
+      borderColor: state.isFocused ? "#8b5cf6" : "#e5e7eb",
+      borderWidth: "2px",
+      borderRadius: "10px",
+      boxShadow: state.isFocused ? "0 0 0 2px rgba(139, 92, 246, 0.2)" : "none",
+      "&:hover": { borderColor: "#8b5cf6" },
+      transition: "all 0.2s ease",
     }),
-    option: (base, { isFocused }) => ({
+    option: (base, { isFocused, isSelected }) => ({
       ...base,
-      backgroundColor: isFocused ? "#f5f3ff" : "white",
-      color: "#4b5563",
-      "&:active": { backgroundColor: "#ede9fe" },
+      backgroundColor: isSelected
+        ? "#8b5cf6"
+        : isFocused
+        ? "#ede9fe"
+        : "white",
+      color: isSelected ? "white" : "#4b5563",
+      padding: "10px 16px",
+      fontSize: "14px",
+      "&:active": { backgroundColor: "#7c3aed" },
     }),
     multiValue: (base) => ({
       ...base,
-      backgroundColor: "#f5f3ff",
+      backgroundColor: "#f3f0ff",
       borderRadius: "8px",
+      padding: "2px 6px",
     }),
     multiValueLabel: (base) => ({
       ...base,
-      color: "#6d28d9",
+      color: "#7c3aed",
       fontWeight: "500",
+      fontSize: "14px",
     }),
     multiValueRemove: (base) => ({
       ...base,
-      color: "#6d28d9",
-      ":hover": { backgroundColor: "#ddd6fe", color: "#4c1d95" },
+      color: "#7c3aed",
+      borderRadius: "0 8px 8px 0",
+      ":hover": { backgroundColor: "#ddd6fe", color: "#5b21b6" },
+    }),
+    placeholder: (base) => ({
+      ...base,
+      color: "#9ca3af",
+      fontSize: "14px",
+    }),
+    input: (base) => ({
+      ...base,
+      color: "#4b5563",
+      fontSize: "14px",
+    }),
+    dropdownIndicator: (base) => ({
+      ...base,
+      color: "#9ca3af",
+      padding: "8px",
+      ":hover": { color: "#6b7280" },
+    }),
+    clearIndicator: (base) => ({
+      ...base,
+      color: "#9ca3af",
+      padding: "8px",
+      ":hover": { color: "#6b7280" },
+    }),
+    indicatorSeparator: (base) => ({
+      ...base,
+      backgroundColor: "#e5e7eb",
     }),
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-2">
       <div>
         <label
           htmlFor="tests-selector"
           className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2"
         >
-          <FaFlask className="text-purple-600" />
-          Select Diagnostic Tests
+          <FaFlask className="text-purple-500" />
+          <span>Diagnostic Tests</span>
+          {selectedTestOptions.length > 0 && (
+            <span className="ml-auto text-xs bg-purple-100 text-green-700 px-2 py-1 rounded-full">
+              {selectedTestOptions.length} selected
+            </span>
+          )}
         </label>
         {testOptions.length === 0 ? (
-          <p className="text-sm text-yellow-600">
+          <div className="text-sm text-yellow-600 bg-yellow-50 px-4 py-3 rounded-lg border border-yellow-100">
             No tests available. Please try again later.
-          </p>
+          </div>
         ) : (
           <Select
             inputId="tests-selector"
@@ -90,50 +132,18 @@ const TestsSelector = ({ allTests, selectedTests, onSelect, onRemove }) => {
             onChange={handleChange}
             isMulti
             isDisabled={testOptions.length === 0}
-            placeholder="Search diagnostic tests..."
+            placeholder="Search and select tests..."
             styles={customStyles}
             className="react-select-container"
             classNamePrefix="react-select"
             aria-label="Select diagnostic tests"
             components={{
-              DropdownIndicator: () => <FaSearch className="mr-3 text-gray-400" />,
+              DropdownIndicator: () => <FaSearch className="mr-1 text-gray-400" />,
             }}
+            noOptionsMessage={() => "No tests found"}
           />
         )}
       </div>
-
-      {selectedTestOptions.length > 0 && (
-        <div className="border-t border-gray-100 pt-4">
-          <div className="flex items-center gap-2 mb-3 text-gray-600">
-            <FaPlus className="text-sm" />
-            <span className="text-sm font-medium">Selected Tests</span>
-            <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">
-              {selectedTestOptions.length} selected
-            </span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {selectedTestOptions.map((test) => (
-              <div
-                key={test.value}
-                className="group bg-purple-50 text-purple-700 px-3 py-1.5 rounded-lg flex items-center gap-2 transition-all hover:bg-purple-100"
-              >
-                <span className="text-sm">{test.label}</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    console.log("Removing test ID:", test.value);
-                    onRemove(test.value);
-                  }}
-                  className="text-purple-400 hover:text-purple-700 transition-colors"
-                  aria-label={`Remove ${test.label}`}
-                >
-                  <FaTimes className="w-4 h-4" />
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
     </div>
   );
 };

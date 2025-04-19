@@ -203,7 +203,7 @@ const ConsultationForm = ({
       />
       <button
         onClick={handleSubmit}
-        className={`w-full py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.01] flex items-center justify-center ${
+        className={`w-full py-4 bg-gradient-to-r from-green-600 to-teal-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all transform hover:scale-[1.01] flex items-center justify-center cursor-pointer ${
           loading || isValidating ? "opacity-75 cursor-not-allowed" : ""
         }`}
         disabled={loading || isValidating}
@@ -242,7 +242,7 @@ const ConsultationForm = ({
       <div className="mt-6">
         <button
           onClick={handlePrint}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center gap-2 print:hidden"
+          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center gap-2 print:hidden cursor-pointer"
           aria-label="Print prescription"
           disabled={loading || isValidating}
         >

@@ -7,6 +7,7 @@ import ConsultationForm from "./ConsultationForm";
 import PrescriptionsPopup from "./PrescriptionsPopup";
 import printConsultation from "../utils/printConsultation";
 import { v4 as uuidv4 } from "uuid";
+import FullPageLoader from "../pages/FullPageLoader";
 
 const neuroExamFields = [
   "motor_function",
@@ -980,7 +981,8 @@ const PatientConsultation = () => {
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-lg text-gray-600">Loading consultation data...</p>
+        {/* <p className="text-lg text-gray-600">Loading consultation data...</p> */}
+        <FullPageLoader isLoading={true} />
       </div>
     );
   }
