@@ -18,6 +18,7 @@ import { motion } from "framer-motion";
 import SymptomsSelector from "./SymptomsSelector";
 import TestsSelector from "./TestsSelector";
 import NeuroExamSelect from "./NeuroExamSelect";
+import FullPageLoader from "../pages/FullPageLoader";
 
 const safeRequest = async (url, options = {}, retries = 3, delay = 1000) => {
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -66,10 +67,13 @@ const FormField = ({
   type = "text",
   min,
   max,
+  disabled = false,
+  required = false,
 }) => (
   <div className="mb-4">
     <label className="block text-sm font-medium text-gray-700 mb-1">
       {label}
+      {required && <span className="text-red-500">*</span>}
     </label>
     <input
       type={type}
@@ -86,9 +90,11 @@ const FormField = ({
       placeholder={placeholder}
       min={min}
       max={max}
+      disabled={disabled}
+      required={required}
       className={`w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition ${
         urdu ? "font-urdu text-right" : ""
-      }`}
+      } ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
     />
   </div>
 );
@@ -117,18 +123,14 @@ const SelectField = ({
   onEnglishChange = null,
   englishValue = null,
   className = "",
+  required = false,
 }) => {
   const handleChange = (selectedValue) => {
     if (bilingual) {
-      // Find the selected option
       const selectedOption = options.find(
         (opt) => opt.label === selectedValue || opt.value === selectedValue
       );
-
-      // Update Urdu value
       onChange(selectedOption ? selectedOption.label : selectedValue);
-
-      // Update English value
       if (onEnglishChange) {
         onEnglishChange(selectedOption ? selectedOption.value : selectedValue);
       }
@@ -137,7 +139,6 @@ const SelectField = ({
     }
   };
 
-  // For bilingual fields, display the Urdu label but store the English value
   const displayValue = bilingual
     ? options.find((opt) => opt.value === englishValue)?.label || value
     : value;
@@ -146,6 +147,7 @@ const SelectField = ({
     <div className={`mb-4 ${urdu ? "font-urdu" : ""} ${className}`}>
       <label className="block text-sm font-medium text-gray-700 mb-1">
         {label}
+        {required && <span className="text-red-500">*</span>}
       </label>
       <select
         value={displayValue || ""}
@@ -153,6 +155,7 @@ const SelectField = ({
         className={`w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition ${
           urdu ? "text-right" : ""
         }`}
+        required={required}
       >
         <option value="">{urdu ? "منتخب کریں" : "Select Option"}</option>
         {options.map((opt) => (
@@ -247,34 +250,18 @@ const durationOptions = [
   { value: "30_days", label: "ایک ماہ" },
 ];
 
-// Expanded mapping to handle all possible stored values
 const durationValueToLabel = {
-  // English keys
   "1_day": "ایک دن",
   "3_days": "تین دن",
   "5_days": "پانچ دن",
   "7_days": "ایک ہفتہ",
-  "7_days_alt": "ایک ہفتہ",
   "14_days": "چودہ دن",
   "21_days": "ایکویں دن",
   "30_days": "ایک ماہ",
-  "30_days_alt": "ایک ماہ",
-
-  // Urdu labels and variants
   "سات دن": "ایک ہفتہ",
   "1 ہفتہ": "ایک ہفتہ",
   "تیس دن": "ایک ماہ",
   "1 ماہ": "ایک ماہ",
-};
-
-const labelToDurationValue = {
-  "ایک دن": "1_day",
-  "تین دن": "3_days",
-  "پانچ دن": "5_days",
-  "ایک ہفتہ": "7_days",
-  "چودہ دن": "14_days",
-  "ایکویں دن": "21_days",
-  "ایک ماہ": "30_days",
 };
 
 const instructionsOptions = [
@@ -295,11 +282,10 @@ const instructionsValueToLabel = {
   as_needed: "ضرورت کے مطابق",
 };
 
-// Helper function to get English value from Urdu label
 const getEnglishValue = (urduLabel, options) => {
   if (!urduLabel) return "";
   const option = options.find((opt) => opt.label === urduLabel);
-  return option ? option.value : urduLabel; // Fallback to original if not found
+  return option ? option.value : urduLabel;
 };
 
 const EditConsultation = () => {
@@ -323,33 +309,14 @@ const EditConsultation = () => {
     const abortController = new AbortController();
     let isMounted = true;
 
-    const normalizeDurationValue = (value) => {
-      if (!value) return "";
-
-      // First check direct mapping
-      if (value in durationValueToLabel) {
-        return durationValueToLabel[value];
-      }
-
-      // Then try to find in options
-      const option = durationOptions.find(
-        (opt) => opt.value === value || opt.label === value
-      );
-
-      return option ? option.label : value;
-    };
-
     const normalizeValue = (value, options, fieldType = null) => {
       if (!value) return "";
-
       const valueToLabelMaps = {
         dosage: dosageValueToLabel,
         frequency: frequencyValueToLabel,
         duration: durationValueToLabel,
         instructions: instructionsValueToLabel,
       };
-
-      // Map English values to Urdu labels for prescription fields
       if (
         fieldType &&
         valueToLabelMaps[fieldType] &&
@@ -357,38 +324,10 @@ const EditConsultation = () => {
       ) {
         return valueToLabelMaps[fieldType][value];
       }
-
-      // Match by value or label
-      const exactMatch = options.find(
+      const option = options.find(
         (opt) => opt.value === value || opt.label === value
       );
-      if (exactMatch) return exactMatch.label; // Always return label for prescriptions
-
-      const labelMatch = options.find(
-        (opt) => opt.label === value || value.includes(opt.label)
-      );
-      if (labelMatch) return labelMatch.label;
-
-      // Handle duration aliases
-      if (fieldType === "duration") {
-        const durationAliases = {
-          "سات دن": "ایک ہفتہ",
-          "1 ہفتہ": "ایک ہفتہ",
-          "تیس دن": "ایک ماہ",
-          "1 ماہ": "ایک ماہ",
-        };
-        if (value in durationAliases) return durationAliases[value];
-      }
-
-      // Handle Urdu labels already in data
-      const urduMatch = options.find((opt) => opt.label === value);
-      if (urduMatch) return urduMatch.label;
-
-      console.warn(
-        `No match for value "${value}" in options for ${fieldType}`,
-        options
-      );
-      return "";
+      return option ? option.label : value;
     };
 
     const mapSymptomsToIds = (symptoms, allSymptoms) => {
@@ -453,19 +392,25 @@ const EditConsultation = () => {
             ? Promise.resolve({ data: cachedSymptoms, error: null })
             : safeRequest(
                 "https://patient-management-backend-nine.vercel.app/api/symptoms",
-                { signal: abortController.signal }
+                {
+                  signal: abortController.signal,
+                }
               ),
           cachedTests
             ? Promise.resolve({ data: cachedTests, error: null })
             : safeRequest(
                 "https://patient-management-backend-nine.vercel.app/api/tests",
-                { signal: abortController.signal }
+                {
+                  signal: abortController.signal,
+                }
               ),
           cachedMedicines
             ? Promise.resolve({ data: cachedMedicines, error: null })
             : safeRequest(
                 "https://patient-management-backend-nine.vercel.app/api/medicines",
-                { signal: abortController.signal }
+                {
+                  signal: abortController.signal,
+                }
               ),
         ]);
 
@@ -489,50 +434,59 @@ const EditConsultation = () => {
           if (medicinesData && !cachedMedicines)
             setCachedData("medicines", medicinesData);
 
-          // const prescriptions = consultationData.prescriptions || [];
-
-          // In your state initialization or fetch logic:
           const prescriptions = (consultationData.prescriptions || []).map(
-            (pres) => {
-              // Ensure we have both English and Urdu values
-              const dosage_en =
+            (pres) => ({
+              medicine_id: pres.medicine_id || "",
+              brand_name: pres.brand_name || "",
+              dosage_en:
                 pres.dosage_en ||
-                getEnglishValue(pres.dosage_urdu, dosageOptions);
-              const frequency_en =
+                getEnglishValue(pres.dosage_urdu, dosageOptions),
+              frequency_en:
                 pres.frequency_en ||
-                getEnglishValue(pres.frequency_urdu, frequencyOptions);
-              const duration_en =
+                getEnglishValue(pres.frequency_urdu, frequencyOptions),
+              duration_en:
                 pres.duration_en ||
-                getEnglishValue(pres.duration_urdu, durationOptions);
-              const instructions_en =
+                getEnglishValue(pres.duration_urdu, durationOptions),
+              instructions_en:
                 pres.instructions_en ||
-                getEnglishValue(pres.instructions_urdu, instructionsOptions);
-
-              return {
-                medicine_id: pres.medicine_id || "",
-                brand_name: pres.brand_name || "",
-                // English values
-                dosage_en,
-                frequency_en,
-                duration_en,
-                instructions_en,
-                // Urdu values
-                dosage_urdu:
-                  pres.dosage_urdu || dosageValueToLabel[dosage_en] || "",
-                frequency_urdu:
-                  pres.frequency_urdu ||
-                  frequencyValueToLabel[frequency_en] ||
-                  "",
-                duration_urdu:
-                  pres.duration_urdu || durationValueToLabel[duration_en] || "",
-                instructions_urdu:
-                  pres.instructions_urdu ||
-                  instructionsValueToLabel[instructions_en] ||
-                  "",
-                prescribed_at: pres.prescribed_at || new Date().toISOString(),
-              };
-            }
+                getEnglishValue(pres.instructions_urdu, instructionsOptions),
+              dosage_urdu: normalizeValue(
+                pres.dosage_urdu || pres.dosage_en,
+                dosageOptions,
+                "dosage"
+              ),
+              frequency_urdu: normalizeValue(
+                pres.frequency_urdu || pres.frequency_en,
+                frequencyOptions,
+                "frequency"
+              ),
+              duration_urdu: normalizeValue(
+                pres.duration_urdu || pres.duration_en,
+                durationOptions,
+                "duration"
+              ),
+              instructions_urdu: normalizeValue(
+                pres.instructions_urdu || pres.instructions_en,
+                instructionsOptions,
+                "instructions"
+              ),
+              prescribed_at: pres.prescribed_at || new Date().toISOString(),
+            })
           );
+
+          // Normalize tests to ensure only valid test_id numbers
+          const normalizedTests = (consultationData.tests || [])
+            .map((t) => {
+              if (typeof t === "number") return t;
+              if (t && (t.test_id || t.id)) return t.test_id || t.id;
+              return null;
+            })
+            .filter(
+              (id) =>
+                id !== null &&
+                Number.isInteger(id) &&
+                referenceData.tests.some((test) => test.id === id)
+            );
 
           setAllSymptoms(referenceData.symptoms);
           setAllTests(referenceData.tests);
@@ -540,14 +494,15 @@ const EditConsultation = () => {
 
           const newFormData = {
             ...consultationData,
+            patient_name: consultationData.patient_name || "",
+            gender: consultationData.gender || "Male",
+            mobile: consultationData.mobile || "",
             symptoms: mapSymptomsToIds(
               consultationData.symptoms || [],
               referenceData.symptoms
             ),
             rawSymptoms: consultationData.symptoms || [],
-            tests: (consultationData.tests || [])
-              .filter((t) => t && (t.test_id || t.id || typeof t === "number"))
-              .map((t) => t.test_id || t.id || t),
+            tests: normalizedTests,
             diagnosis: consultationData.neuro_diagnosis || "",
             treatment_plan: consultationData.neuro_treatment_plan || "",
             motor_function: consultationData.motor_function || "",
@@ -584,30 +539,7 @@ const EditConsultation = () => {
             mmse_score: consultationData.mmse_score || "",
             gcs_score: consultationData.gcs_score || "",
             notes: consultationData.notes || "",
-            prescriptions: prescriptions
-              .filter((p) => p)
-              .map((pres) => ({
-                medicine_id: pres.medicine_id || "",
-                brand_name: pres.brand_name || "",
-                dosage_urdu: normalizeValue(
-                  pres.dosage_urdu,
-                  dosageOptions,
-                  true
-                ),
-                frequency_urdu: normalizeValue(
-                  pres.frequency_urdu,
-                  frequencyOptions
-                ),
-                duration_urdu: normalizeDurationValue(
-                  pres.duration_urdu,
-                  durationOptions
-                ),
-                instructions_urdu: normalizeValue(
-                  pres.instructions_urdu,
-                  instructionsOptions
-                ),
-                prescribed_at: pres.prescribed_at || new Date().toISOString(),
-              })),
+            prescriptions,
             vital_signs: consultationData.vital_signs?.length
               ? consultationData.vital_signs
               : [createNewVitalSign()],
@@ -621,22 +553,8 @@ const EditConsultation = () => {
             })),
           };
 
+          console.log("Normalized Tests:", newFormData.tests);
           setEditFormData(newFormData);
-
-          if (
-            prescriptions.length > 0 &&
-            newFormData.prescriptions.every(
-              (p) =>
-                !p.dosage_urdu &&
-                !p.frequency_urdu &&
-                !p.duration_urdu &&
-                !p.instructions_urdu
-            )
-          ) {
-            setPrescriptionsError(
-              "No valid prescription values loaded (e.g., dosage, frequency)"
-            );
-          }
         }
       } catch (error) {
         if (isMounted && !axios.isCancel(error)) {
@@ -686,7 +604,7 @@ const EditConsultation = () => {
   };
 
   const removeMedicine = (index) => {
-    console.log("Removing prescription at index:", index); // Debug log
+    console.log("Removing prescription at index:", index);
     setEditFormData((prev) => ({
       ...prev,
       prescriptions: prev.prescriptions.filter((_, i) => i !== index),
@@ -741,6 +659,7 @@ const EditConsultation = () => {
   };
 
   const removeTest = (testId) => {
+    console.log("Removing test ID:", testId);
     setEditFormData((prev) => ({
       ...prev,
       tests: prev.tests.filter((id) => id !== testId),
@@ -753,6 +672,13 @@ const EditConsultation = () => {
       setEditLoading(true);
       setError(null);
       setPrescriptionsError(null);
+
+      if (!editFormData.patient_name) {
+        setError("Patient name is required.");
+        setEditLoading(false);
+        return;
+      }
+
       const validTestIds = editFormData.tests.filter((testId) =>
         allTests.some((test) => test.id === testId)
       );
@@ -770,6 +696,9 @@ const EditConsultation = () => {
         ...editFormData,
         patient_id: Number(patientId),
         consultation_id: Number(consultationId),
+        patient_name: editFormData.patient_name,
+        gender: editFormData.gender,
+        mobile: editFormData.mobile,
         tests: validTestIds,
         prescriptions: editFormData.prescriptions.map((pres) => ({
           medicine_id: pres.medicine_id,
@@ -834,47 +763,34 @@ const EditConsultation = () => {
   };
 
   const handleCancel = () => {
-    navigate(`/patients/${patientId}`);
+    if (
+      window.confirm(
+        "Are you sure you want to cancel? Unsaved changes will be lost."
+      )
+    ) {
+      navigate(`/patients/${patientId}`);
+    }
   };
 
   const handlePrint = () => {
     const printUrl = `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}/consultations/${consultationId}/print?lang=urdu`;
-    window.open(printUrl, "_blank");
     const printWindow = window.open(printUrl, "_blank");
     if (!printWindow) {
       alert("Pop-up blocked! Allow pop-ups for this site.");
     }
   };
 
-  if (editLoading) {
-    return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-        <motion.div
-          className="bg-white rounded-2xl shadow-xl p-8 flex items-center gap-4"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <motion.div
-            animate={{ rotate: 360 }}
-            transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
-          >
-            <FaSpinner className="w-12 h-12 text-teal-500" />
-          </motion.div>
-          <p className="text-lg font-medium text-gray-800">
-            Loading consultation data...
-          </p>
-        </motion.div>
-      </div>
-    );
+  if (editLoading && !editFormData) {
+    return <FullPageLoader isLoading={true} />;
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className=" w-full max-w-7xl p-8 max-h-[90vh]"
+        className="w-full max-w-7xl bg-white p-8 rounded-2xl shadow-xl max-h-[90vh] overflow-auto"
       >
         {editLoading && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -890,27 +806,51 @@ const EditConsultation = () => {
           </div>
         )}
         {error && (
-          <div className="mb-6 p-4 bg-yellow-100 text-yellow-700 rounded-lg flex items-center gap-2">
-            <FaTimes className="text-yellow-700" />
+          <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg flex items-center gap-2">
+            <FaTimes className="text-red-700" />
             {error}
+            <button
+              onClick={() => setError("")}
+              className="ml-auto text-red-700 hover:text-red-900"
+            >
+              <FaTimes />
+            </button>
           </div>
         )}
         {symptomsError && (
           <div className="mb-6 p-4 bg-yellow-100 text-yellow-700 rounded-lg flex items-center gap-2">
             <FaTimes className="text-yellow-700" />
             {symptomsError}
+            <button
+              onClick={() => setSymptomsError("")}
+              className="ml-auto text-yellow-700 hover:text-yellow-900"
+            >
+              <FaTimes />
+            </button>
           </div>
         )}
         {testsError && (
           <div className="mb-6 p-4 bg-yellow-100 text-yellow-700 rounded-lg flex items-center gap-2">
             <FaTimes className="text-yellow-700" />
             {testsError}
+            <button
+              onClick={() => setTestsError("")}
+              className="ml-auto text-yellow-700 hover:text-yellow-900"
+            >
+              <FaTimes />
+            </button>
           </div>
         )}
         {prescriptionsError && (
           <div className="mb-6 p-4 bg-yellow-100 text-yellow-700 rounded-lg flex items-center gap-2">
             <FaTimes className="text-yellow-700" />
             {prescriptionsError}
+            <button
+              onClick={() => setPrescriptionsError("")}
+              className="ml-auto text-yellow-700 hover:text-yellow-900"
+            >
+              <FaTimes />
+            </button>
           </div>
         )}
 
@@ -920,7 +860,8 @@ const EditConsultation = () => {
           </h2>
           <button
             onClick={handleCancel}
-            className="text-green-400 hover:text-green-700 transition transform hover:scale-110 bg-gray-500 rounded-full p-2 cursor-pointer hover:bg-white hover:border hover:rotate-90"
+            className="text-red-500 hover:text-red-700 transition transform hover:scale-110 bg-gray-100 rounded-full p-2 cursor-pointer"
+            aria-label="Cancel"
           >
             <FaTimes className="text-2xl" />
           </button>
@@ -945,18 +886,21 @@ const EditConsultation = () => {
                   value={editFormData.patient_name}
                   onChange={(val) => handleFormChange("patient_name", val)}
                   placeholder="Enter patient name"
+                  required
                 />
                 <FormField
                   label="Mobile"
                   value={editFormData.mobile}
                   onChange={(val) => handleFormChange("mobile", val)}
                   placeholder="Enter mobile number"
+                  disabled
                 />
                 <FormField
                   label="Visit Date"
                   type="date"
                   value={editFormData.visit_date?.split("T")[0] || ""}
                   onChange={(val) => handleFormChange("visit_date", val)}
+                  required
                 />
                 <FormField
                   label="Age"
@@ -964,6 +908,8 @@ const EditConsultation = () => {
                   value={editFormData.age}
                   onChange={(val) => handleFormChange("age", val)}
                   placeholder="Enter age"
+                  min={0}
+                  max={150}
                 />
                 <SelectField
                   label="Gender"
@@ -974,6 +920,7 @@ const EditConsultation = () => {
                     { value: "Female", label: "Female" },
                     { value: "Other", label: "Other" },
                   ]}
+                  required
                 />
               </div>
             </motion.div>
@@ -996,7 +943,7 @@ const EditConsultation = () => {
                 >
                   <FormField
                     label="Blood Pressure"
-                    placeholder="e.g., 120/80"
+                    placeholder="e.g., 120/80 mmHg"
                     value={vital.blood_pressure}
                     onChange={(val) =>
                       updateField("vital_signs", index, "blood_pressure", val)
@@ -1004,7 +951,7 @@ const EditConsultation = () => {
                   />
                   <FormField
                     label="Pulse Rate"
-                    placeholder="e.g., 80"
+                    placeholder="e.g., 80 bpm"
                     value={vital.pulse_rate}
                     onChange={(val) =>
                       updateField("vital_signs", index, "pulse_rate", val)
@@ -1012,7 +959,7 @@ const EditConsultation = () => {
                   />
                   <FormField
                     label="Temperature"
-                    placeholder="e.g., 98.6"
+                    placeholder="e.g., 98.6°F"
                     value={vital.temperature}
                     onChange={(val) =>
                       updateField("vital_signs", index, "temperature", val)
@@ -1020,7 +967,7 @@ const EditConsultation = () => {
                   />
                   <FormField
                     label="SpO2 Level"
-                    placeholder="e.g., 98"
+                    placeholder="e.g., 98%"
                     value={vital.spo2_level}
                     onChange={(val) =>
                       updateField("vital_signs", index, "spo2_level", val)
@@ -1047,6 +994,13 @@ const EditConsultation = () => {
                   />
                 </div>
               ))}
+              <button
+                type="button"
+                onClick={addVitalSign}
+                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
+              >
+                <FaPlus /> Add Vital Sign
+              </button>
             </motion.div>
 
             {/* Symptoms */}
@@ -1084,14 +1038,12 @@ const EditConsultation = () => {
                 allTests={allTests}
                 selectedTests={editFormData.tests}
                 onSelect={(newTestIds) =>
-                  setEditFormData({ ...editFormData, tests: newTestIds })
-                }
-                onRemove={(testId) =>
                   setEditFormData({
                     ...editFormData,
-                    tests: editFormData.tests.filter((id) => id !== testId),
+                    tests: [...new Set(newTestIds)], // Prevent duplicates
                   })
                 }
+                onRemove={removeTest}
               />
             </motion.div>
 
@@ -1107,7 +1059,6 @@ const EditConsultation = () => {
                 Neurological Examination
               </h3>
               <div className="space-y-8">
-                {/* Dropdown Fields */}
                 <div>
                   <h4 className="text-lg font-medium text-gray-700 mb-4">
                     Examination Details
@@ -1115,108 +1066,107 @@ const EditConsultation = () => {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <NeuroExamSelect
                       field="motor_function"
-                      value={editFormData.motor_function}
+                      value={editFormData.motor_function || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="muscle_tone"
-                      value={editFormData.muscle_tone}
+                      value={editFormData.muscle_tone || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="muscle_strength"
-                      value={editFormData.muscle_strength}
+                      value={editFormData.muscle_strength || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="coordination"
-                      value={editFormData.coordination}
+                      value={editFormData.coordination || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="deep_tendon_reflexes"
-                      value={editFormData.deep_tendon_reflexes}
+                      value={editFormData.deep_tendon_reflexes || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="gait_assessment"
-                      value={editFormData.gait_assessment}
+                      value={editFormData.gait_assessment || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="cranial_nerves"
-                      value={editFormData.cranial_nerves}
+                      value={editFormData.cranial_nerves || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="romberg_test"
-                      value={editFormData.romberg_test}
+                      value={editFormData.romberg_test || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="plantar_reflex"
-                      value={editFormData.plantar_reflex}
+                      value={editFormData.plantar_reflex || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="straight_leg_raise_left"
-                      value={editFormData.straight_leg_raise_left}
+                      value={editFormData.straight_leg_raise_left || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="straight_leg_raise_right"
-                      value={editFormData.straight_leg_raise_right}
+                      value={editFormData.straight_leg_raise_right || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="pupillary_reaction"
-                      value={editFormData.pupillary_reaction}
+                      value={editFormData.pupillary_reaction || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="speech_assessment"
-                      value={editFormData.speech_assessment}
+                      value={editFormData.speech_assessment || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="sensory_examination"
-                      value={editFormData.sensory_examination}
+                      value={editFormData.sensory_examination || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="mental_status"
-                      value={editFormData.mental_status}
+                      value={editFormData.mental_status || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="cerebellar_function"
-                      value={editFormData.cerebellar_function}
+                      value={editFormData.cerebellar_function || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="muscle_wasting"
-                      value={editFormData.muscle_wasting}
+                      value={editFormData.muscle_wasting || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="abnormal_movements"
-                      value={editFormData.abnormal_movements}
+                      value={editFormData.abnormal_movements || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="nystagmus"
-                      value={editFormData.nystagmus}
+                      value={editFormData.nystagmus || ""}
                       onChange={handleFormChange}
                     />
                     <NeuroExamSelect
                       field="fundoscopy"
-                      value={editFormData.fundoscopy}
+                      value={editFormData.fundoscopy || ""}
                       onChange={handleFormChange}
                     />
                   </div>
                 </div>
 
-                {/* Checkbox Fields */}
                 <div>
                   <h4 className="text-lg font-medium text-gray-700 mb-4">
                     Sensory and Neurological Signs
@@ -1224,54 +1174,54 @@ const EditConsultation = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <CheckboxField
                       label="Brudzinski Sign"
-                      checked={editFormData.brudzinski_sign}
+                      checked={editFormData.brudzinski_sign || false}
                       onChange={(val) =>
                         handleFormChange("brudzinski_sign", val)
                       }
                     />
                     <CheckboxField
                       label="Kernig Sign"
-                      checked={editFormData.kernig_sign}
+                      checked={editFormData.kernig_sign || false}
                       onChange={(val) => handleFormChange("kernig_sign", val)}
                     />
                     <CheckboxField
                       label="Temperature Sensation"
-                      checked={editFormData.temperature_sensation}
+                      checked={editFormData.temperature_sensation || false}
                       onChange={(val) =>
                         handleFormChange("temperature_sensation", val)
                       }
                     />
                     <CheckboxField
                       label="Pain Sensation"
-                      checked={editFormData.pain_sensation}
+                      checked={editFormData.pain_sensation || false}
                       onChange={(val) =>
                         handleFormChange("pain_sensation", val)
                       }
                     />
                     <CheckboxField
                       label="Vibration Sense"
-                      checked={editFormData.vibration_sense}
+                      checked={editFormData.vibration_sense || false}
                       onChange={(val) =>
                         handleFormChange("vibration_sense", val)
                       }
                     />
                     <CheckboxField
                       label="Proprioception"
-                      checked={editFormData.proprioception}
+                      checked={editFormData.proprioception || false}
                       onChange={(val) =>
                         handleFormChange("proprioception", val)
                       }
                     />
                     <CheckboxField
                       label="Facial Sensation"
-                      checked={editFormData.facial_sensation}
+                      checked={editFormData.facial_sensation || false}
                       onChange={(val) =>
                         handleFormChange("facial_sensation", val)
                       }
                     />
                     <CheckboxField
                       label="Swallowing Function"
-                      checked={editFormData.swallowing_function}
+                      checked={editFormData.swallowing_function || false}
                       onChange={(val) =>
                         handleFormChange("swallowing_function", val)
                       }
@@ -1279,7 +1229,6 @@ const EditConsultation = () => {
                   </div>
                 </div>
 
-                {/* Score Fields */}
                 <div>
                   <h4 className="text-lg font-medium text-gray-700 mb-4">
                     Cognitive Scores
@@ -1309,134 +1258,149 @@ const EditConsultation = () => {
             </motion.div>
 
             {/* Prescriptions */}
-            {editFormData.prescriptions?.map((med, index) => (
-              <motion.div
-                key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: index * 0.1 }}
-                className="mb-4 p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition flex items-center gap-4 flex-wrap"
-              >
-                <div className="flex-1 min-w-[200px]">
-                  <label className="block text-sm font-medium text-gray-700 mb-1 font-urdu">
-                    دوائی
-                  </label>
-                  <select
-                    value={med.medicine_id || ""}
-                    onChange={(e) => {
-                      const selectedMedicine = allMedicines.find(
-                        (m) => m.id === parseInt(e.target.value)
-                      );
-                      updateField(
-                        "prescriptions",
-                        index,
-                        "medicine_id",
-                        e.target.value
-                      );
-                      updateField(
-                        "prescriptions",
-                        index,
-                        "brand_name",
-                        selectedMedicine?.brand_name || ""
-                      );
-                    }}
-                    className="w-full p-3 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition"
-                    disabled={allMedicines.length === 0 && !med.brand_name}
-                  >
-                    <option value="">
-                      {allMedicines.length === 0 && med.brand_name
-                        ? med.brand_name
-                        : "دوائی منتخب کریں"}
-                    </option>
-                    {allMedicines.length > 0
-                      ? allMedicines.map((medicine) => (
-                          <option key={medicine.id} value={medicine.id}>
-                            {medicine.form || ""} {medicine.brand_name || ""}{" "}
-                            {medicine.strength || ""}
-                          </option>
-                        ))
-                      : med.brand_name && (
-                          <option value={med.medicine_id}>
-                            {med.brand_name}
-                          </option>
-                        )}
-                  </select>
-                </div>
-                <SelectField
-                  label="خوراک"
-                  value={med.dosage_urdu}
-                  englishValue={med.dosage_en}
-                  onChange={(val) =>
-                    updateField("prescriptions", index, "dosage_urdu", val)
-                  }
-                  onEnglishChange={(val) =>
-                    updateField("prescriptions", index, "dosage_en", val)
-                  }
-                  options={dosageOptions}
-                  urdu
-                  bilingual={true}
-                  className="flex-1 min-w-[150px]"
-                />
-                <SelectField
-                  label="تعدد"
-                  value={med.frequency_urdu}
-                  englishValue={med.frequency_en}
-                  onChange={(val) =>
-                    updateField("prescriptions", index, "frequency_urdu", val)
-                  }
-                  onEnglishChange={(val) =>
-                    updateField("prescriptions", index, "frequency_en", val)
-                  }
-                  options={frequencyOptions}
-                  urdu
-                  bilingual={true}
-                  className="flex-1 min-w-[150px]"
-                />
-                <SelectField
-                  label="مدت"
-                  value={med.duration_urdu}
-                  englishValue={med.duration_en}
-                  onChange={(val) =>
-                    updateField("prescriptions", index, "duration_urdu", val)
-                  }
-                  onEnglishChange={(val) =>
-                    updateField("prescriptions", index, "duration_en", val)
-                  }
-                  options={durationOptions}
-                  urdu
-                  bilingual={true}
-                  className="flex-1 min-w-[150px]"
-                />
-                <SelectField
-                  label="ہدایات"
-                  value={med.instructions_urdu}
-                  englishValue={med.instructions_en}
-                  onChange={(val) =>
-                    updateField(
-                      "prescriptions",
-                      index,
-                      "instructions_urdu",
-                      val
-                    )
-                  }
-                  onEnglishChange={(val) =>
-                    updateField("prescriptions", index, "instructions_en", val)
-                  }
-                  options={instructionsOptions}
-                  urdu
-                  bilingual={true}
-                  className="flex-1 min-w-[150px]"
-                />
-                <button
-                  type="button"
-                  onClick={() => removeMedicine(index)}
-                  className="text-red-500 hover:text-red-900 transition transform hover:scale-110 cursor-pointer"
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.6 }}
+              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+            >
+              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
+                <FaPills className="text-yellow-600 w-6 h-6" />
+                Prescriptions
+              </h3>
+              {editFormData.prescriptions?.map((med, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="mb-4 p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition flex items-center gap-4 flex-wrap"
                 >
-                  <FaTrash className="w-5 h-5" />
-                </button>
-              </motion.div>
-            ))}
-            <motion.div>
+                  <div className="flex-1 min-w-[200px]">
+                    <label className="block text-sm font-medium text-gray-700 mb-1 font-urdu">
+                      دوائی
+                    </label>
+                    <select
+                      value={med.medicine_id || ""}
+                      onChange={(e) => {
+                        const selectedMedicine = allMedicines.find(
+                          (m) => m.id === parseInt(e.target.value)
+                        );
+                        updateField(
+                          "prescriptions",
+                          index,
+                          "medicine_id",
+                          e.target.value
+                        );
+                        updateField(
+                          "prescriptions",
+                          index,
+                          "brand_name",
+                          selectedMedicine?.brand_name || ""
+                        );
+                      }}
+                      className="w-full p-3 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition"
+                      disabled={allMedicines.length === 0 && !med.brand_name}
+                    >
+                      <option value="">
+                        {allMedicines.length === 0 && med.brand_name
+                          ? med.brand_name
+                          : "دوائی منتخب کریں"}
+                      </option>
+                      {allMedicines.length > 0
+                        ? allMedicines.map((medicine) => (
+                            <option key={medicine.id} value={medicine.id}>
+                              {medicine.form || ""} {medicine.brand_name || ""}{" "}
+                              {medicine.strength || ""}
+                            </option>
+                          ))
+                        : med.brand_name && (
+                            <option value={med.medicine_id}>
+                              {med.brand_name}
+                            </option>
+                          )}
+                    </select>
+                  </div>
+                  <SelectField
+                    label="خوراک"
+                    value={med.dosage_urdu}
+                    englishValue={med.dosage_en}
+                    onChange={(val) =>
+                      updateField("prescriptions", index, "dosage_urdu", val)
+                    }
+                    onEnglishChange={(val) =>
+                      updateField("prescriptions", index, "dosage_en", val)
+                    }
+                    options={dosageOptions}
+                    urdu
+                    bilingual={true}
+                    className="flex-1 min-w-[150px]"
+                  />
+                  <SelectField
+                    label="تعدد"
+                    value={med.frequency_urdu}
+                    englishValue={med.frequency_en}
+                    onChange={(val) =>
+                      updateField("prescriptions", index, "frequency_urdu", val)
+                    }
+                    onEnglishChange={(val) =>
+                      updateField("prescriptions", index, "frequency_en", val)
+                    }
+                    options={frequencyOptions}
+                    urdu
+                    bilingual={true}
+                    className="flex-1 min-w-[150px]"
+                  />
+                  <SelectField
+                    label="مدت"
+                    value={med.duration_urdu}
+                    englishValue={med.duration_en}
+                    onChange={(val) =>
+                      updateField("prescriptions", index, "duration_urdu", val)
+                    }
+                    onEnglishChange={(val) =>
+                      updateField("prescriptions", index, "duration_en", val)
+                    }
+                    options={durationOptions}
+                    urdu
+                    bilingual={true}
+                    className="flex-1 min-w-[150px]"
+                  />
+                  <SelectField
+                    label="ہدایات"
+                    value={med.instructions_urdu}
+                    englishValue={med.instructions_en}
+                    onChange={(val) =>
+                      updateField(
+                        "prescriptions",
+                        index,
+                        "instructions_urdu",
+                        val
+                      )
+                    }
+                    onEnglishChange={(val) =>
+                      updateField(
+                        "prescriptions",
+                        index,
+                        "instructions_en",
+                        val
+                      )
+                    }
+                    options={instructionsOptions}
+                    urdu
+                    bilingual={true}
+                    className="flex-1 min-w-[150px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => removeMedicine(index)}
+                    className="text-red-500 hover:text-red-700 transition transform hover:scale-110 cursor-pointer"
+                    aria-label="Remove Medicine"
+                  >
+                    <FaTrash className="w-5 h-5" />
+                  </button>
+                </motion.div>
+              ))}
               <button
                 type="button"
                 onClick={addMedicine}
@@ -1452,6 +1416,7 @@ const EditConsultation = () => {
                 </p>
               )}
             </motion.div>
+
             {/* Diagnosis */}
             <motion.div
               initial={{ opacity: 0 }}
@@ -1511,6 +1476,13 @@ const EditConsultation = () => {
                   />
                 </div>
               ))}
+              <button
+                type="button"
+                onClick={addFollowUp}
+                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
+              >
+                <FaPlus /> Add Follow-up
+              </button>
             </motion.div>
 
             {/* Form Actions */}

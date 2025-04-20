@@ -1,20 +1,26 @@
 import React, { useMemo } from "react";
 import Select from "react-select";
-import { FaFlask, FaSearch } from "react-icons/fa";
+import { FaFlask, FaSearch, FaTimes } from "react-icons/fa";
 
-const TestsSelector = ({ allTests, selectedTests, onSelect }) => {
+const TestsSelector = ({ allTests, selectedTests, onSelect, onRemove }) => {
+  // Log inputs for debugging
+  console.log("TestsSelector - allTests:", allTests);
+  console.log("TestsSelector - selectedTests:", selectedTests);
+
   // Validate and map allTests to testOptions
   const testOptions = useMemo(() => {
     if (!Array.isArray(allTests)) {
       console.warn("allTests is not an array:", allTests);
       return [];
     }
-    return allTests
+    const options = allTests
       .filter((test) => test && test.id && test.test_name)
       .map((test) => ({
         label: test.test_name || "Unknown Test",
         value: test.id,
       }));
+    console.log("TestsSelector - testOptions:", options);
+    return options;
   }, [allTests]);
 
   // Filter valid selected tests
@@ -23,15 +29,18 @@ const TestsSelector = ({ allTests, selectedTests, onSelect }) => {
       console.warn("selectedTests is not an array:", selectedTests);
       return [];
     }
-    return selectedTests
+    const options = selectedTests
       .map((testId) => testOptions.find((option) => option.value === testId))
       .filter(Boolean);
+    console.log("TestsSelector - selectedTestOptions:", options);
+    return options;
   }, [selectedTests, testOptions]);
 
   const handleChange = (selectedOptions) => {
     const newSelectedIds = selectedOptions
       ? selectedOptions.map((option) => option.value)
       : [];
+    console.log("TestsSelector - New selected IDs:", newSelectedIds);
     onSelect(newSelectedIds);
   };
 
@@ -64,6 +73,8 @@ const TestsSelector = ({ allTests, selectedTests, onSelect }) => {
       backgroundColor: "#f3f0ff",
       borderRadius: "8px",
       padding: "2px 6px",
+      display: "flex",
+      alignItems: "center",
     }),
     multiValueLabel: (base) => ({
       ...base,
@@ -75,6 +86,8 @@ const TestsSelector = ({ allTests, selectedTests, onSelect }) => {
       ...base,
       color: "#7c3aed",
       borderRadius: "0 8px 8px 0",
+      padding: "0 6px",
+      cursor: "pointer",
       ":hover": { backgroundColor: "#ddd6fe", color: "#5b21b6" },
     }),
     placeholder: (base) => ({
@@ -106,7 +119,7 @@ const TestsSelector = ({ allTests, selectedTests, onSelect }) => {
   };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-4">
       <div>
         <label
           htmlFor="tests-selector"
@@ -139,6 +152,18 @@ const TestsSelector = ({ allTests, selectedTests, onSelect }) => {
             aria-label="Select diagnostic tests"
             components={{
               DropdownIndicator: () => <FaSearch className="mr-1 text-gray-400" />,
+              MultiValueRemove: (props) => (
+                <div
+                  {...props.innerProps}
+                  className="cursor-pointer p-1 hover:bg-purple-100 rounded-r-md"
+                  onClick={() => {
+                    props.removeProps.onClick();
+                    onRemove(props.data.value); // Call onRemove with test_id
+                  }}
+                >
+                  <FaTimes className="text-purple-700 hover:text-purple-900" />
+                </div>
+              ),
             }}
             noOptionsMessage={() => "No tests found"}
           />
