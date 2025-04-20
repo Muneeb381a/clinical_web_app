@@ -122,13 +122,13 @@ const PrescriptionManagementSection = ({
 
   const validateMedicines = () => {
     if (selectedMedicines.length === 0) return true;
-    const invalid = selectedMedicines.some((med) => {
+    const invalid = selectedMedicines.some((med, index) => {
       if (!med.medicine_id || med.medicine_id === "") {
-        console.warn("Empty medicine_id in:", med);
+        console.warn(`Empty medicine_id at index ${index}:`, med);
         return true;
       }
       if (!medicines.some((m) => m.value === String(med.medicine_id))) {
-        console.warn("Invalid medicine_id not in medicines:", med);
+        console.warn(`Invalid medicine_id at index ${index}:`, med);
         return true;
       }
       return false;
@@ -142,13 +142,9 @@ const PrescriptionManagementSection = ({
     return true;
   };
 
-  // Filter available medicines to exclude those already selected
-  const getAvailableMedicines = (currentIndex) => {
-    const selectedIds = selectedMedicines
-      .filter((_, i) => i !== currentIndex) // Exclude the current medicine to allow editing
-      .map((med) => med.medicine_id)
-      .filter((id) => id); // Exclude empty IDs
-    return medicines.filter((medicine) => !selectedIds.includes(medicine.value));
+  // Modified to allow selecting the same medicine multiple times
+  const getAvailableMedicines = () => {
+    return medicines; // Return all medicines without filtering
   };
 
   return (
@@ -159,6 +155,11 @@ const PrescriptionManagementSection = ({
           Prescription Management
         </h3>
       </div>
+
+      {/* Optional: Add note for user clarity */}
+      <p className="text-sm text-gray-500 mb-2">
+        You can select the same medicine multiple times with different dosages or instructions.
+      </p>
 
       {medicines.length === 0 && !isCreating ? (
         <div className="text-center text-gray-600">
@@ -187,7 +188,7 @@ const PrescriptionManagementSection = ({
                   <CreatableSelect
                     isLoading={isCreating}
                     loadingMessage={() => "Creating medicine..."}
-                    options={getAvailableMedicines(index)} // Filter out selected medicines
+                    options={getAvailableMedicines()} // Updated to use new function
                     value={
                       med.medicine_id
                         ? medicines.find(
