@@ -70,10 +70,18 @@ const FormField = ({
   disabled = false,
   required = false,
 }) => (
-  <div className="mb-4">
-    <label className="block text-sm font-medium text-gray-700 mb-1">
+  <div style={{ marginBottom: "1rem" }}>
+    <label
+      style={{
+        display: "block",
+        fontSize: "0.875rem",
+        fontWeight: "500",
+        color: "#374151",
+        marginBottom: "0.25rem",
+      }}
+    >
       {label}
-      {required && <span className="text-red-500">*</span>}
+      {required && <span style={{ color: "#ef4444" }}>*</span>}
     </label>
     <input
       type={type}
@@ -92,22 +100,56 @@ const FormField = ({
       max={max}
       disabled={disabled}
       required={required}
-      className={`w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition ${
-        urdu ? "font-urdu text-right" : ""
-      } ${disabled ? "bg-gray-100 cursor-not-allowed" : ""}`}
+      style={{
+        width: "100%",
+        padding: "0.5rem",
+        border: "1px solid #d1d5db",
+        borderRadius: "0.375rem",
+        backgroundColor: "#ffffff",
+        fontSize: "0.875rem",
+        color: "#374151",
+        outline: "none",
+        transition: "all 0.2s",
+        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+        ...(urdu
+          ? {
+              fontFamily: "'Noto Nastaliq Urdu', sans-serif",
+              textAlign: "right",
+            }
+          : {}),
+        ...(disabled
+          ? { backgroundColor: "#f3f4f6", cursor: "not-allowed" }
+          : {}),
+      }}
+      onFocus={(e) => (e.target.style.borderColor = "#14b8a6")}
+      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
     />
   </div>
 );
 
 const CheckboxField = ({ label, checked, onChange }) => (
-  <div className="mb-4 flex items-center">
+  <div style={{ marginBottom: "1rem", display: "flex", alignItems: "center" }}>
     <input
       type="checkbox"
       checked={checked || false}
       onChange={(e) => onChange(e.target.checked)}
-      className="h-4 w-4 text-teal-600 focus:ring-teal-500 border-gray-300 rounded"
+      style={{
+        height: "1rem",
+        width: "1rem",
+        color: "#14b8a6",
+        border: "1px solid #d1d5db",
+        borderRadius: "0.25rem",
+        cursor: "pointer",
+      }}
     />
-    <label className="ml-2 block text-sm font-medium text-gray-700">
+    <label
+      style={{
+        marginLeft: "0.5rem",
+        fontSize: "0.875rem",
+        fontWeight: "500",
+        color: "#374151",
+      }}
+    >
       {label}
     </label>
   </div>
@@ -122,7 +164,6 @@ const SelectField = ({
   bilingual = false,
   onEnglishChange = null,
   englishValue = null,
-  className = "",
   required = false,
 }) => {
   const handleChange = (selectedValue) => {
@@ -144,22 +185,53 @@ const SelectField = ({
     : value;
 
   return (
-    <div className={`mb-4 ${urdu ? "font-urdu" : ""} ${className}`}>
-      <label className="block text-sm font-medium text-gray-700 mb-1">
+    <div
+      style={{
+        marginBottom: "1rem",
+        ...(urdu ? { fontFamily: "'Noto Nastaliq Urdu', sans-serif" } : {}),
+      }}
+    >
+      <label
+        style={{
+          display: "block",
+          fontSize: "0.875rem",
+          fontWeight: "500",
+          color: "#374151",
+          marginBottom: "0.25rem",
+        }}
+      >
         {label}
-        {required && <span className="text-red-500">*</span>}
+        {required && <span style={{ color: "#ef4444" }}>*</span>}
       </label>
       <select
         value={displayValue || ""}
         onChange={(e) => handleChange(e.target.value)}
-        className={`w-full p-2 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition ${
-          urdu ? "text-right" : ""
-        }`}
+        style={{
+          width: "100%",
+          padding: "0.5rem",
+          border: "1px solid #d1d5db",
+          borderRadius: "0.375rem",
+          backgroundColor: "#ffffff",
+          fontSize: "0.875rem",
+          color: "#374151",
+          outline: "none",
+          transition: "all 0.2s",
+          boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+          ...(urdu ? { textAlign: "right" } : {}),
+        }}
+        onFocus={(e) => (e.target.style.borderColor = "#14b8a6")}
+        onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
         required={required}
       >
-        <option value="">{urdu ? "منتخب کریں" : "Select Option"}</option>
+        <option value="" style={{ color: "#6b7280" }}>
+          {urdu ? "منتخب کریں" : "Select Option"}
+        </option>
         {options.map((opt) => (
-          <option key={opt.value} value={bilingual ? opt.label : opt.value}>
+          <option
+            key={opt.value}
+            value={bilingual ? opt.label : opt.value}
+            style={{ color: "#374151" }}
+          >
             {opt.label}
           </option>
         ))}
@@ -258,10 +330,6 @@ const durationValueToLabel = {
   "14_days": "چودہ دن",
   "21_days": "ایکویں دن",
   "30_days": "ایک ماہ",
-  "سات دن": "ایک ہفتہ",
-  "1 ہفتہ": "ایک ہفتہ",
-  "تیس دن": "ایک ماہ",
-  "1 ماہ": "ایک ماہ",
 };
 
 const instructionsOptions = [
@@ -366,7 +434,7 @@ const EditConsultation = () => {
 
         const { data: consultationData, error: consultationError } =
           await safeRequest(
-            `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}/consultations/${consultationId}`,
+            `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}/consultations/${consultationId}?t=${Date.now()}`,
             { signal: abortController.signal }
           );
         if (!consultationData || consultationError) {
@@ -392,25 +460,19 @@ const EditConsultation = () => {
             ? Promise.resolve({ data: cachedSymptoms, error: null })
             : safeRequest(
                 "https://patient-management-backend-nine.vercel.app/api/symptoms",
-                {
-                  signal: abortController.signal,
-                }
+                { signal: abortController.signal }
               ),
           cachedTests
             ? Promise.resolve({ data: cachedTests, error: null })
             : safeRequest(
                 "https://patient-management-backend-nine.vercel.app/api/tests",
-                {
-                  signal: abortController.signal,
-                }
+                { signal: abortController.signal }
               ),
           cachedMedicines
             ? Promise.resolve({ data: cachedMedicines, error: null })
             : safeRequest(
                 "https://patient-management-backend-nine.vercel.app/api/medicines",
-                {
-                  signal: abortController.signal,
-                }
+                { signal: abortController.signal }
               ),
         ]);
 
@@ -418,7 +480,7 @@ const EditConsultation = () => {
           if (symptomsError) setSymptomsError("Couldn't load symptoms list");
           if (testsError) setTestsError("Couldn't load tests list");
           if (medicinesError)
-            setError(
+            setPrescriptionsError(
               "Couldn't load medicines list. Existing prescriptions will be displayed."
             );
 
@@ -433,6 +495,34 @@ const EditConsultation = () => {
           if (testsData && !cachedTests) setCachedData("tests", testsData);
           if (medicinesData && !cachedMedicines)
             setCachedData("medicines", medicinesData);
+
+          // Normalize tests
+          const normalizedTests = (consultationData.tests || [])
+            .map((t) => {
+              console.log("Processing test:", t);
+              const testId = t.test_id || t.id;
+              if (!Number.isInteger(testId)) {
+                console.warn("Invalid test ID:", t);
+                return null;
+              }
+              return testId;
+            })
+            .filter(Boolean);
+          console.log("Normalized Tests:", normalizedTests);
+
+          // Check for missing test IDs in allTests
+          const allTestIds = referenceData.tests.map((t) => t.id);
+          const missingTestIds = normalizedTests.filter(
+            (id) => !allTestIds.includes(id)
+          );
+          if (missingTestIds.length > 0) {
+            console.warn("Test IDs not in allTests:", missingTestIds);
+            setTestsError(
+              `Some tests (IDs: ${missingTestIds.join(
+                ", "
+              )}) are not available. Please reselect tests.`
+            );
+          }
 
           const prescriptions = (consultationData.prescriptions || []).map(
             (pres) => ({
@@ -473,20 +563,6 @@ const EditConsultation = () => {
               prescribed_at: pres.prescribed_at || new Date().toISOString(),
             })
           );
-
-          // Normalize tests to ensure only valid test_id numbers
-          const normalizedTests = (consultationData.tests || [])
-            .map((t) => {
-              if (typeof t === "number") return t;
-              if (t && (t.test_id || t.id)) return t.test_id || t.id;
-              return null;
-            })
-            .filter(
-              (id) =>
-                id !== null &&
-                Number.isInteger(id) &&
-                referenceData.tests.some((test) => test.id === id)
-            );
 
           setAllSymptoms(referenceData.symptoms);
           setAllTests(referenceData.tests);
@@ -553,7 +629,6 @@ const EditConsultation = () => {
             })),
           };
 
-          console.log("Normalized Tests:", newFormData.tests);
           setEditFormData(newFormData);
         }
       } catch (error) {
@@ -604,7 +679,6 @@ const EditConsultation = () => {
   };
 
   const removeMedicine = (index) => {
-    console.log("Removing prescription at index:", index);
     setEditFormData((prev) => ({
       ...prev,
       prescriptions: prev.prescriptions.filter((_, i) => i !== index),
@@ -659,7 +733,6 @@ const EditConsultation = () => {
   };
 
   const removeTest = (testId) => {
-    console.log("Removing test ID:", testId);
     setEditFormData((prev) => ({
       ...prev,
       tests: prev.tests.filter((id) => id !== testId),
@@ -725,10 +798,6 @@ const EditConsultation = () => {
         )
       );
       console.log(
-        "Submitting payload (tests):",
-        JSON.stringify(payload.tests, null, 2)
-      );
-      console.log(
         "Submitting payload:",
         JSON.stringify(cleanedPayload, null, 2)
       );
@@ -747,6 +816,7 @@ const EditConsultation = () => {
       }
 
       if (response.status >= 200 && response.status < 300) {
+        sessionStorage.removeItem(`patient_${patientId}_consultations`);
         handlePrint();
         navigate(`/patients/${patientId}`);
       }
@@ -762,6 +832,14 @@ const EditConsultation = () => {
     }
   };
 
+  const handlePrint = () => {
+    const printUrl = `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}/consultations/${consultationId}/print?lang=urdu`;
+    const printWindow = window.open(printUrl, "_blank");
+    if (!printWindow) {
+      alert("Pop-up blocked! Allow pop-ups for this site.");
+    }
+  };
+
   const handleCancel = () => {
     if (
       window.confirm(
@@ -772,115 +850,277 @@ const EditConsultation = () => {
     }
   };
 
-  const handlePrint = () => {
-    const printUrl = `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}/consultations/${consultationId}/print?lang=urdu`;
-    const printWindow = window.open(printUrl, "_blank");
-    if (!printWindow) {
-      alert("Pop-up blocked! Allow pop-ups for this site.");
-    }
-  };
-
   if (editLoading && !editFormData) {
     return <FullPageLoader isLoading={true} />;
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center p-4">
+    <div
+      style={{
+        minHeight: "100vh",
+        background: "linear-gradient(to bottom right, #f3f4f6, #e5e7eb)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        padding: "1rem",
+      }}
+    >
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-7xl bg-white p-8 rounded-2xl shadow-xl max-h-[90vh] overflow-auto"
+        style={{
+          width: "100%",
+          maxWidth: "80rem",
+          backgroundColor: "#ffffff",
+          padding: "2rem",
+          borderRadius: "1rem",
+          boxShadow: "0 10px 20px rgba(0, 0, 0, 0.1)",
+          maxHeight: "90vh",
+          overflow: "auto",
+        }}
       >
         {editLoading && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div
+            style={{
+              position: "fixed",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              backgroundColor: "rgba(0, 0, 0, 0.5)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 50,
+            }}
+          >
             <motion.div
               animate={{ rotate: 360 }}
               transition={{ repeat: Infinity, duration: 1, ease: "linear" }}
             >
-              <FaSpinner className="w-12 h-12 text-teal-500" />
+              <FaSpinner
+                style={{ width: "3rem", height: "3rem", color: "#14b8a6" }}
+              />
             </motion.div>
-            <p className="text-lg font-medium text-white ml-4">
+            <p
+              style={{
+                fontSize: "1.125rem",
+                fontWeight: "500",
+                color: "#ffffff",
+                marginLeft: "1rem",
+              }}
+            >
               Saving Changes...
             </p>
           </div>
         )}
         {error && (
-          <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg flex items-center gap-2">
-            <FaTimes className="text-red-700" />
+          <div
+            style={{
+              marginBottom: "1.5rem",
+              padding: "1rem",
+              backgroundColor: "#fee2e2",
+              color: "#b91c1c",
+              borderRadius: "0.5rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+            }}
+          >
+            <FaTimes style={{ color: "#b91c1c" }} />
             {error}
             <button
               onClick={() => setError("")}
-              className="ml-auto text-red-700 hover:text-red-900"
+              style={{
+                marginLeft: "auto",
+                color: "#b91c1c",
+                cursor: "pointer",
+                transition: "color 0.2s",
+              }}
+              onMouseOver={(e) => (e.target.style.color = "#991b1b")}
+              onMouseOut={(e) => (e.target.style.color = "#b91c1c")}
             >
               <FaTimes />
             </button>
           </div>
         )}
         {symptomsError && (
-          <div className="mb-6 p-4 bg-yellow-100 text-yellow-700 rounded-lg flex items-center gap-2">
-            <FaTimes className="text-yellow-700" />
+          <div
+            style={{
+              marginBottom: "1.5rem",
+              padding: "1rem",
+              backgroundColor: "#fef9c3",
+              color: "#854d0e",
+              borderRadius: "0.5rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+            }}
+          >
+            <FaTimes style={{ color: "#854d0e" }} />
             {symptomsError}
             <button
               onClick={() => setSymptomsError("")}
-              className="ml-auto text-yellow-700 hover:text-yellow-900"
+              style={{
+                marginLeft: "auto",
+                color: "#854d0e",
+                cursor: "pointer",
+                transition: "color 0.2s",
+              }}
+              onMouseOver={(e) => (e.target.style.color = "#713f12")}
+              onMouseOut={(e) => (e.target.style.color = "#854d0e")}
             >
               <FaTimes />
             </button>
           </div>
         )}
         {testsError && (
-          <div className="mb-6 p-4 bg-yellow-100 text-yellow-700 rounded-lg flex items-center gap-2">
-            <FaTimes className="text-yellow-700" />
+          <div
+            style={{
+              marginBottom: "1.5rem",
+              padding: "1rem",
+              backgroundColor: "#fef9c3",
+              color: "#854d0e",
+              borderRadius: "0.5rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+            }}
+          >
+            <FaTimes style={{ color: "#854d0e" }} />
             {testsError}
             <button
               onClick={() => setTestsError("")}
-              className="ml-auto text-yellow-700 hover:text-yellow-900"
+              style={{
+                marginLeft: "auto",
+                color: "#854d0e",
+                cursor: "pointer",
+                transition: "color 0.2s",
+              }}
+              onMouseOver={(e) => (e.target.style.color = "#713f12")}
+              onMouseOut={(e) => (e.target.style.color = "#854d0e")}
             >
               <FaTimes />
             </button>
           </div>
         )}
         {prescriptionsError && (
-          <div className="mb-6 p-4 bg-yellow-100 text-yellow-700 rounded-lg flex items-center gap-2">
-            <FaTimes className="text-yellow-700" />
+          <div
+            style={{
+              marginBottom: "1.5rem",
+              padding: "1rem",
+              backgroundColor: "#fef9c3",
+              color: "#854d0e",
+              borderRadius: "0.5rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+            }}
+          >
+            <FaTimes style={{ color: "#854d0e" }} />
             {prescriptionsError}
             <button
               onClick={() => setPrescriptionsError("")}
-              className="ml-auto text-yellow-700 hover:text-yellow-900"
+              style={{
+                marginLeft: "auto",
+                color: "#854d0e",
+                cursor: "pointer",
+                transition: "color 0.2s",
+              }}
+              onMouseOver={(e) => (e.target.style.color = "#713f12")}
+              onMouseOut={(e) => (e.target.style.color = "#854d0e")}
             >
               <FaTimes />
             </button>
           </div>
         )}
 
-        <div className="flex justify-between items-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-800">
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            marginBottom: "2rem",
+          }}
+        >
+          <h2
+            style={{
+              fontSize: "1.875rem",
+              fontWeight: "700",
+              color: "#1f2937",
+            }}
+          >
             Edit Consultation
           </h2>
           <button
             onClick={handleCancel}
-            className="text-red-500 hover:text-red-700 transition transform hover:scale-110 bg-gray-100 rounded-full p-2 cursor-pointer"
+            style={{
+              color: "#ef4444",
+              backgroundColor: "#f3f4f6",
+              borderRadius: "9999px",
+              padding: "0.5rem",
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+            onMouseOver={(e) => {
+              e.target.style.color = "#dc2626";
+              e.target.style.transform = "scale(1.1)";
+            }}
+            onMouseOut={(e) => {
+              e.target.style.color = "#ef4444";
+              e.target.style.transform = "scale(1)";
+            }}
             aria-label="Cancel"
           >
-            <FaTimes className="text-2xl" />
+            <FaTimes style={{ fontSize: "1.5rem" }} />
           </button>
         </div>
 
         {editFormData ? (
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <form
+            onSubmit={handleSubmit}
+            style={{ display: "flex", flexDirection: "column", gap: "2rem" }}
+          >
             {/* Patient Information */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.1 }}
-              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+              style={{
+                backgroundColor: "#f9fafb",
+                padding: "1.5rem",
+                borderRadius: "0.75rem",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
+              }}
             >
-              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
-                <FaUser className="text-teal-600 w-6 h-6" />
+              <h3
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  color: "#1f2937",
+                  marginBottom: "1.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                <FaUser
+                  style={{
+                    color: "#14b8a6",
+                    width: "1.5rem",
+                    height: "1.5rem",
+                  }}
+                />
                 Patient Information
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                  gap: "1.5rem",
+                }}
+              >
                 <FormField
                   label="Patient Name"
                   value={editFormData.patient_name}
@@ -930,16 +1170,46 @@ const EditConsultation = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.2 }}
-              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+              style={{
+                backgroundColor: "#f9fafb",
+                padding: "1.5rem",
+                borderRadius: "0.75rem",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
+              }}
             >
-              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
-                <FaHeartbeat className="text-red-600 w-6 h-6" />
+              <h3
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  color: "#1f2937",
+                  marginBottom: "1.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                <FaHeartbeat
+                  style={{
+                    color: "#ef4444",
+                    width: "1.5rem",
+                    height: "1.5rem",
+                  }}
+                />
                 Vital Signs
               </h3>
               {editFormData.vital_signs?.map((vital, index) => (
                 <div
                   key={index}
-                  className="mb-4 p-4 bg-white rounded-lg shadow-inner grid grid-cols-1 md:grid-cols-3 gap-4"
+                  style={{
+                    marginBottom: "1rem",
+                    padding: "1rem",
+                    backgroundColor: "#ffffff",
+                    borderRadius: "0.5rem",
+                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                    gap: "1rem",
+                  }}
                 >
                   <FormField
                     label="Blood Pressure"
@@ -994,13 +1264,6 @@ const EditConsultation = () => {
                   />
                 </div>
               ))}
-              <button
-                type="button"
-                onClick={addVitalSign}
-                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
-              >
-                <FaPlus /> Add Vital Sign
-              </button>
             </motion.div>
 
             {/* Symptoms */}
@@ -1008,10 +1271,31 @@ const EditConsultation = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
-              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+              style={{
+                backgroundColor: "#f9fafb",
+                padding: "1.5rem",
+                borderRadius: "0.75rem",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
+              }}
             >
-              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
-                <FaStethoscope className="text-blue-600 w-6 h-6" />
+              <h3
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  color: "#1f2937",
+                  marginBottom: "1.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                <FaStethoscope
+                  style={{
+                    color: "#3b82f6",
+                    width: "1.5rem",
+                    height: "1.5rem",
+                  }}
+                />
                 Symptoms
               </h3>
               <SymptomsSelector
@@ -1028,10 +1312,31 @@ const EditConsultation = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4 }}
-              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+              style={{
+                backgroundColor: "#f9fafb",
+                padding: "1.5rem",
+                borderRadius: "0.75rem",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
+              }}
             >
-              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
-                <FaFlask className="text-green-600 w-6 h-6" />
+              <h3
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  color: "#1f2937",
+                  marginBottom: "1.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                <FaFlask
+                  style={{
+                    color: "#22c55e",
+                    width: "1.5rem",
+                    height: "1.5rem",
+                  }}
+                />
                 Tests
               </h3>
               <TestsSelector
@@ -1040,7 +1345,7 @@ const EditConsultation = () => {
                 onSelect={(newTestIds) =>
                   setEditFormData({
                     ...editFormData,
-                    tests: [...new Set(newTestIds)], // Prevent duplicates
+                    tests: [...new Set(newTestIds)],
                   })
                 }
                 onRemove={removeTest}
@@ -1052,18 +1357,59 @@ const EditConsultation = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+              style={{
+                backgroundColor: "#f9fafb",
+                padding: "1.5rem",
+                borderRadius: "0.75rem",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
+              }}
             >
-              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
-                <FaBrain className="text-purple-600 w-6 h-6" />
+              <h3
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  color: "#1f2937",
+                  marginBottom: "1.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                <FaBrain
+                  style={{
+                    color: "#8b5cf6",
+                    width: "1.5rem",
+                    height: "1.5rem",
+                  }}
+                />
                 Neurological Examination
               </h3>
-              <div className="space-y-8">
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "2rem",
+                }}
+              >
                 <div>
-                  <h4 className="text-lg font-medium text-gray-700 mb-4">
+                  <h4
+                    style={{
+                      fontSize: "1.125rem",
+                      fontWeight: "500",
+                      color: "#374151",
+                      marginBottom: "1rem",
+                    }}
+                  >
                     Examination Details
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(200px, 1fr))",
+                      gap: "1.5rem",
+                    }}
+                  >
                     <NeuroExamSelect
                       field="motor_function"
                       value={editFormData.motor_function || ""}
@@ -1168,10 +1514,24 @@ const EditConsultation = () => {
                 </div>
 
                 <div>
-                  <h4 className="text-lg font-medium text-gray-700 mb-4">
+                  <h4
+                    style={{
+                      fontSize: "1.125rem",
+                      fontWeight: "500",
+                      color: "#374151",
+                      marginBottom: "1rem",
+                    }}
+                  >
                     Sensory and Neurological Signs
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(200px, 1fr))",
+                      gap: "1.5rem",
+                    }}
+                  >
                     <CheckboxField
                       label="Brudzinski Sign"
                       checked={editFormData.brudzinski_sign || false}
@@ -1230,10 +1590,24 @@ const EditConsultation = () => {
                 </div>
 
                 <div>
-                  <h4 className="text-lg font-medium text-gray-700 mb-4">
+                  <h4
+                    style={{
+                      fontSize: "1.125rem",
+                      fontWeight: "500",
+                      color: "#374151",
+                      marginBottom: "1rem",
+                    }}
+                  >
                     Cognitive Scores
                   </h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(200px, 1fr))",
+                      gap: "1.5rem",
+                    }}
+                  >
                     <FormField
                       label="MMSE Score (0–30)"
                       type="number"
@@ -1262,10 +1636,31 @@ const EditConsultation = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.6 }}
-              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+              style={{
+                backgroundColor: "#f9fafb",
+                padding: "1.5rem",
+                borderRadius: "0.75rem",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
+              }}
             >
-              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
-                <FaPills className="text-yellow-600 w-6 h-6" />
+              <h3
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  color: "#1f2937",
+                  marginBottom: "1.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                <FaPills
+                  style={{
+                    color: "#f59e0b",
+                    width: "1.5rem",
+                    height: "1.5rem",
+                  }}
+                />
                 Prescriptions
               </h3>
               {editFormData.prescriptions?.map((med, index) => (
@@ -1274,10 +1669,38 @@ const EditConsultation = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
-                  className="mb-4 p-4 bg-white rounded-lg shadow-md hover:shadow-lg transition flex items-center gap-4 flex-wrap"
+                  style={{
+                    marginBottom: "1rem",
+                    padding: "1rem",
+                    backgroundColor: "#ffffff",
+                    borderRadius: "0.5rem",
+                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
+                    display: "flex",
+                    flexWrap: "wrap",
+                    gap: "1rem",
+                    alignItems: "center",
+                    transition: "box-shadow 0.2s",
+                  }}
+                  onMouseOver={(e) =>
+                    (e.currentTarget.style.boxShadow =
+                      "0 4px 8px rgba(0, 0, 0, 0.1)")
+                  }
+                  onMouseOut={(e) =>
+                    (e.currentTarget.style.boxShadow =
+                      "0 2px 4px rgba(0, 0, 0, 0.05)")
+                  }
                 >
-                  <div className="flex-1 min-w-[200px]">
-                    <label className="block text-sm font-medium text-gray-700 mb-1 font-urdu">
+                  <div style={{ flex: "1", minWidth: "200px" }}>
+                    <label
+                      style={{
+                        display: "block",
+                        fontSize: "0.875rem",
+                        fontWeight: "500",
+                        color: "#374151",
+                        marginBottom: "0.25rem",
+                        fontFamily: "'Noto Nastaliq Urdu', sans-serif",
+                      }}
+                    >
                       دوائی
                     </label>
                     <select
@@ -1299,17 +1722,34 @@ const EditConsultation = () => {
                           selectedMedicine?.brand_name || ""
                         );
                       }}
-                      className="w-full p-3 border rounded-lg bg-white focus:ring-2 focus:ring-teal-500 transition"
+                      style={{
+                        width: "100%",
+                        padding: "0.75rem",
+                        border: "1px solid #d1d5db",
+                        borderRadius: "0.375rem",
+                        backgroundColor: "#ffffff",
+                        fontSize: "0.875rem",
+                        color: "#374151",
+                        outline: "none",
+                        transition: "all 0.2s",
+                        boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+                      }}
+                      onFocus={(e) => (e.target.style.borderColor = "#14b8a6")}
+                      onBlur={(e) => (e.target.style.borderColor = "#d1d5db")}
                       disabled={allMedicines.length === 0 && !med.brand_name}
                     >
-                      <option value="">
+                      <option value="" style={{ color: "#6b7280" }}>
                         {allMedicines.length === 0 && med.brand_name
                           ? med.brand_name
                           : "دوائی منتخب کریں"}
                       </option>
                       {allMedicines.length > 0
                         ? allMedicines.map((medicine) => (
-                            <option key={medicine.id} value={medicine.id}>
+                            <option
+                              key={medicine.id}
+                              value={medicine.id}
+                              style={{ color: "#374151" }}
+                            >
                               {medicine.form || ""} {medicine.brand_name || ""}{" "}
                               {medicine.strength || ""}
                             </option>
@@ -1334,7 +1774,7 @@ const EditConsultation = () => {
                     options={dosageOptions}
                     urdu
                     bilingual={true}
-                    className="flex-1 min-w-[150px]"
+                    style={{ flex: "1", minWidth: "150px" }}
                   />
                   <SelectField
                     label="تعدد"
@@ -1349,7 +1789,7 @@ const EditConsultation = () => {
                     options={frequencyOptions}
                     urdu
                     bilingual={true}
-                    className="flex-1 min-w-[150px]"
+                    style={{ flex: "1", minWidth: "150px" }}
                   />
                   <SelectField
                     label="مدت"
@@ -1364,7 +1804,7 @@ const EditConsultation = () => {
                     options={durationOptions}
                     urdu
                     bilingual={true}
-                    className="flex-1 min-w-[150px]"
+                    style={{ flex: "1", minWidth: "150px" }}
                   />
                   <SelectField
                     label="ہدایات"
@@ -1389,28 +1829,67 @@ const EditConsultation = () => {
                     options={instructionsOptions}
                     urdu
                     bilingual={true}
-                    className="flex-1 min-w-[150px]"
+                    style={{ flex: "1", minWidth: "150px" }}
                   />
                   <button
                     type="button"
                     onClick={() => removeMedicine(index)}
-                    className="text-red-500 hover:text-red-700 transition transform hover:scale-110 cursor-pointer"
+                    style={{
+                      color: "#ef4444",
+                      cursor: "pointer",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.color = "#dc2626";
+                      e.target.style.transform = "scale(1.1)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.color = "#ef4444";
+                      e.target.style.transform = "scale(1)";
+                    }}
                     aria-label="Remove Medicine"
                   >
-                    <FaTrash className="w-5 h-5" />
+                    <FaTrash style={{ width: "1.25rem", height: "1.25rem" }} />
                   </button>
                 </motion.div>
               ))}
               <button
                 type="button"
                 onClick={addMedicine}
-                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2 cursor-pointer"
+                style={{
+                  marginTop: "1rem",
+                  padding: "0.5rem 1rem",
+                  backgroundColor: "#14b8a6",
+                  color: "#ffffff",
+                  borderRadius: "0.375rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                  cursor: allMedicines.length === 0 ? "not-allowed" : "pointer",
+                  transition: "background-color 0.2s",
+                  opacity: allMedicines.length === 0 ? 0.5 : 1,
+                }}
+                onMouseOver={(e) =>
+                  allMedicines.length > 0 &&
+                  (e.target.style.backgroundColor = "#0d9488")
+                }
+                onMouseOut={(e) =>
+                  allMedicines.length > 0 &&
+                  (e.target.style.backgroundColor = "#14b8a6")
+                }
                 disabled={allMedicines.length === 0}
               >
                 <FaPlus /> Add Medicine
               </button>
               {allMedicines.length === 0 && (
-                <p className="mt-2 text-sm text-yellow-600 font-urdu">
+                <p
+                  style={{
+                    marginTop: "0.5rem",
+                    fontSize: "0.875rem",
+                    color: "#d97706",
+                    fontFamily: "'Noto Nastaliq Urdu', sans-serif",
+                  }}
+                >
                   نوٹ: دوائیوں کی فہرست لوڈ ہونے تک نئی دوائیاں شامل نہیں کی جا
                   سکتیں۔
                 </p>
@@ -1422,10 +1901,31 @@ const EditConsultation = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.7 }}
-              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+              style={{
+                backgroundColor: "#f9fafb",
+                padding: "1.5rem",
+                borderRadius: "0.75rem",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
+              }}
             >
-              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
-                <FaNotesMedical className="text-orange-600 w-6 h-6" />
+              <h3
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  color: "#1f2937",
+                  marginBottom: "1.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                <FaNotesMedical
+                  style={{
+                    color: "#f97316",
+                    width: "1.5rem",
+                    height: "1.5rem",
+                  }}
+                />
                 Diagnosis
               </h3>
               <FormField
@@ -1447,16 +1947,46 @@ const EditConsultation = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8 }}
-              className="bg-gray-50 p-6 rounded-xl shadow-sm"
+              style={{
+                backgroundColor: "#f9fafb",
+                padding: "1.5rem",
+                borderRadius: "0.75rem",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
+              }}
             >
-              <h3 className="text-xl font-semibold mb-6 flex items-center gap-2 text-gray-800">
-                <FaNotesMedical className="text-pink-600 w-6 h-6" />
+              <h3
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  color: "#1f2937",
+                  marginBottom: "1.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                <FaNotesMedical
+                  style={{
+                    color: "#ec4899",
+                    width: "1.5rem",
+                    height: "1.5rem",
+                  }}
+                />
                 Follow-ups
               </h3>
               {editFormData.follow_ups?.map((followUp, index) => (
                 <div
                   key={index}
-                  className="mb-4 p-4 bg-white rounded-lg shadow-inner grid grid-cols-1 md:grid-cols-2 gap-4"
+                  style={{
+                    marginBottom: "1rem",
+                    padding: "1rem",
+                    backgroundColor: "#ffffff",
+                    borderRadius: "0.5rem",
+                    boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+                    gap: "1rem",
+                  }}
                 >
                   <FormField
                     label="Follow-up Date"
@@ -1476,13 +2006,6 @@ const EditConsultation = () => {
                   />
                 </div>
               ))}
-              <button
-                type="button"
-                onClick={addFollowUp}
-                className="mt-4 px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center gap-2"
-              >
-                <FaPlus /> Add Follow-up
-              </button>
             </motion.div>
 
             {/* Form Actions */}
@@ -1490,21 +2013,89 @@ const EditConsultation = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.9 }}
-              className="flex justify-end gap-4 mt-8"
+              style={{
+                display: "flex",
+                justifyContent: "flex-end",
+                gap: "1rem",
+                marginTop: "2rem",
+              }}
             >
               <button
                 type="button"
                 onClick={handleCancel}
-                className="px-6 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
+                style={{
+                  padding: "0.75rem 1.5rem",
+                  backgroundColor: "#e5e7eb",
+                  color: "#374151",
+                  borderRadius: "0.375rem",
+                  cursor: "pointer",
+                  transition: "background-color 0.2s",
+                }}
+                onMouseOver={(e) =>
+                  (e.target.style.backgroundColor = "#d1d5db")
+                }
+                onMouseOut={(e) => (e.target.style.backgroundColor = "#e5e7eb")}
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={editLoading}
-                className="px-6 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition disabled:opacity-50"
+                style={{
+                  padding: "0.75rem 1.5rem",
+                  backgroundColor: "#14b8a6",
+                  color: "#ffffff",
+                  borderRadius: "0.375rem",
+                  cursor: editLoading ? "not-allowed" : "pointer",
+                  transition: "background-color 0.2s, opacity 0.2s",
+                  opacity: editLoading ? 0.5 : 1,
+                  border: "none",
+                  fontSize: "1rem",
+                  fontWeight: 500,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "0.5rem",
+                  boxShadow: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+                  ...(!editLoading && {
+                    ":hover": {
+                      backgroundColor: "#0d9488",
+                    },
+                    ":active": {
+                      backgroundColor: "#0f766e",
+                      transform: "scale(0.98)",
+                    },
+                  }),
+                }}
               >
-                {editLoading ? "Saving..." : "Update Consultation"}
+                {editLoading ? (
+                  <>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        animation: "spin 1s linear infinite",
+                        marginRight: "0.5rem",
+                      }}
+                    >
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                      </svg>
+                    </span>
+                    Saving...
+                  </>
+                ) : (
+                  "Update Consultation"
+                )}
               </button>
             </motion.div>
           </form>
