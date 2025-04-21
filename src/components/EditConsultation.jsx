@@ -293,87 +293,63 @@ const dosageValueToLabel = {
 };
 
 const frequencyOptions = [
-  // Time of day
   { value: "morning", label: "صبح" },
   { value: "afternoon", label: "دوپہر" },
   { value: "evening", label: "شام" },
   { value: "night", label: "رات" },
-  { value: "bedtime", label: "سونے سے پہلے" },
-  { value: "on_awakening", label: "جاگتے ہی" },
-
-  // Daily frequencies
-  { value: "once_a_day", label: "دن میں ایک بار" },
-  { value: "twice_a_day", label: "دن میں دو بار" },
-  { value: "three_times_a_day", label: "دن میں تین بار" },
-  { value: "four_times_a_day", label: "دن میں چار بار" },
-  { value: "every_morning", label: "روزانہ صبح" },
-  { value: "every_night", label: "روزانہ رات" },
-
-  // Hourly intervals
-  { value: "every_4_hours", label: "ہر چار گھنٹے بعد" },
-  { value: "every_6_hours", label: "ہر چھ گھنٹے بعد" },
-  { value: "every_8_hours", label: "ہر آٹھ گھنٹے بعد" },
-  { value: "every_12_hours", label: "ہر بارہ گھنٹے بعد" },
-
-  // Weekly frequencies
-  { value: "once_a_week", label: "ہفتے میں ایک بار" },
-  { value: "twice_a_week", label: "ہفتے میں دو بار" },
-  { value: "three_times_a_week", label: "ہفتے میں تین بار" },
-
-  // Monthly frequencies
-  { value: "once_a_month", label: "مہینے میں ایک بار" },
-
-  // Special cases
-  { value: "as_needed", label: "ضرورت کے مطابق" },
-  { value: "before_meals", label: "کھانے سے پہلے" },
-  { value: "after_meals", label: "کھانے کے بعد" },
-  { value: "with_meals", label: "کھانے کے ساتھ" },
-  { value: "alternate_days", label: "ایک دن چھوڑ کر" },
-  { value: "every_other_day", label: "ایک دن چھوڑ کر" },
-  { value: "continuous", label: "مسلسل" },
-  { value: "as_directed", label: "ڈاکٹر کے مشورے سے" }
+  { value: "morning_evening", label: "صبح، شام" },
+  { value: "morning_night", label: "صبح، رات" },
+  { value: "afternoon_evening", label: "دوپہر، شام" },
+  { value: "afternoon_night", label: "دوپہر، رات" },
+  { value: "morning_evening_night", label: "صبح، شام، رات" },
+  { value: "morning_afternoon_evening", label: "صبح، دوپہر، شام" },
+  { value: "as_needed", label: "حسب ضرورت" },
+  { value: "morning_afternoon_night", label: "صبح، دوپہر، رات" },
+  { value: "afternoon_evening_night", label: "دوپہر، شام، رات" },
+  { value: "early_morning", label: "صبح سویرے" },
+  { value: "late_morning", label: "دیر صبح" },
+  { value: "late_afternoon", label: "دیر دوپہر" },
+  { value: "sunset", label: "غروب آفتاب" },
+  { value: "midnight", label: "آدھی رات" },
+  { value: "late_night", label: "رات دیر گئے" },
+  { value: "morning_afternoon", label: "صبح، دوپہر" },
+  { value: "evening_night", label: "شام، رات" },
+  { value: "early_morning_night", label: "صبح سویرے، رات" },
+  { value: "morning_late_afternoon", label: "صبح، دیر دوپہر" },
+  { value: "afternoon_sunset", label: "دوپہر، غروب آفتاب" },
+  { value: "all_day", label: "پورا دن" },
+  { value: "all_night", label: "پوری رات" },
+  { value: "24_hours", label: "چوبیس گھنٹے" }
 ];
 
 const frequencyValueToLabel = {
-  // Time of day
   morning: "صبح",
   afternoon: "دوپہر",
   evening: "شام",
   night: "رات",
-  bedtime: "سونے سے پہلے",
-  on_awakening: "جاگتے ہی",
-
-  // Daily frequencies
-  once_a_day: "دن میں ایک بار",
-  twice_a_day: "دن میں دو بار",
-  three_times_a_day: "دن میں تین بار",
-  four_times_a_day: "دن میں چار بار",
-  every_morning: "روزانہ صبح",
-  every_night: "روزانہ رات",
-
-  // Hourly intervals
-  every_4_hours: "ہر چار گھنٹے بعد",
-  every_6_hours: "ہر چھ گھنٹے بعد",
-  every_8_hours: "ہر آٹھ گھنٹے بعد",
-  every_12_hours: "ہر بارہ گھنٹے بعد",
-
-  // Weekly frequencies
-  once_a_week: "ہفتے میں ایک بار",
-  twice_a_week: "ہفتے میں دو بار",
-  three_times_a_week: "ہفتے میں تین بار",
-
-  // Monthly frequencies
-  once_a_month: "مہینے میں ایک بار",
-
-  // Special cases
-  as_needed: "ضرورت کے مطابق",
-  before_meals: "کھانے سے پہلے",
-  after_meals: "کھانے کے بعد",
-  with_meals: "کھانے کے ساتھ",
-  alternate_days: "ایک دن چھوڑ کر",
-  every_other_day: "ایک دن چھوڑ کر",
-  continuous: "مسلسل",
-  as_directed: "ڈاکٹر کے مشورے سے"
+  morning_evening: "صبح، شام",
+  morning_night: "صبح، رات",
+  afternoon_evening: "دوپہر، شام",
+  afternoon_night: "دوپہر، رات",
+  morning_evening_night: "صبح، شام، رات",
+  morning_afternoon_evening: "صبح، دوپہر، شام",
+  as_needed: "حسب ضرورت",
+  morning_afternoon_night: "صبح، دوپہر، رات",
+  afternoon_evening_night: "دوپہر، شام، رات",
+  early_morning: "صبح سویرے",
+  late_morning: "دیر صبح",
+  late_afternoon: "دیر دوپہر",
+  sunset: "غروب آفتاب",
+  midnight: "آدھی رات",
+  late_night: "رات دیر گئے",
+  morning_afternoon: "صبح، دوپہر",
+  evening_night: "شام، رات",
+  early_morning_night: "صبح سویرے، رات",
+  morning_late_afternoon: "صبح، دیر دوپہر",
+  afternoon_sunset: "دوپہر، غروب آفتاب",
+  all_day: "پورا دن",
+  all_night: "پوری رات",
+  "24_hours": "چوبیس گھنٹے"
 };
 
 const durationOptions = [
