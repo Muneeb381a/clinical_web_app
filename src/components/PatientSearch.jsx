@@ -588,626 +588,656 @@ const PatientSearch = () => {
                 </div>
               ) : (
                 <div className="space-y-6">
-                  {consultations.map((consultation, index) => (
-                    <motion.div
-                      key={index}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="bg-white p-6 rounded-xl shadow-xs border border-gray-100 hover:border-purple-100 transition-all"
-                    >
-                      {/* Consultation Header */}
-                      <div className="flex flex-wrap gap-4 justify-between items-start pb-4 border-b border-gray-100">
-                        <div className="flex items-center gap-4">
-                          <div className="p-3 bg-blue-50 rounded-xl">
-                            <FaCalendarAlt className="text-xl text-blue-600" />
-                          </div>
-                          <div>
-                            <h4 className="text-lg font-semibold text-gray-900">
-                              {new Date(
-                                consultation.visit_date
-                              ).toLocaleDateString("en-US", {
-                                year: "numeric",
-                                month: "long",
-                                day: "numeric",
-                              })}
-                            </h4>
-                            {consultation.follow_up_date && (
-                              <p className="text-sm text-gray-500 mt-1">
-                                <span className="font-medium">Follow-up:</span>{" "}
-                                {new Date(
-                                  consultation.follow_up_date
-                                ).toLocaleDateString()}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        <div className="flex gap-3">
-                          <PrescriptionButton
-                            patient={patient}
-                            consultation={consultation}
-                          />
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() => toggleSection(index)}
-                            title="Toggle Details"
-                          >
-                            {expandedSections[index] ? (
-                              <FaChevronUp className="text-blue-600 hover:text-blue-800 text-xl cursor-pointer" />
-                            ) : (
-                              <FaEye className="text-blue-600 hover:text-blue-800 text-xl cursor-pointer" />
-                            )}
-                          </motion.button>
-                          <motion.button
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            onClick={() =>
-                              handleEditClick(consultation.consultation_id)
-                            }
-                            title="Edit Consultation"
-                          >
-                            <FaEdit className="text-green-600 hover:text-green-800 text-xl cursor-pointer" />
-                          </motion.button>
-                        </div>
-                      </div>
+                  {consultations
+                    .filter((consultation) => consultation.visit_date) // Filter out consultations without a valid date
+                    .map((consultation, index) => {
+                      const hasValidDate =
+                        consultation.visit_date &&
+                        new Date(consultation.visit_date).getFullYear() > 1970;
 
-                      {/* Consultation Details (Inline) */}
-                      {expandedSections[index] && (
-                        <div className="space-y-6 pt-4 border-t border-gray-100">
-                          {/* Patient Information */}
-                          <div>
-                            <div className="flex items-center gap-2 mb-4">
-                              <FaStethoscope className="text-gray-600" />
-                              <h4 className="font-semibold text-gray-900">
-                                Patient Information
-                              </h4>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="bg-gray-50 p-4 rounded-lg">
-                                <label className="text-sm font-medium text-gray-500">
-                                  Name
-                                </label>
-                                <p className="mt-2 text-gray-900">
-                                  {consultation.patient_name || "Not specified"}
-                                </p>
-                              </div>
-                              <div className="bg-gray-50 p-4 rounded-lg">
-                                <label className="text-sm font-medium text-gray-500">
-                                  Mobile
-                                </label>
-                                <p className="mt-2 text-gray-900">
-                                  {consultation.mobile || "Not specified"}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
+                      if (!hasValidDate) return null; // Skip rendering if date is invalid
 
-                          {/* Diagnosis & Symptoms */}
-                          <div>
-                            <div className="flex items-center gap-2 mb-4">
-                              <FaNotesMedical className="text-gray-600" />
-                              <h4 className="font-semibold text-gray-900">
-                                Diagnosis & Symptoms
-                              </h4>
-                            </div>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div className="bg-gray-50 p-4 rounded-lg">
-                                <label className="text-sm font-medium text-gray-500">
-                                  Diagnosis
-                                </label>
-                                <p className="mt-2 text-gray-900">
-                                  {consultation.neuro_diagnosis ||
-                                    "Not specified"}
-                                </p>
+                      return (
+                        <motion.div
+                          key={index}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-white p-6 rounded-xl shadow-xs border border-gray-100 hover:border-purple-100 transition-all"
+                        >
+                          {/* Consultation Header */}
+                          <div className="flex flex-wrap gap-4 justify-between items-start pb-4 border-b border-gray-100">
+                            <div className="flex items-center gap-4">
+                              <div className="p-3 bg-blue-50 rounded-xl">
+                                <FaCalendarAlt className="text-xl text-blue-600" />
                               </div>
-                              <div className="bg-gray-50 p-4 rounded-lg">
-                                <label className="text-sm font-medium text-gray-500">
-                                  Symptoms
-                                </label>
-                                <p className="mt-2 text-gray-900">
-                                  {consultation.symptoms
-                                    ?.filter(Boolean)
-                                    .join(", ") || "No symptoms recorded"}
-                                </p>
-                              </div>
-                              <div className="md:col-span-2 bg-gray-50 p-4 rounded-lg">
-                                <label className="text-sm font-medium text-gray-500">
-                                  Treatment Plan
-                                </label>
-                                <p className="mt-2 text-gray-900">
-                                  {consultation.neuro_treatment_plan ||
-                                    "Not specified"}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
-
-                          {/* Tests */}
-                          <div>
-                            <div className="flex items-center gap-3 mb-4">
-                              <div className="p-2.5 bg-blue-100 rounded-lg">
-                                <FaFlask className="text-xl text-blue-600" />
-                              </div>
-                              <h4 className="text-lg font-semibold text-gray-900">
-                                Tests
-                              </h4>
-                            </div>
-                            <p className="text-gray-800 font-medium leading-relaxed">
-                              {consultation.tests?.length > 0 ? (
-                                <span className="inline-flex flex-wrap gap-2">
-                                  {consultation.tests.map((test) => (
-                                    <span
-                                      key={test.test_id}
-                                      className="px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-sm"
-                                    >
-                                      {test.test_name}
-                                    </span>
-                                  ))}
-                                </span>
-                              ) : (
-                                <span className="text-gray-500 italic">
-                                  No tests prescribed
-                                </span>
-                              )}
-                            </p>
-                          </div>
-
-                          {/* Vital Signs */}
-                          {consultation.vital_signs?.length > 0 && (
-                            <div className="mt-6 pt-4 border-t border-gray-100">
-                              <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2.5 bg-red-100 rounded-lg">
-                                  <FaHeartbeat className="text-xl text-red-600" />
-                                </div>
+                              <div>
                                 <h4 className="text-lg font-semibold text-gray-900">
-                                  Vital Signs
+                                  {new Date(
+                                    consultation.visit_date
+                                  ).toLocaleDateString("en-US", {
+                                    year: "numeric",
+                                    month: "long",
+                                    day: "numeric",
+                                  })}
                                 </h4>
+                                {consultation.follow_up_date && (
+                                  <p className="text-sm text-gray-500 mt-1">
+                                    <span className="font-medium">
+                                      Follow-up:
+                                    </span>{" "}
+                                    {new Date(
+                                      consultation.follow_up_date
+                                    ).toLocaleDateString()}
+                                  </p>
+                                )}
                               </div>
-                              <div className="overflow-x-auto pb-4">
-                                <div className="flex gap-2 min-w-max">
-                                  {consultation.vital_signs.map(
-                                    (vital, idx) => (
-                                      <div
-                                        key={idx}
-                                        className="bg-white p-4 border-b border-gray-100 transition-all min-w-[300px]"
-                                      >
-                                        <div className="flex flex-col gap-3">
-                                          <div className="flex gap-2">
-                                            <div className="flex items-center justify-center gap-2 p-2 bg-red-50 rounded-lg flex-1 min-w-[150px]">
-                                              <FaHeartbeat className="text-red-600" />
-                                              <div>
-                                                <p className="text-xs font-medium text-red-700">
-                                                  BP
-                                                </p>
-                                                <p className="text-lg font-bold text-gray-900">
-                                                  {vital.blood_pressure ||
-                                                    "N/A"}
-                                                  <span className="text-xs text-gray-500 ml-1">
-                                                    mmHg
-                                                  </span>
-                                                </p>
-                                              </div>
-                                            </div>
-                                            <div className="flex items-center justify-center gap-2 p-2 bg-blue-50 rounded-lg flex-1 min-w-[110px]">
-                                              <FaHeartbeat className="text-blue-600" />
-                                              <div>
-                                                <p className="text-xs font-medium text-blue-700">
-                                                  Pulse
-                                                </p>
-                                                <p className="text-lg font-bold text-gray-900">
-                                                  {vital.pulse_rate || "N/A"}
-                                                  <span className="text-xs text-gray-500 ml-1">
-                                                    bpm
-                                                  </span>
-                                                </p>
-                                              </div>
-                                            </div>
-                                            <div className="flex items-center justify-center gap-2 p-2 bg-orange-50 rounded-lg flex-1 min-w-[110px]">
-                                              <FaThermometer className="text-orange-600" />
-                                              <div>
-                                                <p className="text-xs font-medium text-orange-700">
-                                                  Temp
-                                                </p>
-                                                <p className="text-lg font-bold text-gray-900">
-                                                  {vital.temperature || "N/A"}
-                                                  <span className="text-xs text-gray-500 ml-1">
-                                                    °C
-                                                  </span>
-                                                </p>
-                                              </div>
-                                            </div>
-                                            <div className="flex items-center justify-center gap-2 p-2 bg-green-50 rounded-lg flex-1 min-w-[110px]">
-                                              <FaLungs className="text-green-600" />
-                                              <div>
-                                                <p className="text-xs font-medium text-green-700">
-                                                  SpO₂
-                                                </p>
-                                                <p className="text-lg font-bold text-gray-900">
-                                                  {vital.spo2_level || "N/A"}
-                                                  <span className="text-xs text-gray-500 ml-1">
-                                                    %
-                                                  </span>
-                                                </p>
-                                              </div>
-                                            </div>
-                                            <div className="flex items-center justify-center gap-3 p-3 bg-green-50 rounded-lg flex-1 min-w-[120px]">
-                                              <div className="p-2 bg-green-100 rounded-full">
-                                                <FaBrain className="text-green-600 w-5 h-5" />{" "}
-                                                {/* Brain icon for NIHSS */}
-                                              </div>
-                                              <div>
-                                                <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">
-                                                  NIHSS Score
-                                                </p>
-                                                <p className="text-lg font-bold text-gray-900 mt-1">
-                                                  {vital.nihss_score ?? "N/A"}
-                                                </p>
-                                              </div>
-                                            </div>
+                            </div>
 
-                                            <div className="flex items-center justify-center gap-3 p-3 bg-orange-50 rounded-lg flex-1 min-w-[120px]">
-                                              <div className="p-2 bg-orange-100 rounded-full">
-                                                <FaWalking className="text-orange-600 w-5 h-5" />{" "}
-                                                {/* Walking icon for Fall Assessment */}
+                            {/* Only show buttons if there's valid consultation data */}
+                            {consultation.consultation_id && (
+                              <div className="flex gap-3">
+                                <PrescriptionButton
+                                  patient={patient}
+                                  consultation={consultation}
+                                />
+                                <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() => toggleSection(index)}
+                                  title="Toggle Details"
+                                >
+                                  {expandedSections[index] ? (
+                                    <FaChevronUp className="text-blue-600 hover:text-blue-800 text-xl cursor-pointer" />
+                                  ) : (
+                                    <FaEye className="text-blue-600 hover:text-blue-800 text-xl cursor-pointer" />
+                                  )}
+                                </motion.button>
+                                <motion.button
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  onClick={() =>
+                                    handleEditClick(
+                                      consultation.consultation_id
+                                    )
+                                  }
+                                  title="Edit Consultation"
+                                >
+                                  <FaEdit className="text-green-600 hover:text-green-800 text-xl cursor-pointer" />
+                                </motion.button>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Consultation Details (Inline) */}
+                          {expandedSections[index] && (
+                            <div className="space-y-6 pt-4 border-t border-gray-100">
+                              {/* Patient Information */}
+                              <div>
+                                <div className="flex items-center gap-2 mb-4">
+                                  <FaStethoscope className="text-gray-600" />
+                                  <h4 className="font-semibold text-gray-900">
+                                    Patient Information
+                                  </h4>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="bg-gray-50 p-4 rounded-lg">
+                                    <label className="text-sm font-medium text-gray-500">
+                                      Name
+                                    </label>
+                                    <p className="mt-2 text-gray-900">
+                                      {consultation.patient_name ||
+                                        "Not specified"}
+                                    </p>
+                                  </div>
+                                  <div className="bg-gray-50 p-4 rounded-lg">
+                                    <label className="text-sm font-medium text-gray-500">
+                                      Mobile
+                                    </label>
+                                    <p className="mt-2 text-gray-900">
+                                      {consultation.mobile || "Not specified"}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Diagnosis & Symptoms */}
+                              <div>
+                                <div className="flex items-center gap-2 mb-4">
+                                  <FaNotesMedical className="text-gray-600" />
+                                  <h4 className="font-semibold text-gray-900">
+                                    Diagnosis & Symptoms
+                                  </h4>
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                  <div className="bg-gray-50 p-4 rounded-lg">
+                                    <label className="text-sm font-medium text-gray-500">
+                                      Diagnosis
+                                    </label>
+                                    <p className="mt-2 text-gray-900">
+                                      {consultation.neuro_diagnosis ||
+                                        "Not specified"}
+                                    </p>
+                                  </div>
+                                  <div className="bg-gray-50 p-4 rounded-lg">
+                                    <label className="text-sm font-medium text-gray-500">
+                                      Symptoms
+                                    </label>
+                                    <p className="mt-2 text-gray-900">
+                                      {consultation.symptoms
+                                        ?.filter(Boolean)
+                                        .join(", ") || "No symptoms recorded"}
+                                    </p>
+                                  </div>
+                                  <div className="md:col-span-2 bg-gray-50 p-4 rounded-lg">
+                                    <label className="text-sm font-medium text-gray-500">
+                                      Treatment Plan
+                                    </label>
+                                    <p className="mt-2 text-gray-900">
+                                      {consultation.neuro_treatment_plan ||
+                                        "Not specified"}
+                                    </p>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Tests */}
+                              <div>
+                                <div className="flex items-center gap-3 mb-4">
+                                  <div className="p-2.5 bg-blue-100 rounded-lg">
+                                    <FaFlask className="text-xl text-blue-600" />
+                                  </div>
+                                  <h4 className="text-lg font-semibold text-gray-900">
+                                    Tests
+                                  </h4>
+                                </div>
+                                <p className="text-gray-800 font-medium leading-relaxed">
+                                  {consultation.tests?.length > 0 ? (
+                                    <span className="inline-flex flex-wrap gap-2">
+                                      {consultation.tests.map((test) => (
+                                        <span
+                                          key={test.test_id}
+                                          className="px-3 py-1 bg-blue-50 text-blue-800 rounded-full text-sm"
+                                        >
+                                          {test.test_name}
+                                        </span>
+                                      ))}
+                                    </span>
+                                  ) : (
+                                    <span className="text-gray-500 italic">
+                                      No tests prescribed
+                                    </span>
+                                  )}
+                                </p>
+                              </div>
+
+                              {/* Vital Signs */}
+                              {consultation.vital_signs?.length > 0 && (
+                                <div className="mt-6 pt-4 border-t border-gray-100">
+                                  <div className="flex items-center gap-3 mb-4">
+                                    <div className="p-2.5 bg-red-100 rounded-lg">
+                                      <FaHeartbeat className="text-xl text-red-600" />
+                                    </div>
+                                    <h4 className="text-lg font-semibold text-gray-900">
+                                      Vital Signs
+                                    </h4>
+                                  </div>
+                                  <div className="overflow-x-auto pb-4">
+                                    <div className="flex gap-2 min-w-max">
+                                      {consultation.vital_signs.map(
+                                        (vital, idx) => (
+                                          <div
+                                            key={idx}
+                                            className="bg-white p-4 border-b border-gray-100 transition-all min-w-[300px]"
+                                          >
+                                            <div className="flex flex-col gap-3">
+                                              <div className="flex gap-2">
+                                                <div className="flex items-center justify-center gap-2 p-2 bg-red-50 rounded-lg flex-1 min-w-[150px]">
+                                                  <FaHeartbeat className="text-red-600" />
+                                                  <div>
+                                                    <p className="text-xs font-medium text-red-700">
+                                                      BP
+                                                    </p>
+                                                    <p className="text-lg font-bold text-gray-900">
+                                                      {vital.blood_pressure ||
+                                                        "N/A"}
+                                                      <span className="text-xs text-gray-500 ml-1">
+                                                        mmHg
+                                                      </span>
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                                <div className="flex items-center justify-center gap-2 p-2 bg-blue-50 rounded-lg flex-1 min-w-[110px]">
+                                                  <FaHeartbeat className="text-blue-600" />
+                                                  <div>
+                                                    <p className="text-xs font-medium text-blue-700">
+                                                      Pulse
+                                                    </p>
+                                                    <p className="text-lg font-bold text-gray-900">
+                                                      {vital.pulse_rate ||
+                                                        "N/A"}
+                                                      <span className="text-xs text-gray-500 ml-1">
+                                                        bpm
+                                                      </span>
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                                <div className="flex items-center justify-center gap-2 p-2 bg-orange-50 rounded-lg flex-1 min-w-[110px]">
+                                                  <FaThermometer className="text-orange-600" />
+                                                  <div>
+                                                    <p className="text-xs font-medium text-orange-700">
+                                                      Temp
+                                                    </p>
+                                                    <p className="text-lg font-bold text-gray-900">
+                                                      {vital.temperature ||
+                                                        "N/A"}
+                                                      <span className="text-xs text-gray-500 ml-1">
+                                                        °C
+                                                      </span>
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                                <div className="flex items-center justify-center gap-2 p-2 bg-green-50 rounded-lg flex-1 min-w-[110px]">
+                                                  <FaLungs className="text-green-600" />
+                                                  <div>
+                                                    <p className="text-xs font-medium text-green-700">
+                                                      SpO₂
+                                                    </p>
+                                                    <p className="text-lg font-bold text-gray-900">
+                                                      {vital.spo2_level ||
+                                                        "N/A"}
+                                                      <span className="text-xs text-gray-500 ml-1">
+                                                        %
+                                                      </span>
+                                                    </p>
+                                                  </div>
+                                                </div>
+                                                <div className="flex items-center justify-center gap-3 p-3 bg-green-50 rounded-lg flex-1 min-w-[120px]">
+                                                  <div className="p-2 bg-green-100 rounded-full">
+                                                    <FaBrain className="text-green-600 w-5 h-5" />{" "}
+                                                    {/* Brain icon for NIHSS */}
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-xs font-semibold text-green-700 uppercase tracking-wide">
+                                                      NIHSS Score
+                                                    </p>
+                                                    <p className="text-lg font-bold text-gray-900 mt-1">
+                                                      {vital.nihss_score ??
+                                                        "N/A"}
+                                                    </p>
+                                                  </div>
+                                                </div>
+
+                                                <div className="flex items-center justify-center gap-3 p-3 bg-orange-50 rounded-lg flex-1 min-w-[120px]">
+                                                  <div className="p-2 bg-orange-100 rounded-full">
+                                                    <FaWalking className="text-orange-600 w-5 h-5" />{" "}
+                                                    {/* Walking icon for Fall Assessment */}
+                                                  </div>
+                                                  <div>
+                                                    <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide">
+                                                      Fall Assessment
+                                                    </p>
+                                                    <p className="text-lg font-bold text-gray-900 mt-1">
+                                                      {vital.fall_assessment ||
+                                                        "N/A"}
+                                                    </p>
+                                                  </div>
+                                                </div>
                                               </div>
-                                              <div>
-                                                <p className="text-xs font-semibold text-orange-700 uppercase tracking-wide">
-                                                  Fall Assessment
-                                                </p>
-                                                <p className="text-lg font-bold text-gray-900 mt-1">
-                                                  {vital.fall_assessment ||
-                                                    "N/A"}
-                                                </p>
-                                              </div>
+                                              <p className="text-xs text-gray-500">
+                                                Recorded:{" "}
+                                                {vital.recorded_at
+                                                  ? new Date(
+                                                      vital.recorded_at
+                                                    ).toLocaleString()
+                                                  : "N/A"}
+                                              </p>
                                             </div>
                                           </div>
-                                          <p className="text-xs text-gray-500">
-                                            Recorded:{" "}
-                                            {vital.recorded_at
-                                              ? new Date(
-                                                  vital.recorded_at
-                                                ).toLocaleString()
-                                              : "N/A"}
-                                          </p>
-                                        </div>
-                                      </div>
-                                    )
-                                  )}
+                                        )
+                                      )}
+                                    </div>
+                                  </div>
                                 </div>
-                              </div>
-                            </div>
-                          )}
+                              )}
 
-                          {/* Prescriptions */}
-                          {consultation.prescriptions?.length > 0 && (
-                            <div className="mt-6 pt-4 border-t border-gray-100">
-                              <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2.5 bg-purple-100 rounded-lg">
-                                  <FaPills className="text-xl text-purple-600" />
-                                </div>
-                                <h4 className="text-lg font-semibold text-gray-900">
-                                  Medication Plan
-                                </h4>
-                              </div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                                {consultation.prescriptions.map(
-                                  (prescription, idx) => (
-                                    <div
-                                      key={idx}
-                                      className="bg-white p-5 rounded-2xl shadow-lg border border-gray-100"
-                                    >
-                                      <div className="flex justify-between items-start mb-4">
-                                        <div className="max-w-[70%]">
-                                          <h3 className="font-semibold text-gray-800 truncate text-lg">
-                                            {prescription.brand_name ||
-                                              "Unnamed Medication"}
-                                          </h3>
-                                          <p className="text-sm text-gray-500 truncate">
-                                            {prescription.generic_name}
-                                          </p>
-                                        </div>
-                                        <span className="bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full text-xs font-semibold">
-                                          {prescription.duration_ ||
-                                            "No duration"}
-                                        </span>
-                                      </div>
-                                      <div className="grid gap-3 text-sm">
-                                        <div>
-                                          <label className="text-gray-500">
-                                            Dosage:
-                                          </label>
-                                          <p className="text-gray-900">
-                                            {prescription.dosage_en || "N/A"}
-                                          </p>
-                                          <p className="text-gray-600 font-urdu">
-                                            {prescription.dosage_urdu}
-                                          </p>
-                                        </div>
-                                        <div>
-                                          <label className="text-gray-500">
-                                            Frequency:
-                                          </label>
-                                          <p className="text-gray-900">
-                                            {prescription.frequency_en || "N/A"}
-                                          </p>
-                                          <p className="text-gray-600 font-urdu">
-                                            {prescription.frequency_urdu}
-                                          </p>
-                                        </div>
-                                        <div>
-                                          <label className="text-gray-500">
-                                            Instructions:
-                                          </label>
-                                          <p className="text-gray-900">
-                                            {prescription.instructions_en ||
-                                              "N/A"}
-                                          </p>
-                                          <p className="text-gray-600 font-urdu">
-                                            {prescription.instructions_urdu}
-                                          </p>
-                                        </div>
-                                        <div className="pt-3 border-t border-gray-100">
-                                          <label className="text-gray-500">
-                                            Prescribed On:
-                                          </label>
-                                          <p className="text-gray-600">
-                                            {prescription.prescribed_at
-                                              ? new Date(
-                                                  prescription.prescribed_at
-                                                ).toLocaleDateString("en-US", {
-                                                  month: "short",
-                                                  day: "numeric",
-                                                  year: "numeric",
-                                                })
-                                              : "N/A"}
-                                          </p>
-                                        </div>
-                                      </div>
+                              {/* Prescriptions */}
+                              {consultation.prescriptions?.length > 0 && (
+                                <div className="mt-6 pt-4 border-t border-gray-100">
+                                  <div className="flex items-center gap-3 mb-4">
+                                    <div className="p-2.5 bg-purple-100 rounded-lg">
+                                      <FaPills className="text-xl text-purple-600" />
                                     </div>
-                                  )
-                                )}
-                              </div>
-                            </div>
-                          )}
+                                    <h4 className="text-lg font-semibold text-gray-900">
+                                      Medication Plan
+                                    </h4>
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                                    {consultation.prescriptions.map(
+                                      (prescription, idx) => (
+                                        <div
+                                          key={idx}
+                                          className="bg-white p-5 rounded-2xl shadow-lg border border-gray-100"
+                                        >
+                                          <div className="flex justify-between items-start mb-4">
+                                            <div className="max-w-[70%]">
+                                              <h3 className="font-semibold text-gray-800 truncate text-lg">
+                                                {prescription.brand_name ||
+                                                  "Unnamed Medication"}
+                                              </h3>
+                                              <p className="text-sm text-gray-500 truncate">
+                                                {prescription.generic_name}
+                                              </p>
+                                            </div>
+                                            <span className="bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full text-xs font-semibold">
+                                              {prescription.duration_ ||
+                                                "No duration"}
+                                            </span>
+                                          </div>
+                                          <div className="grid gap-3 text-sm">
+                                            <div>
+                                              <label className="text-gray-500">
+                                                Dosage:
+                                              </label>
+                                              <p className="text-gray-900">
+                                                {prescription.dosage_en ||
+                                                  "N/A"}
+                                              </p>
+                                              <p className="text-gray-600 font-urdu">
+                                                {prescription.dosage_urdu}
+                                              </p>
+                                            </div>
+                                            <div>
+                                              <label className="text-gray-500">
+                                                Frequency:
+                                              </label>
+                                              <p className="text-gray-900">
+                                                {prescription.frequency_en ||
+                                                  "N/A"}
+                                              </p>
+                                              <p className="text-gray-600 font-urdu">
+                                                {prescription.frequency_urdu}
+                                              </p>
+                                            </div>
+                                            <div>
+                                              <label className="text-gray-500">
+                                                Instructions:
+                                              </label>
+                                              <p className="text-gray-900">
+                                                {prescription.instructions_en ||
+                                                  "N/A"}
+                                              </p>
+                                              <p className="text-gray-600 font-urdu">
+                                                {prescription.instructions_urdu}
+                                              </p>
+                                            </div>
+                                            <div className="pt-3 border-t border-gray-100">
+                                              <label className="text-gray-500">
+                                                Prescribed On:
+                                              </label>
+                                              <p className="text-gray-600">
+                                                {prescription.prescribed_at
+                                                  ? new Date(
+                                                      prescription.prescribed_at
+                                                    ).toLocaleDateString(
+                                                      "en-US",
+                                                      {
+                                                        month: "short",
+                                                        day: "numeric",
+                                                        year: "numeric",
+                                                      }
+                                                    )
+                                                  : "N/A"}
+                                              </p>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      )
+                                    )}
+                                  </div>
+                                </div>
+                              )}
 
-                          {/* Neurological Examination Findings */}
-                          {(consultation.cranial_nerves ||
-                            consultation.motor_function ||
-                            consultation.muscle_strength ||
-                            consultation.muscle_tone ||
-                            consultation.coordination ||
-                            consultation.deep_tendon_reflexes ||
-                            consultation.gait_assessment ||
-                            consultation.romberg_test ||
-                            consultation.plantar_reflex ||
-                            consultation.straight_leg_raise_test ||
-                            consultation.brudzinski_sign ||
-                            consultation.kernig_sign ||
-                            consultation.mmse_score ||
-                            consultation.gcs_score ||
-                            consultation.notes) && (
-                            <div className="mt-6 pt-4 border-t border-gray-100">
-                              <div className="flex items-center gap-3 mb-4">
-                                <div className="p-2.5 bg-blue-100 rounded-lg">
-                                  <FaBrain className="text-xl text-blue-600" />
+                              {/* Neurological Examination Findings */}
+                              {(consultation.cranial_nerves ||
+                                consultation.motor_function ||
+                                consultation.muscle_strength ||
+                                consultation.muscle_tone ||
+                                consultation.coordination ||
+                                consultation.deep_tendon_reflexes ||
+                                consultation.gait_assessment ||
+                                consultation.romberg_test ||
+                                consultation.plantar_reflex ||
+                                consultation.straight_leg_raise_test ||
+                                consultation.brudzinski_sign ||
+                                consultation.kernig_sign ||
+                                consultation.mmse_score ||
+                                consultation.gcs_score ||
+                                consultation.notes) && (
+                                <div className="mt-6 pt-4 border-t border-gray-100">
+                                  <div className="flex items-center gap-3 mb-4">
+                                    <div className="p-2.5 bg-blue-100 rounded-lg">
+                                      <FaBrain className="text-xl text-blue-600" />
+                                    </div>
+                                    <h4 className="text-lg font-semibold text-gray-900">
+                                      Neurological Examination Findings
+                                    </h4>
+                                  </div>
+                                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {(consultation.cranial_nerves ||
+                                      consultation.notes) && (
+                                      <div className="bg-blue-50 p-4 rounded-lg">
+                                        <h5 className="font-medium text-blue-800 mb-2">
+                                          Cranial Nerve Assessment
+                                        </h5>
+                                        <div className="space-y-2">
+                                          {consultation.cranial_nerves && (
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">
+                                                Cranial Nerves:
+                                              </span>
+                                              <span className="font-medium text-gray-800">
+                                                {consultation.cranial_nerves}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {consultation.notes && (
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">
+                                                Clinical Notes:
+                                              </span>
+                                              <span className="font-medium text-gray-800">
+                                                {consultation.notes}
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {(consultation.motor_function ||
+                                      consultation.muscle_strength ||
+                                      consultation.muscle_tone ||
+                                      consultation.coordination ||
+                                      consultation.deep_tendon_reflexes) && (
+                                      <div className="bg-green-50 p-4 rounded-lg">
+                                        <h5 className="font-medium text-green-800 mb-2">
+                                          Motor Function Assessment
+                                        </h5>
+                                        <div className="space-y-2">
+                                          {consultation.motor_function && (
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">
+                                                Motor Function:
+                                              </span>
+                                              <span className="font-medium text-gray-800">
+                                                {consultation.motor_function}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {consultation.muscle_strength && (
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">
+                                                Muscle Strength:
+                                              </span>
+                                              <span className="font-medium text-gray-800">
+                                                {consultation.muscle_strength}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {consultation.muscle_tone && (
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">
+                                                Muscle Tone:
+                                              </span>
+                                              <span className="font-medium text-gray-800">
+                                                {consultation.muscle_tone}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {consultation.coordination && (
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">
+                                                Coordination:
+                                              </span>
+                                              <span className="font-medium text-gray-800">
+                                                {consultation.coordination}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {consultation.deep_tendon_reflexes && (
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">
+                                                Deep Tendon Reflexes:
+                                              </span>
+                                              <span className="font-medium text-gray-800">
+                                                {
+                                                  consultation.deep_tendon_reflexes
+                                                }
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {(consultation.gait_assessment ||
+                                      consultation.romberg_test ||
+                                      consultation.plantar_reflex ||
+                                      consultation.straight_leg_raise_test) && (
+                                      <div className="bg-orange-50 p-4 rounded-lg">
+                                        <h5 className="font-medium text-orange-800 mb-2">
+                                          Special Tests
+                                        </h5>
+                                        <div className="space-y-2">
+                                          {consultation.gait_assessment && (
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">
+                                                Gait Assessment:
+                                              </span>
+                                              <span className="font-medium text-gray-800">
+                                                {consultation.gait_assessment}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {consultation.romberg_test && (
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">
+                                                Romberg Test:
+                                              </span>
+                                              <span className="font-medium text-gray-800">
+                                                {consultation.romberg_test}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {consultation.plantar_reflex && (
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">
+                                                Plantar Reflex:
+                                              </span>
+                                              <span className="font-medium text-gray-800">
+                                                {consultation.plantar_reflex}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {consultation.straight_leg_raise_test && (
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">
+                                                Straight Leg Raise Test:
+                                              </span>
+                                              <span className="font-medium text-gray-800">
+                                                {
+                                                  consultation.straight_leg_raise_test
+                                                }
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {(consultation.brudzinski_sign ||
+                                      consultation.kernig_sign ||
+                                      consultation.mmse_score ||
+                                      consultation.gcs_score) && (
+                                      <div className="bg-purple-50 p-4 rounded-lg">
+                                        <h5 className="font-medium text-purple-800 mb-2">
+                                          Additional Assessments
+                                        </h5>
+                                        <div className="space-y-2">
+                                          {consultation.brudzinski_sign !==
+                                            undefined && (
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">
+                                                Brudzinski's Sign:
+                                              </span>
+                                              <span className="font-medium text-gray-800">
+                                                {consultation.brudzinski_sign
+                                                  ? "Positive"
+                                                  : "Negative"}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {consultation.kernig_sign !==
+                                            undefined && (
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">
+                                                Kernig's Sign:
+                                              </span>
+                                              <span className="font-medium text-gray-800">
+                                                {consultation.kernig_sign
+                                                  ? "Positive"
+                                                  : "Negative"}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {consultation.mmse_score && (
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">
+                                                MMSE Score:
+                                              </span>
+                                              <span className="font-medium text-gray-800">
+                                                {consultation.mmse_score}
+                                              </span>
+                                            </div>
+                                          )}
+                                          {consultation.gcs_score && (
+                                            <div className="flex justify-between">
+                                              <span className="text-gray-600">
+                                                GCS Score:
+                                              </span>
+                                              <span className="font-medium text-gray-800">
+                                                {consultation.gcs_score}
+                                              </span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
                                 </div>
-                                <h4 className="text-lg font-semibold text-gray-900">
-                                  Neurological Examination Findings
-                                </h4>
-                              </div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                {(consultation.cranial_nerves ||
-                                  consultation.notes) && (
-                                  <div className="bg-blue-50 p-4 rounded-lg">
-                                    <h5 className="font-medium text-blue-800 mb-2">
-                                      Cranial Nerve Assessment
-                                    </h5>
-                                    <div className="space-y-2">
-                                      {consultation.cranial_nerves && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600">
-                                            Cranial Nerves:
-                                          </span>
-                                          <span className="font-medium text-gray-800">
-                                            {consultation.cranial_nerves}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {consultation.notes && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600">
-                                            Clinical Notes:
-                                          </span>
-                                          <span className="font-medium text-gray-800">
-                                            {consultation.notes}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                                {(consultation.motor_function ||
-                                  consultation.muscle_strength ||
-                                  consultation.muscle_tone ||
-                                  consultation.coordination ||
-                                  consultation.deep_tendon_reflexes) && (
-                                  <div className="bg-green-50 p-4 rounded-lg">
-                                    <h5 className="font-medium text-green-800 mb-2">
-                                      Motor Function Assessment
-                                    </h5>
-                                    <div className="space-y-2">
-                                      {consultation.motor_function && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600">
-                                            Motor Function:
-                                          </span>
-                                          <span className="font-medium text-gray-800">
-                                            {consultation.motor_function}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {consultation.muscle_strength && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600">
-                                            Muscle Strength:
-                                          </span>
-                                          <span className="font-medium text-gray-800">
-                                            {consultation.muscle_strength}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {consultation.muscle_tone && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600">
-                                            Muscle Tone:
-                                          </span>
-                                          <span className="font-medium text-gray-800">
-                                            {consultation.muscle_tone}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {consultation.coordination && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600">
-                                            Coordination:
-                                          </span>
-                                          <span className="font-medium text-gray-800">
-                                            {consultation.coordination}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {consultation.deep_tendon_reflexes && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600">
-                                            Deep Tendon Reflexes:
-                                          </span>
-                                          <span className="font-medium text-gray-800">
-                                            {consultation.deep_tendon_reflexes}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                                {(consultation.gait_assessment ||
-                                  consultation.romberg_test ||
-                                  consultation.plantar_reflex ||
-                                  consultation.straight_leg_raise_test) && (
-                                  <div className="bg-orange-50 p-4 rounded-lg">
-                                    <h5 className="font-medium text-orange-800 mb-2">
-                                      Special Tests
-                                    </h5>
-                                    <div className="space-y-2">
-                                      {consultation.gait_assessment && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600">
-                                            Gait Assessment:
-                                          </span>
-                                          <span className="font-medium text-gray-800">
-                                            {consultation.gait_assessment}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {consultation.romberg_test && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600">
-                                            Romberg Test:
-                                          </span>
-                                          <span className="font-medium text-gray-800">
-                                            {consultation.romberg_test}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {consultation.plantar_reflex && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600">
-                                            Plantar Reflex:
-                                          </span>
-                                          <span className="font-medium text-gray-800">
-                                            {consultation.plantar_reflex}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {consultation.straight_leg_raise_test && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600">
-                                            Straight Leg Raise Test:
-                                          </span>
-                                          <span className="font-medium text-gray-800">
-                                            {
-                                              consultation.straight_leg_raise_test
-                                            }
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                                {(consultation.brudzinski_sign ||
-                                  consultation.kernig_sign ||
-                                  consultation.mmse_score ||
-                                  consultation.gcs_score) && (
-                                  <div className="bg-purple-50 p-4 rounded-lg">
-                                    <h5 className="font-medium text-purple-800 mb-2">
-                                      Additional Assessments
-                                    </h5>
-                                    <div className="space-y-2">
-                                      {consultation.brudzinski_sign !==
-                                        undefined && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600">
-                                            Brudzinski's Sign:
-                                          </span>
-                                          <span className="font-medium text-gray-800">
-                                            {consultation.brudzinski_sign
-                                              ? "Positive"
-                                              : "Negative"}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {consultation.kernig_sign !==
-                                        undefined && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600">
-                                            Kernig's Sign:
-                                          </span>
-                                          <span className="font-medium text-gray-800">
-                                            {consultation.kernig_sign
-                                              ? "Positive"
-                                              : "Negative"}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {consultation.mmse_score && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600">
-                                            MMSE Score:
-                                          </span>
-                                          <span className="font-medium text-gray-800">
-                                            {consultation.mmse_score}
-                                          </span>
-                                        </div>
-                                      )}
-                                      {consultation.gcs_score && (
-                                        <div className="flex justify-between">
-                                          <span className="text-gray-600">
-                                            GCS Score:
-                                          </span>
-                                          <span className="font-medium text-gray-800">
-                                            {consultation.gcs_score}
-                                          </span>
-                                        </div>
-                                      )}
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
+                              )}
                             </div>
                           )}
-                        </div>
-                      )}
-                    </motion.div>
-                  ))}
+                        </motion.div>
+                      );
+                    })}
                 </div>
               )}
             </div>

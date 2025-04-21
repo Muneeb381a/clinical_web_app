@@ -293,43 +293,189 @@ const dosageValueToLabel = {
 };
 
 const frequencyOptions = [
+  // Time of day
   { value: "morning", label: "صبح" },
+  { value: "afternoon", label: "دوپہر" },
   { value: "evening", label: "شام" },
+  { value: "night", label: "رات" },
+  { value: "bedtime", label: "سونے سے پہلے" },
+  { value: "on_awakening", label: "جاگتے ہی" },
+
+  // Daily frequencies
   { value: "once_a_day", label: "دن میں ایک بار" },
   { value: "twice_a_day", label: "دن میں دو بار" },
   { value: "three_times_a_day", label: "دن میں تین بار" },
+  { value: "four_times_a_day", label: "دن میں چار بار" },
+  { value: "every_morning", label: "روزانہ صبح" },
+  { value: "every_night", label: "روزانہ رات" },
+
+  // Hourly intervals
+  { value: "every_4_hours", label: "ہر چار گھنٹے بعد" },
   { value: "every_6_hours", label: "ہر چھ گھنٹے بعد" },
+  { value: "every_8_hours", label: "ہر آٹھ گھنٹے بعد" },
+  { value: "every_12_hours", label: "ہر بارہ گھنٹے بعد" },
+
+  // Weekly frequencies
+  { value: "once_a_week", label: "ہفتے میں ایک بار" },
+  { value: "twice_a_week", label: "ہفتے میں دو بار" },
+  { value: "three_times_a_week", label: "ہفتے میں تین بار" },
+
+  // Monthly frequencies
+  { value: "once_a_month", label: "مہینے میں ایک بار" },
+
+  // Special cases
   { value: "as_needed", label: "ضرورت کے مطابق" },
+  { value: "before_meals", label: "کھانے سے پہلے" },
+  { value: "after_meals", label: "کھانے کے بعد" },
+  { value: "with_meals", label: "کھانے کے ساتھ" },
+  { value: "alternate_days", label: "ایک دن چھوڑ کر" },
+  { value: "every_other_day", label: "ایک دن چھوڑ کر" },
+  { value: "continuous", label: "مسلسل" },
+  { value: "as_directed", label: "ڈاکٹر کے مشورے سے" }
 ];
 
 const frequencyValueToLabel = {
+  // Time of day
   morning: "صبح",
+  afternoon: "دوپہر",
   evening: "شام",
+  night: "رات",
+  bedtime: "سونے سے پہلے",
+  on_awakening: "جاگتے ہی",
+
+  // Daily frequencies
   once_a_day: "دن میں ایک بار",
   twice_a_day: "دن میں دو بار",
   three_times_a_day: "دن میں تین بار",
+  four_times_a_day: "دن میں چار بار",
+  every_morning: "روزانہ صبح",
+  every_night: "روزانہ رات",
+
+  // Hourly intervals
+  every_4_hours: "ہر چار گھنٹے بعد",
   every_6_hours: "ہر چھ گھنٹے بعد",
+  every_8_hours: "ہر آٹھ گھنٹے بعد",
+  every_12_hours: "ہر بارہ گھنٹے بعد",
+
+  // Weekly frequencies
+  once_a_week: "ہفتے میں ایک بار",
+  twice_a_week: "ہفتے میں دو بار",
+  three_times_a_week: "ہفتے میں تین بار",
+
+  // Monthly frequencies
+  once_a_month: "مہینے میں ایک بار",
+
+  // Special cases
   as_needed: "ضرورت کے مطابق",
+  before_meals: "کھانے سے پہلے",
+  after_meals: "کھانے کے بعد",
+  with_meals: "کھانے کے ساتھ",
+  alternate_days: "ایک دن چھوڑ کر",
+  every_other_day: "ایک دن چھوڑ کر",
+  continuous: "مسلسل",
+  as_directed: "ڈاکٹر کے مشورے سے"
 };
 
 const durationOptions = [
+  // Days (1-31)
   { value: "1_day", label: "ایک دن" },
+  { value: "2_days", label: "دو دن" },
   { value: "3_days", label: "تین دن" },
+  { value: "4_days", label: "چار دن" },
   { value: "5_days", label: "پانچ دن" },
+  { value: "6_days", label: "چھ دن" },
   { value: "7_days", label: "ایک ہفتہ" },
-  { value: "14_days", label: "چودہ دن" },
-  { value: "21_days", label: "ایکویں دن" },
+  { value: "10_days", label: "دس دن" },
+  { value: "14_days", label: "دو ہفتے" },
+  { value: "15_days", label: "پندرہ دن" },
+  { value: "21_days", label: "تین ہفتے" },
+  { value: "28_days", label: "چار ہفتے" },
   { value: "30_days", label: "ایک ماہ" },
+  { value: "45_days", label: "پینتالیس دن" },
+  { value: "60_days", label: "دو ماہ" },
+  { value: "90_days", label: "تین ماہ" },
+
+  // Weeks
+  { value: "1_week", label: "ایک ہفتہ" },
+  { value: "2_weeks", label: "دو ہفتے" },
+  { value: "3_weeks", label: "تین ہفتے" },
+  { value: "4_weeks", label: "چار ہفتے" },
+  { value: "6_weeks", label: "چھ ہفتے" },
+  { value: "8_weeks", label: "آٹھ ہفتے" },
+  { value: "12_weeks", label: "بارہ ہفتے" },
+
+  // Months
+  { value: "1_month", label: "ایک ماہ" },
+  { value: "2_months", label: "دو ماہ" },
+  { value: "3_months", label: "تین ماہ" },
+  { value: "4_months", label: "چار ماہ" },
+  { value: "6_months", label: "چھ ماہ" },
+  { value: "9_months", label: "نو ماہ" },
+  { value: "12_months", label: "ایک سال" },
+  { value: "18_months", label: "ڈیڑھ سال" },
+
+  // Years
+  { value: "1_year", label: "ایک سال" },
+  { value: "2_years", label: "دو سال" },
+  { value: "3_years", label: "تین سال" },
+
+  // Special Durations
+  { value: "as_needed", label: "ضرورت کے مطابق" },
+  { value: "until_finished", label: "دوا ختم ہونے تک" },
+  { value: "lifetime", label: "زندگی بھر" },
+  { value: "short_term", label: "مختصر مدت" },
+  { value: "long_term", label: "طویل مدت" }
 ];
 
 const durationValueToLabel = {
+  // Days
   "1_day": "ایک دن",
+  "2_days": "دو دن",
   "3_days": "تین دن",
+  "4_days": "چار دن",
   "5_days": "پانچ دن",
+  "6_days": "چھ دن",
   "7_days": "ایک ہفتہ",
-  "14_days": "چودہ دن",
-  "21_days": "ایکویں دن",
+  "10_days": "دس دن",
+  "14_days": "دو ہفتے",
+  "15_days": "پندرہ دن",
+  "21_days": "تین ہفتے",
+  "28_days": "چار ہفتے",
   "30_days": "ایک ماہ",
+  "45_days": "پینتالیس دن",
+  "60_days": "دو ماہ",
+  "90_days": "تین ماہ",
+
+  // Weeks
+  "1_week": "ایک ہفتہ",
+  "2_weeks": "دو ہفتے",
+  "3_weeks": "تین ہفتے",
+  "4_weeks": "چار ہفتے",
+  "6_weeks": "چھ ہفتے",
+  "8_weeks": "آٹھ ہفتے",
+  "12_weeks": "بارہ ہفتے",
+
+  // Months
+  "1_month": "ایک ماہ",
+  "2_months": "دو ماہ",
+  "3_months": "تین ماہ",
+  "4_months": "چار ماہ",
+  "6_months": "چھ ماہ",
+  "9_months": "نو ماہ",
+  "12_months": "ایک سال",
+  "18_months": "ڈیڑھ سال",
+
+  // Years
+  "1_year": "ایک سال",
+  "2_years": "دو سال",
+  "3_years": "تین سال",
+
+  // Special Durations
+  "as_needed": "ضرورت کے مطابق",
+  "until_finished": "دوا ختم ہونے تک",
+  "lifetime": "زندگی بھر",
+  "short_term": "مختصر مدت",
+  "long_term": "طویل مدت"
 };
 
 const instructionsOptions = [
@@ -337,8 +483,21 @@ const instructionsOptions = [
   { value: "after_meal", label: "کھانے کے بعد" },
   { value: "with_meal", label: "کھانے کے ساتھ" },
   { value: "with_water", label: "پانی کے ساتھ" },
+  { value: "with_milk", label: "دودھ کے ساتھ" },
+  { value: "with_juice", label: "جوس کے ساتھ" },
   { value: "on_empty_stomach", label: "خالی پیٹ" },
+  { value: "before_breakfast", label: "ناشتے سے پہلے" },
+  { value: "after_breakfast", label: "ناشتے کے بعد" },
+  { value: "before_lunch", label: "دوپہر کے کھانے سے پہلے" },
+  { value: "after_lunch", label: "دوپہر کے کھانے کے بعد" },
+  { value: "before_dinner", label: "رات کے کھانے سے پہلے" },
+  { value: "after_dinner", label: "رات کے کھانے کے بعد" },
+  { value: "at_bedtime", label: "سونے سے پہلے" },
+  { value: "chew_tab", label: "چبا کر کھائیں" },
+  { value: "sublingual", label: "زیر زبان رکھیں" },
+  { value: "avoid_alcohol", label: "الکحل سے پرہیز" },
   { value: "as_needed", label: "ضرورت کے مطابق" },
+  { value: "as_directed", label: "ڈاکٹر کے مشورے سے" }
 ];
 
 const instructionsValueToLabel = {
@@ -346,8 +505,21 @@ const instructionsValueToLabel = {
   after_meal: "کھانے کے بعد",
   with_meal: "کھانے کے ساتھ",
   with_water: "پانی کے ساتھ",
+  with_milk: "دودھ کے ساتھ",
+  with_juice: "جوس کے ساتھ",
   on_empty_stomach: "خالی پیٹ",
+  before_breakfast: "ناشتے سے پہلے",
+  after_breakfast: "ناشتے کے بعد",
+  before_lunch: "دوپہر کے کھانے سے پہلے",
+  after_lunch: "دوپہر کے کھانے کے بعد",
+  before_dinner: "رات کے کھانے سے پہلے",
+  after_dinner: "رات کے کھانے کے بعد",
+  at_bedtime: "سونے سے پہلے",
+  chew_tab: "چبا کر کھائیں",
+  sublingual: "زیر زبان رکھیں",
+  avoid_alcohol: "الکحل سے پرہیز",
   as_needed: "ضرورت کے مطابق",
+  as_directed: "ڈاکٹر کے مشورے سے"
 };
 
 const getEnglishValue = (urduLabel, options) => {
