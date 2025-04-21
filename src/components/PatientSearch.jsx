@@ -929,7 +929,7 @@ const PatientSearch = () => {
                                               </p>
                                             </div>
                                             <span className="bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full text-xs font-semibold">
-                                              {prescription.duration_ ||
+                                              {prescription.duration_en ||
                                                 "No duration"}
                                             </span>
                                           </div>
