@@ -745,11 +745,11 @@ const EditConsultation = () => {
             pupillary_reaction: consultationData.pupillary_reaction || "",
             speech_assessment: consultationData.speech_assessment || "",
             sensory_examination: consultationData.sensory_examination || "",
-            mental_status: consultationData.mental_status || "",
-            cerebellar_function: consultationData.cerebellar_function || "",
-            muscle_wasting: consultationData.muscle_wasting || "",
-            abnormal_movements: consultationData.abnormal_movements || "",
-            nystagmus: consultationData.nystagmus || "",
+            // mental_status: consultationData.mental_status || "",
+            // cerebellar_function: consultationData.cerebellar_function || "",
+            // muscle_wasting: consultationData.muscle_wasting || "",
+            // abnormal_movements: consultationData.abnormal_movements || "",
+            // nystagmus: consultationData.nystagmus || "",
             fundoscopy: consultationData.fundoscopy || "",
             brudzinski_sign: consultationData.brudzinski_sign || false,
             kernig_sign: consultationData.kernig_sign || false,
@@ -1628,7 +1628,7 @@ const EditConsultation = () => {
                       value={editFormData.sensory_examination || ""}
                       onChange={handleFormChange}
                     />
-                    <NeuroExamSelect
+                    {/* <NeuroExamSelect
                       field="mental_status"
                       value={editFormData.mental_status || ""}
                       onChange={handleFormChange}
@@ -1642,8 +1642,8 @@ const EditConsultation = () => {
                       field="muscle_wasting"
                       value={editFormData.muscle_wasting || ""}
                       onChange={handleFormChange}
-                    />
-                    <NeuroExamSelect
+                    /> */}
+                    {/* <NeuroExamSelect
                       field="abnormal_movements"
                       value={editFormData.abnormal_movements || ""}
                       onChange={handleFormChange}
@@ -1652,7 +1652,7 @@ const EditConsultation = () => {
                       field="nystagmus"
                       value={editFormData.nystagmus || ""}
                       onChange={handleFormChange}
-                    />
+                    /> */}
                     <NeuroExamSelect
                       field="fundoscopy"
                       value={editFormData.fundoscopy || ""}
