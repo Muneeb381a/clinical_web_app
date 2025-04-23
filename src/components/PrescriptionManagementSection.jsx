@@ -897,6 +897,10 @@ const PrescriptionManagementSection = ({
                       { value: "every_morning", label: "روزانہ صبح" },
                       { value: "every_night", label: "روزانہ رات" },
                       { value: "alternate_days", label: "ایک دن چھوڑ کر" },
+                      { value: "after_one_week", label: "ایک ہفتے بعد" },
+                      { value: "after_two_weeks", label: "دو ہفتے بعد" },
+                      { value: "after_three_weeks", label: "تین ہفتے بعد" },
+                      { value: "after_one_month", label: "ایک مہینے بعد" },
                     ]}
                     value={
                       med.instructions_en
