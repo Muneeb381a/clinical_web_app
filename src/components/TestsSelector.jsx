@@ -6,6 +6,7 @@ const TestsSelector = ({ allTests, selectedTests, onSelect, onRemove }) => {
   // Log inputs for debugging
   console.log("TestsSelector - allTests:", allTests);
   console.log("TestsSelector - selectedTests:", selectedTests);
+  console.log("TestsSelector - onRemove:", onRemove);
 
   // Validate and map allTests to testOptions
   const testOptions = useMemo(() => {
@@ -41,6 +42,14 @@ const TestsSelector = ({ allTests, selectedTests, onSelect, onRemove }) => {
       ? selectedOptions.map((option) => option.value)
       : [];
     console.log("TestsSelector - New selected IDs:", newSelectedIds);
+    onSelect(newSelectedIds);
+  };
+
+  const handleRemove = (testId) => {
+    console.log("TestsSelector - Removing test ID:", testId);
+    onRemove(testId);
+    // Fallback: Update react-select state if removeProps is unavailable
+    const newSelectedIds = selectedTests.filter((id) => id !== testId);
     onSelect(newSelectedIds);
   };
 
@@ -152,18 +161,26 @@ const TestsSelector = ({ allTests, selectedTests, onSelect, onRemove }) => {
             aria-label="Select diagnostic tests"
             components={{
               DropdownIndicator: () => <FaSearch className="mr-1 text-gray-400" />,
-              MultiValueRemove: (props) => (
-                <div
-                  {...props.innerProps}
-                  className="cursor-pointer p-1 hover:bg-purple-100 rounded-r-md"
-                  onClick={() => {
-                    props.removeProps.onClick();
-                    onRemove(props.data.value); // Call onRemove with test_id
-                  }}
-                >
-                  <FaTimes className="text-purple-700 hover:text-purple-900" />
-                </div>
-              ),
+              MultiValueRemove: ({ data, innerProps, removeProps }) => {
+                console.log("MultiValueRemove - Props:", { data, removeProps, innerProps });
+                return (
+                  <div
+                    {...innerProps}
+                    className="cursor-pointer p-1 hover:bg-purple-100 rounded-r-md"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemove(data.value); // Always call onRemove
+                      if (removeProps?.onClick) {
+                        removeProps.onClick(e); // Call react-select's handler if available
+                      } else {
+                        console.warn("MultiValueRemove - removeProps.onClick is undefined");
+                      }
+                    }}
+                  >
+                    <FaTimes className="text-purple-700 hover:text-purple-900" />
+                  </div>
+                );
+              },
             }}
             noOptionsMessage={() => "No tests found"}
           />

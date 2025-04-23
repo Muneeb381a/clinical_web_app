@@ -951,7 +951,7 @@ const EditConsultation = () => {
       );
 
       const response = await axios.put(
-        `https://patient-management-backend-nine.vercel.app/api/patients/consultations/${consultationId}`,
+        `http://localhost:4500/api/patients/consultations/${consultationId}`,
         cleanedPayload,
         {
           validateStatus: (status) => status < 500,
