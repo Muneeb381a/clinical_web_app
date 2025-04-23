@@ -625,12 +625,12 @@ const PatientConsultation = () => {
       toast.warn("Offline. Submission queued. Please reconnect to submit.");
       return;
     }
-
+  
     setSubmissionLoading(true);
-
+  
     try {
       await refreshMedicines();
-
+  
       const validIds = medicines.map((m) => String(m.value));
       const invalidMedicines = selectedMedicines.filter(
         (med) => med.medicine_id && !validIds.includes(String(med.medicine_id))
@@ -643,21 +643,20 @@ const PatientConsultation = () => {
         );
         return;
       }
-
+  
       const consultationPayload = {
         patient_id: String(patient.id),
         doctor_name: "Dr. Abdul Rauf",
         diagnosis: neuroExamData?.diagnosis?.trim() || null,
         notes: neuroExamData?.treatment_plan?.trim() || null,
-        consultation_date: new Date().toISOString().split("T")[0],
-        status: "completed",
+        visit_date: new Date().toISOString(), // Align with server
       };
-
+  
       // Validate payload
       if (!consultationPayload.patient_id) {
         throw new Error("Invalid patient ID in consultation payload");
       }
-
+  
       console.log("Creating consultation with payload:", consultationPayload);
       let consultationId;
       try {
@@ -668,26 +667,33 @@ const PatientConsultation = () => {
           consultationPayload,
           (data) => data
         );
-        consultationId = consultationRes?.id;
+        console.log("Consultation response:", consultationRes);
+        consultationId = consultationRes?.consultation?.id;
         if (!consultationId) {
           throw new Error("Server did not return a consultation ID.");
         }
         console.log("Consultation created with ID:", consultationId);
       } catch (error) {
-        console.error("Failed to create consultation:", error);
-        toast.error(
-          error.response?.status === 400
-            ? "Invalid consultation data. Please check inputs."
-            : error.response?.status >= 500
-            ? "Server error creating consultation. Please try again."
-            : "Failed to create consultation. Please try again."
-        );
-        return; // Exit early, as dependent requests need consultationId
+        console.error("Failed to create consultation:", {
+          message: error.message,
+          response: error.response?.data,
+          status: error.response?.status,
+        });
+        let errorMessage;
+        if (error.response?.status === 400) {
+          errorMessage = error.response?.data?.details || "Invalid consultation data. Please check patient ID and inputs.";
+        } else if (error.response?.status >= 500) {
+          errorMessage = "Server error creating consultation. Please try again.";
+        } else {
+          errorMessage = error.message || "Failed to create consultation.";
+        }
+        toast.error(errorMessage);
+        throw error; // Exit early
       }
-
+  
       const failedSteps = [];
       const requests = [];
-
+  
       // Vitals
       if (vitalSigns && Object.values(vitalSigns).some((v) => v && v !== "")) {
         const vitalsPayload = {
@@ -715,7 +721,7 @@ const PatientConsultation = () => {
           })
         );
       }
-
+  
       // Symptoms
       if (Array.isArray(selectedSymptoms) && selectedSymptoms.length > 0) {
         const validSymptomIds = symptomsOptions.map((s) => String(s.value));
@@ -744,16 +750,14 @@ const PatientConsultation = () => {
                 e.message ||
                 "Unknown error submitting symptoms";
               failedSteps.push(
-                `Symptoms: ${errorMessage} (HTTP ${
-                  e.response?.status || "unknown"
-                })`
+                `Symptoms: ${errorMessage} (HTTP ${e.response?.status || "unknown"})`
               );
               throw e;
             })
           );
         }
       }
-
+  
       // Prescriptions
       if (Array.isArray(selectedMedicines) && selectedMedicines.length > 0) {
         const invalidMedicines = selectedMedicines.filter(
@@ -782,10 +786,7 @@ const PatientConsultation = () => {
               how_to_take_urdu: med.how_to_take_urdu?.trim() || null,
             })),
           };
-          console.log(
-            "Submitting prescriptions payload:",
-            prescriptionsPayload
-          );
+          console.log("Submitting prescriptions payload:", prescriptionsPayload);
           requests.push(
             fetchWithRetry(
               "post",
@@ -805,9 +806,7 @@ const PatientConsultation = () => {
                 payload: prescriptionsPayload,
               });
               failedSteps.push(
-                `Prescriptions: ${errorMessage} (HTTP ${
-                  error.response?.status || "unknown"
-                })`
+                `Prescriptions: ${errorMessage} (HTTP ${error.response?.status || "unknown"})`
               );
               toast.error(
                 error.response?.status === 400
@@ -819,7 +818,7 @@ const PatientConsultation = () => {
           );
         }
       }
-
+  
       // Tests
       if (Array.isArray(selectedTests) && selectedTests.length > 0) {
         const testIds = selectedTests
@@ -830,19 +829,13 @@ const PatientConsultation = () => {
           )
           .filter((id) => id && Number.isInteger(Number(id)));
         const validTestIds = tests.map((t) => String(t.value));
-        const invalidTestIds = testIds.filter(
-          (id) => !validTestIds.includes(id)
-        );
+        const invalidTestIds = testIds.filter((id) => !validTestIds.includes(id));
         if (invalidTestIds.length > 0) {
           console.error("Invalid test IDs:", invalidTestIds);
           toast.error(
-            `Cannot submit tests: Unrecognized test IDs (${invalidTestIds.join(
-              ", "
-            )}). Please reselect tests.`
+            `Cannot submit tests: Unrecognized test IDs (${invalidTestIds.join(", ")}). Please reselect tests.`
           );
-          failedSteps.push(
-            `Tests: Invalid test IDs (${invalidTestIds.join(", ")})`
-          );
+          failedSteps.push(`Tests: Invalid test IDs (${invalidTestIds.join(", ")})`);
         } else if (testIds.length > 0) {
           const testsPayload = {
             test_ids: testIds,
@@ -868,9 +861,7 @@ const PatientConsultation = () => {
                 payload: testsPayload,
               });
               failedSteps.push(
-                `Tests: ${errorMessage} (HTTP ${
-                  error.response?.status || "unknown"
-                })`
+                `Tests: ${errorMessage} (HTTP ${error.response?.status || "unknown"})`
               );
               toast.error(
                 error.response?.status === 400
@@ -881,14 +872,12 @@ const PatientConsultation = () => {
             })
           );
         } else {
-          console.warn("No valid test IDs after processing:", {
-            selectedTests,
-          });
+          console.warn("No valid test IDs after processing:", { selectedTests });
           toast.warn("No valid tests selected. Please reselect tests.");
           failedSteps.push("Tests: No valid test IDs selected");
         }
       }
-
+  
       // Neuro Exam
       if (neuroExamData && Object.keys(neuroExamData).length > 0) {
         const neuroPayload = {
@@ -919,15 +908,13 @@ const PatientConsultation = () => {
             (data) => data
           ).catch((e) => {
             failedSteps.push(
-              `Neuro Exam: ${e.message} (HTTP ${
-                e.response?.status || "unknown"
-              })`
+              `Neuro Exam: ${e.message} (HTTP ${e.response?.status || "unknown"})`
             );
             throw e;
           })
         );
       }
-
+  
       // Follow-Up
       if (
         selectedDuration &&
@@ -951,16 +938,14 @@ const PatientConsultation = () => {
               (data) => data
             ).catch((e) => {
               failedSteps.push(
-                `Follow-Up: ${e.message} (HTTP ${
-                  e.response?.status || "unknown"
-                })`
+                `Follow-Up: ${e.message} (HTTP ${e.response?.status || "unknown"})`
               );
               throw e;
             })
           );
         }
       }
-
+  
       // Execute parallel requests
       if (requests.length > 0) {
         console.log("Executing parallel requests:", requests.length);
@@ -972,18 +957,16 @@ const PatientConsultation = () => {
           });
         });
       }
-
+  
       if (failedSteps.length > 0) {
         console.warn("Failed steps:", failedSteps);
         toast.warn(
-          `Consultation saved, but some steps failed: ${failedSteps.join(
-            ", "
-          )}.`
+          `Consultation saved, but some steps failed: ${failedSteps.join(", ")}.`
         );
       } else {
         toast.success("Consultation processed successfully!");
       }
-
+  
       // Reset state
       setVitalSigns({
         pulseRate: "",
@@ -996,7 +979,7 @@ const PatientConsultation = () => {
       setFollowUpDate(null);
       setFollowUpNotes("");
       setSelectedDuration(null);
-
+  
       // Attempt to print
       setTimeout(async () => {
         try {
@@ -1006,20 +989,21 @@ const PatientConsultation = () => {
           toast.warn("Consultation saved, but printing failed.");
         }
       }, 0);
-
+  
       navigate("/");
     } catch (error) {
       console.error("Submission error:", error);
       let errorMessage =
-        error.response?.data?.message || error.message || "Submission error";
+        error.response?.data?.details ||
+        error.response?.data?.message ||
+        error.message ||
+        "Submission error";
       if (error.code === "ECONNABORTED") {
         errorMessage = "Request timed out. Please check your network.";
       } else if (error.response?.status >= 500) {
         errorMessage = "Server error. Please try again later.";
       } else if (error.response?.status === 400) {
-        errorMessage = `Invalid data: ${
-          error.response?.data?.message || "Check your inputs."
-        }`;
+        errorMessage = `Invalid data: ${error.response?.data?.details || error.response?.data?.message || "Check your inputs."}`;
       } else if (error.response?.status === 404) {
         errorMessage = "Resource not found. Please check the data.";
       }
