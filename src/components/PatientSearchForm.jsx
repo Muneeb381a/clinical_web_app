@@ -154,7 +154,7 @@ const PatientSearchForm = ({ onSearch, isSearching }) => {
             <div className="relative w-full">
               <input
                 {...register("search")}
-                placeholder="03001234567 or John Doe"
+                placeholder="03001234567 or Name"
                 className="w-full rounded-xl border-2 border-gray-200 bg-white p-3.5 shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all pr-10"
                 onFocus={() =>
                   setShowDropdown(suggestions.length > 0 || isSuggesting)
