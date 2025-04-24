@@ -58,10 +58,16 @@ const debounce = (func, wait) => {
 
 // Simplified FullPageLoader
 const FullPageLoader = ({ message = "Processing your request" }) => (
-  <div className="fixed inset-0 z-[100] bg-white/95 flex items-center justify-center">
-    <div className="text-center space-y-4">
-      <div className="mx-auto w-16 h-16 border-4 border-blue-100 border-t-blue-600 rounded-full animate-spin" />
-      <p className="text-lg font-semibold text-gray-800">{message}</p>
+  <div className="fixed inset-0 z-[100] bg-gradient-to-br from-gray-50 to-gray-100/95 flex items-center justify-center">
+    <div className="text-center space-y-6 p-8 rounded-2xl bg-white/80 shadow-xl backdrop-blur-sm">
+      <div className="relative mx-auto w-20 h-20">
+        <div className="absolute inset-0 border-4 border-transparent border-t-indigo-500 border-r-indigo-300 rounded-full animate-spin" />
+        <div className="absolute inset-1.5 border-4 border-transparent border-t-indigo-400 border-l-indigo-200 rounded-full animate-spin [animation-duration:1.2s]" />
+        <div className="absolute inset-0 bg-indigo-100/20 rounded-full animate-pulse" />
+      </div>
+      <p className="text-xl font-medium text-gray-900 tracking-tight animate-pulse [animation-duration:2s]">
+        {message}
+      </p>
     </div>
   </div>
 );
