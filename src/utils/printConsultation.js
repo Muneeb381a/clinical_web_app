@@ -21,6 +21,15 @@ const urduDate = (date) => {
   return `${day} ${month} ${year}`;
 };
 
+const englishDate = (date) => {
+  const d = new Date(date);
+  return d.toLocaleDateString("en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+};
+
 const printConsultation = ({
   patient,
   selectedMedicines,
@@ -200,6 +209,15 @@ const printConsultation = ({
           .clinical-paragraph strong {
             color: #1e293b;
           }
+           .date-header {
+            text-align: right;
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #4b5563;
+            margin-bottom: 2mm;
+          }
+          }
           .follow-up-section {
             margin-top: 1mm;
             padding: 3mm;
@@ -247,6 +265,7 @@ const printConsultation = ({
         </style>
       </head>
       <body>
+        <div class="date-header">${englishDate(new Date())}</div>
         <table class="patient-table">
           <tbody>
             <tr>
