@@ -145,104 +145,8 @@ const fetchData = async (
   refreshMedicines,
   neuroExamFields
 ) => {
-  // Validate parameters
-  const args = {
-    patientId,
-    setLoading,
-    setFetchError,
-    setPatient,
-    setSymptomsOptions,
-    setTests,
-    setNeuroOptions,
-    refreshMedicines,
-    neuroExamFields,
-  };
-  if (typeof setLoading !== "function") {
-    console.error(
-      "setLoading is not a function. Received:",
-      setLoading,
-      "All arguments:",
-      args
-    );
-    throw new TypeError("setLoading must be a function");
-  }
-  if (typeof setFetchError !== "function") {
-    console.error(
-      "setFetchError is not a function. Received:",
-      setFetchError,
-      "All arguments:",
-      args
-    );
-    throw new TypeError("setFetchError must be a function");
-  }
-  if (typeof setPatient !== "function") {
-    console.error(
-      "setPatient is not a function. Received:",
-      setPatient,
-      "All arguments:",
-      args
-    );
-    throw new TypeError("setPatient must be a function");
-  }
-  if (typeof setSymptomsOptions !== "function") {
-    console.error(
-      "setSymptomsOptions is not a function. Received:",
-      setSymptomsOptions,
-      "All arguments:",
-      args
-    );
-    throw new TypeError("setSymptomsOptions must be a function");
-  }
-  if (typeof setTests !== "function") {
-    console.error(
-      "setTests is not a function. Received:",
-      setTests,
-      "All arguments:",
-      args
-    );
-    throw new TypeError("setTests must be a function");
-  }
-  if (typeof setNeuroOptions !== "function") {
-    console.error(
-      "setNeuroOptions is not a function. Received:",
-      setNeuroOptions,
-      "All arguments:",
-      args
-    );
-    throw new TypeError("setNeuroOptions must be a function");
-  }
-  if (typeof refreshMedicines !== "function") {
-    console.error(
-      "refreshMedicines is not a function. Received:",
-      refreshMedicines,
-      "All arguments:",
-      args
-    );
-    throw new TypeError("refreshMedicines must be a function");
-  }
-  if (!Array.isArray(neuroExamFields)) {
-    console.error(
-      "neuroExamFields is not an array. Received:",
-      neuroExamFields,
-      "All arguments:",
-      args
-    );
-    throw new TypeError("neuroExamFields must be an array");
-  }
-  if (!patientId || typeof patientId !== "string") {
-    console.error(
-      "Invalid patientId. Received:",
-      patientId,
-      "All arguments:",
-      args
-    );
-    throw new TypeError("patientId must be a non-empty string");
-  }
-
   setLoading(true);
   setFetchError(null);
-
-  // In-memory cache
   const cache = new Map();
 
   const fetchCached = async (key, url, transform) => {
@@ -256,37 +160,36 @@ const fetchData = async (
   };
 
   try {
-    // Fetch patient data (critical, no cache)
-    const patientData = await fetchWithRetry(
-      "get",
-      `/api/patients/${patientId}`,
-      "patient",
-      null,
-      (data) => {
-        if (!data || !data.id) {
-          throw new Error("Invalid patient data");
+    let patientData = null;
+    // Only fetch patient if setPatient is provided (i.e., not skipped)
+    if (typeof setPatient === "function") {
+      patientData = await fetchWithRetry(
+        "get",
+        `/api/patients/${patientId}`,
+        "patient",
+        null,
+        (data) => {
+          if (!data || !data.id) {
+            throw new Error("Invalid patient data");
+          }
+          return {
+            id: String(data.id),
+            name: data.name || "Unknown",
+            mobile: data.mobile || "",
+            age: data.age || null,
+            gender: data.gender || null,
+          };
         }
-        return {
-          id: String(data.id),
-          name: data.name || "Unknown",
-          mobile: data.mobile || "",
-          age: data.age || null,
-          gender: data.gender || null,
-        };
-      }
-    );
-    setPatient(patientData);
+      );
+      setPatient(patientData);
+    }
 
-    // Parallelize non-critical fetches
     const results = await Promise.allSettled([
-      // Refresh medicines
       refreshMedicines().catch((err) => {
         console.warn("Failed to refresh medicines:", err);
         toast.warn("Failed to load medicines. Some features may be limited.");
         return [];
       }),
-
-      // Fetch symptoms
       fetchCached("symptoms", "/api/symptoms", (data) =>
         Array.isArray(data)
           ? data.map((sym) => ({
@@ -305,8 +208,6 @@ const fetchData = async (
           setSymptomsOptions([]);
           return [];
         }),
-
-      // Fetch tests
       fetchCached("tests", "/api/tests", (data) =>
         Array.isArray(data)
           ? data.map((test) => ({
@@ -325,8 +226,6 @@ const fetchData = async (
           setTests([]);
           return [];
         }),
-
-      // Fetch neuro options
       Promise.all(
         neuroExamFields.map((field) =>
           fetchCached(`neuro-${field}`, `/api/neuro-options/${field}`, (data) =>
@@ -359,7 +258,6 @@ const fetchData = async (
         }),
     ]);
 
-    // Log fetch results
     results.forEach((result, index) => {
       if (result.status === "fulfilled") {
         console.log(`Fetch ${index} succeeded:`, result.value);
@@ -368,15 +266,16 @@ const fetchData = async (
       }
     });
 
-    // Check if all non-critical fetches failed
-    if (results.slice(1).every((result) => result.status === "rejected")) {
-      throw new Error("All non-critical data fetches failed");
+    if (results.every((result) => result.status === "rejected") && !patientData) {
+      throw new Error("All data fetches failed");
     }
   } catch (error) {
     console.error("Critical fetch error:", error);
     const errorMessage =
       error.response?.status === 404
         ? "Patient not found. Please check the patient ID."
+        : error.response?.status === 500
+        ? "Server error loading patient data. Please try again."
         : `Failed to load data: ${error.message}`;
     setFetchError(errorMessage);
     toast.error(errorMessage);
@@ -384,7 +283,6 @@ const fetchData = async (
     setLoading(false);
   }
 };
-
 // Custom error boundary without external package
 class CustomErrorBoundary extends Component {
   state = { hasError: false, error: null };

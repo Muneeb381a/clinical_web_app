@@ -2,10 +2,10 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import axios from "axios";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useNavigate } from "react-router-dom";
+import { fetchWithRetry } from "../utils/api"; // Adjust path to match your project
 
 const patientSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -26,6 +26,7 @@ const AddPatientForm = ({ searchedMobile, onSuccess, onClose }) => {
 
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
   useEffect(() => {
     if (searchedMobile) {
       setValue("mobile", searchedMobile);
@@ -35,29 +36,35 @@ const AddPatientForm = ({ searchedMobile, onSuccess, onClose }) => {
   const addPatient = async (data) => {
     setLoading(true);
     try {
-      const res = await axios.post("https://patient-management-backend-nine.vercel.app/api/patients", {
-        name: data.name,
-        age: Number(data.age),
-        gender: data.gender,
-        mobile: data.mobile,
-      });
+      const res = await fetchWithRetry(
+        "post",
+        "/api/patients",
+        "add-patient",
+        {
+          name: data.name,
+          age: Number(data.age),
+          gender: data.gender,
+          mobile: data.mobile,
+        },
+        (data) => {
+          if (!data?.id && !data?._id) {
+            throw new Error("Patient ID not found in response");
+          }
+          return data;
+        }
+      );
 
-      const patientId = res.data.id || res.data._id;
-      console.log("AddPatientForm - Backend response:", res.data);
+      const patientId = res.id || res._id;
+      console.log("AddPatientForm - Backend response:", res);
       console.log("AddPatientForm - Patient ID:", patientId);
-
-      if (!patientId) {
-        throw new Error("Patient ID not found in response");
-      }
 
       toast.success("Patient registered successfully!", {
         position: "top-right",
         autoClose: 2000,
       });
-      
 
-      if (onSuccess) onSuccess(); // Trigger any additional success actions
-      if (onClose) onClose(); // Close the popup after success
+      if (onSuccess) onSuccess(patientId); // Pass patientId to PatientSearch
+      if (onClose) onClose(); // Close the popup
 
       setTimeout(() => {
         console.log(
@@ -65,16 +72,20 @@ const AddPatientForm = ({ searchedMobile, onSuccess, onClose }) => {
           `/patients/${patientId}/consultations/new`
         );
         navigate(`/patients/${patientId}/consultations/new`, { replace: true });
-      }, 300);
+      }, 1000); // Increased delay to 1 second
 
-      console.log("Patient Registered:", res.data);
+      console.log("Patient Registered:", res);
     } catch (error) {
       const errorMessage = error.response?.data?.message || "Failed to register patient";
       toast.error(`Error: ${errorMessage}`, {
         position: "top-right",
         autoClose: 4000,
       });
-      console.error("Error adding patient", error.response?.data || error.message);
+      console.error("Error adding patient:", {
+        message: error.message,
+        status: error.response?.status,
+        data: error.response?.data,
+      });
     } finally {
       setLoading(false);
     }
@@ -112,7 +123,7 @@ const AddPatientForm = ({ searchedMobile, onSuccess, onClose }) => {
         </div>
         <button
           type="submit"
-          className="col-span-2 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all"
+          className="col-span-2 py-4 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-2xl shadow-lg hover:shadow-xl transition-all cursor-pointer"
           disabled={loading}
         >
           {loading ? "Registering..." : "📥 Register New Patient"}
