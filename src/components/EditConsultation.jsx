@@ -1198,6 +1198,7 @@ const EditConsultation = () => {
             tests: normalizedTests,
             diagnosis: consultationData.neuro_diagnosis || "",
             treatment_plan: consultationData.neuro_treatment_plan || "",
+            power: consultationData.power,
             motor_function: consultationData.motor_function || "",
             muscle_tone: consultationData.muscle_tone || "",
             muscle_strength: consultationData.muscle_strength || "",
@@ -2240,6 +2241,15 @@ const EditConsultation = () => {
                       value={editFormData.gcs_score}
                       onChange={(val) => handleFormChange("gcs_score", val)}
                       placeholder="Enter GCS score"
+                      min={3}
+                      max={15}
+                    />
+                    <FormField
+                      label="Power"
+                      type="text"
+                      value={editFormData.power}
+                      onChange={(val) => handleFormChange("power", val)}
+                      placeholder="Enter Power"
                       min={3}
                       max={15}
                     />
