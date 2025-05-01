@@ -590,6 +590,7 @@ const PatientHistory = () => {
                               record.kernig_sign ||
                               record.mmse_score ||
                               record.gcs_score ||
+                              record.power ||
                               record.notes) && (
                               <div className="mt-6 pt-4 border-t border-gray-100">
                                 <div className="flex items-center gap-3 mb-4">
@@ -624,6 +625,16 @@ const PatientHistory = () => {
                                             </span>
                                             <span className="font-medium text-gray-800">
                                               {record.notes}
+                                            </span>
+                                          </div>
+                                        )}
+                                        {record.power && (
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">
+                                              Power:
+                                            </span>
+                                            <span className="font-medium text-gray-800">
+                                              {record.power}
                                             </span>
                                           </div>
                                         )}

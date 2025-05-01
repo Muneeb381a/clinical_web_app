@@ -358,6 +358,7 @@ const ConsultationItem = React.memo(
             consultation.kernig_sign ||
             consultation.mmse_score ||
             consultation.gcs_score ||
+            consultation.power ||
             consultation.notes) && (
             <div className="mt-6 pt-4 border-t border-gray-100">
               <div className="flex items-center gap-3 mb-4">
@@ -381,6 +382,12 @@ const ConsultationItem = React.memo(
                         <div className="flex justify-between">
                           <span className="text-gray-600">Clinical Notes:</span>
                           <span className="font-medium text-gray-800">{consultation.notes}</span>
+                        </div>
+                      )}
+                      {consultation.power && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-600">Power Notes:</span>
+                          <span className="font-medium text-gray-800">{consultation.power}</span>
                         </div>
                       )}
                     </div>

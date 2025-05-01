@@ -114,6 +114,7 @@ const printConsultation = ({
     { label: "Swallowing", key: "swallowing_function", type: "check" },
     { label: "Diagnosis", key: "diagnosis" },
     { label: "Treatment Plan", key: "treatment_plan" },
+    {label: "Power", key: "power"}
   ];
 
   printWindow.document.write(`
