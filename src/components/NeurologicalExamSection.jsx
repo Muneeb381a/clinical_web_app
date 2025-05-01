@@ -66,6 +66,7 @@ const NeurologicalExamSection = ({
     nihss_score: '',
     // Textareas
     treatment_plan: '',
+    power: '',
     findings: '', // Added for consistency, though not used in UI yet
     ...neuroExamData, // Merge with passed data
   };
@@ -196,7 +197,18 @@ const NeurologicalExamSection = ({
             </div>
           </div>
         </div>
-
+        <div className="md:col-span-4 space-y-4">
+          <div className="w-full space-y-2">
+            <label className="text-sm font-semibold text-gray-800">Power</label>
+            <textarea
+              value={initializedNeuroData.power || ''}
+              onChange={(e) => handleFieldChange('power', e.target.value)}
+              className="w-full px-4 py-3 text-base font-medium border border-gray-300 rounded-lg shadow-sm focus:ring-2 focus:ring-purple-300 focus:border-purple-500 focus:outline-none bg-white placeholder-gray-400"
+              placeholder="write power"
+              rows="3"
+            />
+          </div>
+        </div>
         {/* Treatment Plan */}
         <div className="md:col-span-4 space-y-4">
           <h4 className="font-medium text-gray-700 bg-gray-50 p-2 rounded-lg">
