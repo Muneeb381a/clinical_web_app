@@ -9,7 +9,7 @@ export const fetchWithRetry = async (
   body,
   transformResponse = (data) => data,
   retries = 3,
-  delay = 1000
+  delay = 500
 ) => {
   let attempt = 1;
 
@@ -24,7 +24,7 @@ export const fetchWithRetry = async (
         method,
         url: cleanEndpoint,
         data: body,
-        timeout: 10000, // 10s timeout
+        timeout: 5000, // 5s timeout
       });
 
       const data = transformResponse(response.data);
