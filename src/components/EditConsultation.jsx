@@ -1369,12 +1369,14 @@ const EditConsultation = () => {
       setError(null);
       setPrescriptionsError(null);
 
+      // Validate required fields
       if (!editFormData.patient_name) {
         setError("Patient name is required.");
         setEditLoading(false);
         return;
       }
 
+      // Validate tests
       const validTestIds = editFormData.tests.filter((testId) =>
         allTests.some((test) => test.id === testId)
       );
@@ -1388,13 +1390,16 @@ const EditConsultation = () => {
         return;
       }
 
+      // Construct payload with neuro exam fields nested under neurological_exams
       const payload = {
-        ...editFormData,
         patient_id: Number(patientId),
         consultation_id: Number(consultationId),
         patient_name: editFormData.patient_name,
         gender: editFormData.gender,
         mobile: editFormData.mobile,
+        age: editFormData.age || null,
+        visit_date: editFormData.visit_date || null,
+        symptoms: editFormData.symptoms || [],
         tests: validTestIds,
         prescriptions: editFormData.prescriptions.map((pres) => ({
           medicine_id: pres.medicine_id,
@@ -1409,30 +1414,71 @@ const EditConsultation = () => {
           instructions_urdu: pres.instructions_urdu,
           prescribed_at: pres.prescribed_at,
         })),
+        vital_signs: editFormData.vital_signs || [],
         follow_ups: editFormData.follow_ups.map((f) => ({
           follow_up_date: f.follow_up_date,
           notes: f.notes || null,
         })),
+        neurological_exams: {
+          diagnosis: editFormData.diagnosis || null,
+          treatment_plan: editFormData.treatment_plan || null,
+          motor_function: editFormData.motor_function || null,
+          muscle_tone: editFormData.muscle_tone || null,
+          muscle_strength: editFormData.muscle_strength || null,
+          deep_tendon_reflexes: editFormData.deep_tendon_reflexes || null,
+          plantar_reflex: editFormData.plantar_reflex || null,
+          sensory_examination: editFormData.sensory_examination || null,
+          pain_sensation: editFormData.pain_sensation || false,
+          vibration_sense: editFormData.vibration_sense || false,
+          proprioception: editFormData.proprioception || false,
+          temperature_sensation: editFormData.temperature_sensation || false,
+          coordination: editFormData.coordination || null,
+          finger_nose_test: editFormData.finger_nose_test || null,
+          heel_shin_test: editFormData.heel_shin_test || null,
+          gait_assessment: editFormData.gait_assessment || null,
+          romberg_test: editFormData.romberg_test || null,
+          cranial_nerves: editFormData.cranial_nerves || null,
+          pupillary_reaction: editFormData.pupillary_reaction || null,
+          eye_movements: editFormData.eye_movements || null,
+          facial_sensation: editFormData.facial_sensation || false,
+          swallowing_function: editFormData.swallowing_function || false,
+          tongue_movement: editFormData.tongue_movement || null,
+          straight_leg_raise_test: editFormData.straight_leg_raise_test || null,
+          lasegue_test: editFormData.lasegue_test || null,
+          brudzinski_sign: editFormData.brudzinski_sign || false,
+          kernig_sign: editFormData.kernig_sign || false,
+          cognitive_assessment: editFormData.cognitive_assessment || null,
+          speech_assessment: editFormData.speech_assessment || null,
+          tremors: editFormData.tremors || null,
+          involuntary_movements: editFormData.involuntary_movements || null,
+          notes: editFormData.notes || null,
+          fundoscopy: editFormData.fundoscopy || null,
+          mmse_score: editFormData.mmse_score || null,
+          gcs_score: editFormData.gcs_score || null,
+          straight_leg_raise_left: editFormData.straight_leg_raise_left || null,
+          straight_leg_raise_right:
+            editFormData.straight_leg_raise_right || null,
+          power: editFormData.power || null,
+        },
       };
 
-      const cleanedPayload = Object.fromEntries(
-        Object.entries(payload).filter(
-          ([_, v]) => v !== null && v !== undefined
-        )
-      );
-      console.log(
-        "Submitting payload:",
-        JSON.stringify(cleanedPayload, null, 2)
-      );
+      // Log neuro exam fields for debugging
+      console.log("Neuro exam fields in payload:", payload.neurological_exams);
 
+      // Always call handlePrint to ensure neuro exam fields are printed
+      handlePrint();
+
+      // Submit payload to backend
       const response = await axios.put(
         `https://patient-management-backend-nine.vercel.app/api/patients/consultations/${consultationId}`,
-        cleanedPayload,
+        payload,
         {
           validateStatus: (status) => status < 500,
           headers: { "Content-Type": "application/json" },
         }
       );
+
+      console.log("API Response:", response.data);
 
       if (response.status === 400) {
         throw new Error(response.data.message || "Validation failed");
@@ -1440,7 +1486,6 @@ const EditConsultation = () => {
 
       if (response.status >= 200 && response.status < 300) {
         sessionStorage.removeItem(`patient_${patientId}_consultations`);
-        handlePrint();
         navigate(`/patients/${patientId}`);
       }
     } catch (error) {
