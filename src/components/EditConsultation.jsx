@@ -1342,9 +1342,24 @@ const EditConsultation = () => {
 
   const updateField = (section, index, field, value) => {
     setEditFormData((prev) => {
-      const newData = [...(prev[section] || [])];
-      newData[index] = { ...newData[index], [field]: value };
-      return { ...prev, [section]: newData };
+      if (section && index !== undefined) {
+        // Handle array fields (e.g., follow_ups)
+        const newData = [...(prev[section] || [])];
+        newData[index] = { ...newData[index], [field]: value };
+        const updated = { ...prev, [section]: newData };
+        console.log(
+          `Updated ${section}[${index}].${field}:`,
+          value,
+          "New editFormData:",
+          updated
+        );
+        return updated;
+      } else {
+        // Handle scalar fields (e.g., motor_function, diagnosis)
+        const updated = { ...prev, [field]: value };
+        console.log(`Updated ${field}:`, value, "New editFormData:", updated);
+        return updated;
+      }
     });
   };
 
@@ -1369,28 +1384,21 @@ const EditConsultation = () => {
       setError(null);
       setPrescriptionsError(null);
 
-      // Validate required fields
       if (!editFormData.patient_name) {
         setError("Patient name is required.");
         setEditLoading(false);
         return;
       }
 
-      // Validate tests
       const validTestIds = editFormData.tests.filter((testId) =>
         allTests.some((test) => test.id === testId)
       );
       if (editFormData.tests.length !== validTestIds.length) {
-        console.warn(
-          "Invalid test IDs found:",
-          editFormData.tests.filter((id) => !validTestIds.includes(id))
-        );
         setError("Some selected tests are invalid. Please reselect tests.");
         setEditLoading(false);
         return;
       }
 
-      // Construct payload with neuro exam fields nested under neurological_exams
       const payload = {
         patient_id: Number(patientId),
         consultation_id: Number(consultationId),
@@ -1401,19 +1409,7 @@ const EditConsultation = () => {
         visit_date: editFormData.visit_date || null,
         symptoms: editFormData.symptoms || [],
         tests: validTestIds,
-        prescriptions: editFormData.prescriptions.map((pres) => ({
-          medicine_id: pres.medicine_id,
-          brand_name: pres.brand_name,
-          dosage_en: pres.dosage_en,
-          frequency_en: pres.frequency_en,
-          duration_en: pres.duration_en,
-          instructions_en: pres.instructions_en,
-          dosage_urdu: pres.dosage_urdu,
-          frequency_urdu: pres.frequency_urdu,
-          duration_urdu: pres.duration_urdu,
-          instructions_urdu: pres.instructions_urdu,
-          prescribed_at: pres.prescribed_at,
-        })),
+        prescriptions: editFormData.prescriptions || [],
         vital_signs: editFormData.vital_signs || [],
         follow_ups: editFormData.follow_ups.map((f) => ({
           follow_up_date: f.follow_up_date,
@@ -1462,13 +1458,11 @@ const EditConsultation = () => {
         },
       };
 
-      // Log neuro exam fields for debugging
-      console.log("Neuro exam fields in payload:", payload.neurological_exams);
+      console.log("Submitting payload:", payload);
 
-      // Always call handlePrint to ensure neuro exam fields are printed
+      // Print the current form state before saving
       handlePrint();
 
-      // Submit payload to backend
       const response = await axios.put(
         `https://patient-management-backend-nine.vercel.app/api/patients/consultations/${consultationId}`,
         payload,
@@ -1485,6 +1479,8 @@ const EditConsultation = () => {
       }
 
       if (response.status >= 200 && response.status < 300) {
+        // Re-fetch data to update editFormData
+        await fetchData();
         sessionStorage.removeItem(`patient_${patientId}_consultations`);
         navigate(`/patients/${patientId}`);
       }
