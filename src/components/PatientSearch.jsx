@@ -45,6 +45,11 @@ const cache = {
     }
     return item.value;
   },
+  clear(patientId, searchInput) {
+    if (patientId) delete this.data[`patient:${patientId}`];
+    if (searchInput) delete this.data[`search:${searchInput}`];
+    console.log("Cache cleared for:", { patientId, searchInput });
+  },
 };
 
 // Custom debounce function
@@ -74,7 +79,14 @@ const FullPageLoader = ({ message = "Processing your request" }) => (
 
 // Memoized ConsultationItem component
 const ConsultationItem = React.memo(
-  ({ consultation, index, toggleSection, expandedSections, handleEditClick, patient }) => (
+  ({
+    consultation,
+    index,
+    toggleSection,
+    expandedSections,
+    handleEditClick,
+    patient,
+  }) => (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
@@ -132,38 +144,61 @@ const ConsultationItem = React.memo(
           <div>
             <div className="flex items-center gap-2 mb-4">
               <FaStethoscope className="text-gray-600" />
-              <h4 className="font-semibold text-gray-900">Patient Information</h4>
+              <h4 className="font-semibold text-gray-900">
+                Patient Information
+              </h4>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-gray-50 p-4 rounded-lg">
-                <label className="text-sm font-medium text-gray-500">Name</label>
-                <p className="mt-2 text-gray-900">{consultation.patient_name || "Not specified"}</p>
+                <label className="text-sm font-medium text-gray-500">
+                  Name
+                </label>
+                <p className="mt-2 text-gray-900">
+                  {consultation.patient_name || "Not specified"}
+                </p>
               </div>
               <div className="bg-gray-50 p-4 rounded-lg">
-                <label className="text-sm font-medium text-gray-500">Mobile</label>
-                <p className="mt-2 text-gray-900">{consultation.mobile || "Not specified"}</p>
+                <label className="text-sm font-medium text-gray-500">
+                  Mobile
+                </label>
+                <p className="mt-2 text-gray-900">
+                  {consultation.mobile || "Not specified"}
+                </p>
               </div>
             </div>
           </div>
           <div>
             <div className="flex items-center gap-2 mb-4">
               <FaNotesMedical className="text-gray-600" />
-              <h4 className="font-semibold text-gray-900">Diagnosis & Symptoms</h4>
+              <h4 className="font-semibold text-gray-900">
+                Diagnosis & Symptoms
+              </h4>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="bg-gray-50 p-4 rounded-lg">
-                <label className="text-sm font-medium text-gray-500">Diagnosis</label>
-                <p className="mt-2 text-gray-900">{consultation.neuro_diagnosis || "Not specified"}</p>
+                <label className="text-sm font-medium text-gray-500">
+                  Diagnosis
+                </label>
+                <p className="mt-2 text-gray-900">
+                  {consultation.neuro_diagnosis || "Not specified"}
+                </p>
               </div>
               <div className="bg-gray-50 p-4 rounded-lg">
-                <label className="text-sm font-medium text-gray-500">Symptoms</label>
+                <label className="text-sm font-medium text-gray-500">
+                  Symptoms
+                </label>
                 <p className="mt-2 text-gray-900">
-                  {consultation.symptoms?.filter(Boolean).join(", ") || "No symptoms recorded"}
+                  {consultation.symptoms?.filter(Boolean).join(", ") ||
+                    "No symptoms recorded"}
                 </p>
               </div>
               <div className="md:col-span-2 bg-gray-50 p-4 rounded-lg">
-                <label className="text-sm font-medium text-gray-500">Treatment Plan</label>
-                <p className="mt-2 text-gray-900">{consultation.neuro_treatment_plan || "Not specified"}</p>
+                <label className="text-sm font-medium text-gray-500">
+                  Treatment Plan
+                </label>
+                <p className="mt-2 text-gray-900">
+                  {consultation.neuro_treatment_plan || "Not specified"}
+                </p>
               </div>
             </div>
           </div>
@@ -187,7 +222,9 @@ const ConsultationItem = React.memo(
                   ))}
                 </span>
               ) : (
-                <span className="text-gray-500 italic">No tests prescribed</span>
+                <span className="text-gray-500 italic">
+                  No tests prescribed
+                </span>
               )}
             </p>
           </div>
@@ -197,7 +234,9 @@ const ConsultationItem = React.memo(
                 <div className="p-2.5 bg-red-100 rounded-lg">
                   <FaHeartbeat className="text-xl text-red-600" />
                 </div>
-                <h4 className="text-lg font-semibold text-gray-900">Vital Signs</h4>
+                <h4 className="text-lg font-semibold text-gray-900">
+                  Vital Signs
+                </h4>
               </div>
               <div className="overflow-x-auto pb-4">
                 <div className="flex gap-2 min-w-max">
@@ -211,40 +250,56 @@ const ConsultationItem = React.memo(
                           <div className="flex items-center justify-center gap-2 p-2 bg-red-50 rounded-lg flex-1 min-w-[150px]">
                             <FaHeartbeat className="text-red-600" />
                             <div>
-                              <p className="text-xs font-medium text-red-700">BP</p>
+                              <p className="text-xs font-medium text-red-700">
+                                BP
+                              </p>
                               <p className="text-lg font-bold text-gray-900">
                                 {vital.blood_pressure || "N/A"}
-                                <span className="text-xs text-gray-500 ml-1">mmHg</span>
+                                <span className="text-xs text-gray-500 ml-1">
+                                  mmHg
+                                </span>
                               </p>
                             </div>
                           </div>
                           <div className="flex items-center justify-center gap-2 p-2 bg-blue-50 rounded-lg flex-1 min-w-[110px]">
                             <FaHeartbeat className="text-blue-600" />
                             <div>
-                              <p className="text-xs font-medium text-blue-700">Pulse</p>
+                              <p className="text-xs font-medium text-blue-700">
+                                Pulse
+                              </p>
                               <p className="text-lg font-bold text-gray-900">
                                 {vital.pulse_rate || "N/A"}
-                                <span className="text-xs text-gray-500 ml-1">bpm</span>
+                                <span className="text-xs text-gray-500 ml-1">
+                                  bpm
+                                </span>
                               </p>
                             </div>
                           </div>
                           <div className="flex items-center justify-center gap-2 p-2 bg-orange-50 rounded-lg flex-1 min-w-[110px]">
                             <FaThermometer className="text-orange-600" />
                             <div>
-                              <p className="text-xs font-medium text-orange-700">Temp</p>
+                              <p className="text-xs font-medium text-orange-700">
+                                Temp
+                              </p>
                               <p className="text-lg font-bold text-gray-900">
                                 {vital.temperature || "N/A"}
-                                <span className="text-xs text-gray-500 ml-1">°C</span>
+                                <span className="text-xs text-gray-500 ml-1">
+                                  °C
+                                </span>
                               </p>
                             </div>
                           </div>
                           <div className="flex items-center justify-center gap-2 p-2 bg-green-50 rounded-lg flex-1 min-w-[110px]">
                             <FaLungs className="text-green-600" />
                             <div>
-                              <p className="text-xs font-medium text-green-700">SpO₂</p>
+                              <p className="text-xs font-medium text-green-700">
+                                SpO₂
+                              </p>
                               <p className="text-lg font-bold text-gray-900">
                                 {vital.spo2_level || "N/A"}
-                                <span className="text-xs text-gray-500 ml-1">%</span>
+                                <span className="text-xs text-gray-500 ml-1">
+                                  %
+                                </span>
                               </p>
                             </div>
                           </div>
@@ -276,7 +331,10 @@ const ConsultationItem = React.memo(
                           </div>
                         </div>
                         <p className="text-xs text-gray-500">
-                          Recorded: {vital.recorded_at ? new Date(vital.recorded_at).toLocaleString() : "N/A"}
+                          Recorded:{" "}
+                          {vital.recorded_at
+                            ? new Date(vital.recorded_at).toLocaleString()
+                            : "N/A"}
                         </p>
                       </div>
                     </div>
@@ -291,7 +349,9 @@ const ConsultationItem = React.memo(
                 <div className="p-2.5 bg-purple-100 rounded-lg">
                   <FaPills className="text-xl text-purple-600" />
                 </div>
-                <h4 className="text-lg font-semibold text-gray-900">Medication Plan</h4>
+                <h4 className="text-lg font-semibold text-gray-900">
+                  Medication Plan
+                </h4>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {consultation.prescriptions.map((prescription, idx) => (
@@ -304,7 +364,9 @@ const ConsultationItem = React.memo(
                         <h3 className="font-semibold text-gray-800 truncate text-lg">
                           {prescription.brand_name || "Unnamed Medication"}
                         </h3>
-                        <p className="text-sm text-gray-500 truncate">{prescription.generic_name}</p>
+                        <p className="text-sm text-gray-500 truncate">
+                          {prescription.generic_name}
+                        </p>
                       </div>
                       <span className="bg-purple-50 text-purple-700 px-3 py-1.5 rounded-full text-xs font-semibold">
                         {prescription.duration_en || "No duration"}
@@ -313,24 +375,38 @@ const ConsultationItem = React.memo(
                     <div className="grid gap-3 text-sm">
                       <div>
                         <label className="text-gray-500">Dosage:</label>
-                        <p className="text-gray-900">{prescription.dosage_en || "N/A"}</p>
-                        <p className="text-gray-600 font-urdu">{prescription.dosage_urdu}</p>
+                        <p className="text-gray-900">
+                          {prescription.dosage_en || "N/A"}
+                        </p>
+                        <p className="text-gray-600 font-urdu">
+                          {prescription.dosage_urdu}
+                        </p>
                       </div>
                       <div>
                         <label className="text-gray-500">Frequency:</label>
-                        <p className="text-gray-900">{prescription.frequency_en || "N/A"}</p>
-                        <p className="text-gray-600 font-urdu">{prescription.frequency_urdu}</p>
+                        <p className="text-gray-900">
+                          {prescription.frequency_en || "N/A"}
+                        </p>
+                        <p className="text-gray-600 font-urdu">
+                          {prescription.frequency_urdu}
+                        </p>
                       </div>
                       <div>
                         <label className="text-gray-500">Instructions:</label>
-                        <p className="text-gray-900">{prescription.instructions_en || "N/A"}</p>
-                        <p className="text-gray-600 font-urdu">{prescription.instructions_urdu}</p>
+                        <p className="text-gray-900">
+                          {prescription.instructions_en || "N/A"}
+                        </p>
+                        <p className="text-gray-600 font-urdu">
+                          {prescription.instructions_urdu}
+                        </p>
                       </div>
                       <div className="pt-3 border-t border-gray-100">
                         <label className="text-gray-500">Prescribed On:</label>
                         <p className="text-gray-600">
                           {prescription.prescribed_at
-                            ? new Date(prescription.prescribed_at).toLocaleDateString("en-US", {
+                            ? new Date(
+                                prescription.prescribed_at
+                              ).toLocaleDateString("en-US", {
                                 month: "short",
                                 day: "numeric",
                                 year: "numeric",
@@ -365,29 +441,39 @@ const ConsultationItem = React.memo(
                 <div className="p-2.5 bg-blue-100 rounded-lg">
                   <FaBrain className="text-xl text-blue-600" />
                 </div>
-                <h4 className="text-lg font-semibold text-gray-900">Neurological Examination Findings</h4>
+                <h4 className="text-lg font-semibold text-gray-900">
+                  Neurological Examination Findings
+                </h4>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {(consultation.cranial_nerves || consultation.notes) && (
                   <div className="bg-blue-50 p-4 rounded-lg">
-                    <h5 className="font-medium text-blue-800 mb-2">Cranial Nerve Assessment</h5>
+                    <h5 className="font-medium text-blue-800 mb-2">
+                      Cranial Nerve Assessment
+                    </h5>
                     <div className="space-y-2">
                       {consultation.cranial_nerves && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">Cranial Nerves:</span>
-                          <span className="font-medium text-gray-800">{consultation.cranial_nerves}</span>
+                          <span className="font-medium text-gray-800">
+                            {consultation.cranial_nerves}
+                          </span>
                         </div>
                       )}
                       {consultation.notes && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">Clinical Notes:</span>
-                          <span className="font-medium text-gray-800">{consultation.notes}</span>
+                          <span className="font-medium text-gray-800">
+                            {consultation.notes}
+                          </span>
                         </div>
                       )}
                       {consultation.power && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">Power Notes:</span>
-                          <span className="font-medium text-gray-800">{consultation.power}</span>
+                          <span className="font-medium text-gray-800">
+                            {consultation.power}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -399,35 +485,49 @@ const ConsultationItem = React.memo(
                   consultation.coordination ||
                   consultation.deep_tendon_reflexes) && (
                   <div className="bg-green-50 p-4 rounded-lg">
-                    <h5 className="font-medium text-green-800 mb-2">Motor Function Assessment</h5>
+                    <h5 className="font-medium text-green-800 mb-2">
+                      Motor Function Assessment
+                    </h5>
                     <div className="space-y-2">
                       {consultation.motor_function && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">Motor Function:</span>
-                          <span className="font-medium text-gray-800">{consultation.motor_function}</span>
+                          <span className="font-medium text-gray-800">
+                            {consultation.motor_function}
+                          </span>
                         </div>
                       )}
                       {consultation.muscle_strength && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Muscle Strength:</span>
-                          <span className="font-medium text-gray-800">{consultation.muscle_strength}</span>
+                          <span className="text-gray-600">
+                            Muscle Strength:
+                          </span>
+                          <span className="font-medium text-gray-800">
+                            {consultation.muscle_strength}
+                          </span>
                         </div>
                       )}
                       {consultation.muscle_tone && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">Muscle Tone:</span>
-                          <span className="font-medium text-gray-800">{consultation.muscle_tone}</span>
+                          <span className="font-medium text-gray-800">
+                            {consultation.muscle_tone}
+                          </span>
                         </div>
                       )}
                       {consultation.coordination && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">Coordination:</span>
-                          <span className="font-medium text-gray-800">{consultation.coordination}</span>
+                          <span className="font-medium text-gray-800">
+                            {consultation.coordination}
+                          </span>
                         </div>
                       )}
                       {consultation.deep_tendon_reflexes && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Deep Tendon Reflexes:</span>
+                          <span className="text-gray-600">
+                            Deep Tendon Reflexes:
+                          </span>
                           <span className="font-medium text-gray-800">
                             {consultation.deep_tendon_reflexes}
                           </span>
@@ -441,29 +541,41 @@ const ConsultationItem = React.memo(
                   consultation.plantar_reflex ||
                   consultation.straight_leg_raise_test) && (
                   <div className="bg-orange-50 p-4 rounded-lg">
-                    <h5 className="font-medium text-orange-800 mb-2">Special Tests</h5>
+                    <h5 className="font-medium text-orange-800 mb-2">
+                      Special Tests
+                    </h5>
                     <div className="space-y-2">
                       {consultation.gait_assessment && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Gait Assessment:</span>
-                          <span className="font-medium text-gray-800">{consultation.gait_assessment}</span>
+                          <span className="text-gray-600">
+                            Gait Assessment:
+                          </span>
+                          <span className="font-medium text-gray-800">
+                            {consultation.gait_assessment}
+                          </span>
                         </div>
                       )}
                       {consultation.romberg_test && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">Romberg Test:</span>
-                          <span className="font-medium text-gray-800">{consultation.romberg_test}</span>
+                          <span className="font-medium text-gray-800">
+                            {consultation.romberg_test}
+                          </span>
                         </div>
                       )}
                       {consultation.plantar_reflex && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">Plantar Reflex:</span>
-                          <span className="font-medium text-gray-800">{consultation.plantar_reflex}</span>
+                          <span className="font-medium text-gray-800">
+                            {consultation.plantar_reflex}
+                          </span>
                         </div>
                       )}
                       {consultation.straight_leg_raise_test && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Straight Leg Raise Test:</span>
+                          <span className="text-gray-600">
+                            Straight Leg Raise Test:
+                          </span>
                           <span className="font-medium text-gray-800">
                             {consultation.straight_leg_raise_test}
                           </span>
@@ -477,13 +589,19 @@ const ConsultationItem = React.memo(
                   consultation.mmse_score ||
                   consultation.gcs_score) && (
                   <div className="bg-purple-50 p-4 rounded-lg">
-                    <h5 className="font-medium text-purple-800 mb-2">Additional Assessments</h5>
+                    <h5 className="font-medium text-purple-800 mb-2">
+                      Additional Assessments
+                    </h5>
                     <div className="space-y-2">
                       {consultation.brudzinski_sign !== undefined && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Brudzinski's Sign:</span>
+                          <span className="text-gray-600">
+                            Brudzinski's Sign:
+                          </span>
                           <span className="font-medium text-gray-800">
-                            {consultation.brudzinski_sign ? "Positive" : "Negative"}
+                            {consultation.brudzinski_sign
+                              ? "Positive"
+                              : "Negative"}
                           </span>
                         </div>
                       )}
@@ -498,13 +616,17 @@ const ConsultationItem = React.memo(
                       {consultation.mmse_score && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">MMSE Score:</span>
-                          <span className="font-medium text-gray-800">{consultation.mmse_score}</span>
+                          <span className="font-medium text-gray-800">
+                            {consultation.mmse_score}
+                          </span>
                         </div>
                       )}
                       {consultation.gcs_score && (
                         <div className="flex justify-between">
                           <span className="text-gray-600">GCS Score:</span>
-                          <span className="font-medium text-gray-800">{consultation.gcs_score}</span>
+                          <span className="font-medium text-gray-800">
+                            {consultation.gcs_score}
+                          </span>
                         </div>
                       )}
                     </div>
@@ -532,11 +654,18 @@ const PatientSearch = () => {
     expandedSections: {},
     page: 1,
   });
-  const consultationsPerPage = 5; // Reduced for faster initial load
+  const consultationsPerPage = 5;
   const navigate = useNavigate();
   const location = useLocation();
 
-  const updateState = (updates) => setState((prev) => ({ ...prev, ...updates }));
+  const updateState = (updates) => {
+    console.log("Updating state:", updates);
+    setState((prev) => {
+      const newState = { ...prev, ...updates };
+      console.log("New state:", newState);
+      return newState;
+    });
+  };
 
   const handleBackToHome = useCallback(() => navigate("/"), [navigate]);
 
@@ -560,13 +689,8 @@ const PatientSearch = () => {
         consultations: [],
         showAddPatient: false,
         expandedSections: {},
-      });
-
-      const isMobile = /^[0-9]{11}$/.test(searchInput);
-      const isName = /^[a-zA-Z\s]{1,50}$/.test(searchInput);
-      updateState({
-        searchedMobile: isMobile ? searchInput : "",
-        searchedName: isName ? searchInput : "",
+        searchedMobile: /^[0-9]{11}$/.test(searchInput) ? searchInput : "",
+        searchedName: /^[a-zA-Z\s]{1,50}$/.test(searchInput) ? searchInput : "",
       });
 
       const cacheKey = `search:${searchInput}`;
@@ -574,26 +698,32 @@ const PatientSearch = () => {
       if (cachedResult) {
         updateState({
           patient: cachedResult.patient,
-          consultations: cachedResult.consultations,
+          consultations: [...cachedResult.consultations], // Ensure new array reference
           isSearching: false,
         });
-        navigate(`/patients/${cachedResult.patient.id || cachedResult.patient._id}`, { replace: true });
+        navigate(
+          `/patients/${cachedResult.patient.id || cachedResult.patient._id}`,
+          { replace: true }
+        );
         return;
       }
 
       try {
         const query = new URLSearchParams();
-        if (isMobile) query.append("mobile", searchInput);
-        else if (isName) query.append("name", searchInput);
+        if (/^[0-9]{11}$/.test(searchInput))
+          query.append("mobile", searchInput);
+        else if (/^[a-zA-Z\s]{1,50}$/.test(searchInput))
+          query.append("name", searchInput);
         else throw new Error("Invalid input format");
 
         const patientRes = await fetchWithRetry(
           "get",
-          `/api/patients/search?${query.toString()}`,
+          `/api/patients/search?${query.toString()}&t=${Date.now()}`,
           "patient-search",
-          { timeout: 5000 }, // 5s timeout
+          { timeout: 5000 },
           (data) => {
-            if (!data?.success) throw new Error(data?.message || "Invalid search response");
+            if (!data?.success)
+              throw new Error(data?.message || "Invalid search response");
             return data;
           }
         );
@@ -609,22 +739,32 @@ const PatientSearch = () => {
 
             const historyRes = await fetchWithRetry(
               "get",
-              `/api/patient-history/${patientId}?page=1&limit=${consultationsPerPage}`,
+              `/api/patient-history/${patientId}?page=1&limit=${consultationsPerPage}&t=${Date.now()}`,
               "patient-history",
               { timeout: 5000 },
               (data) => (Array.isArray(data) ? data : [])
             );
 
-            cache.set(cacheKey, { patient: patientData, consultations: historyRes }, 1000 * 60 * 15); // 15 min TTL
+            cache.set(
+              cacheKey,
+              { patient: patientData, consultations: historyRes },
+              1000 * 60 * 15
+            );
             updateState({
               patient: patientData,
-              consultations: historyRes,
+              consultations: [...historyRes], // Ensure new array reference
               isSearching: false,
+              page: 1,
             });
             navigate(`/patients/${patientId}`, { replace: true });
           }
         } else {
-          updateState({ patient: null, patientsList: [], showAddPatient: true, isSearching: false });
+          updateState({
+            patient: null,
+            patientsList: [],
+            showAddPatient: true,
+            isSearching: false,
+          });
           toast.info("No patients found. You can add a new patient.");
         }
       } catch (error) {
@@ -645,8 +785,41 @@ const PatientSearch = () => {
         toast.error(errorMessage);
         updateState({ isSearching: false });
       }
-    }, 300),
+    }, 150), // Reduced debounce delay for faster response
     [navigate]
+  );
+
+  const handleConsultationUpdated = useCallback(
+    (patientId) => {
+      cache.clear(patientId);
+      updateState({ isSearching: true });
+      fetchWithRetry(
+        "get",
+        `/api/patient-history/${patientId}?page=1&limit=${consultationsPerPage}&t=${Date.now()}`,
+        "patient-history",
+        { timeout: 5000 },
+        (data) => (Array.isArray(data) ? data : [])
+      )
+        .then((historyRes) => {
+          cache.set(
+            `patient:${patientId}`,
+            { patient: state.patient, consultations: historyRes },
+            1000 * 60 * 15
+          );
+          updateState({
+            consultations: [...historyRes], // Ensure new array reference
+            isSearching: false,
+            page: 1,
+          });
+          toast.success("Consultation history updated.");
+        })
+        .catch((error) => {
+          console.error("Error refetching consultations:", error);
+          toast.error("Failed to refresh consultations.");
+          updateState({ isSearching: false });
+        });
+    },
+    [state.patient]
   );
 
   const handlePatientSelect = useCallback(
@@ -655,42 +828,38 @@ const PatientSearch = () => {
       try {
         const patientId = selectedPatient.id || selectedPatient._id;
         const cacheKey = `patient:${patientId}`;
-        const cachedResult = cache.get(cacheKey);
-        if (cachedResult) {
-          updateState({
-            patient: cachedResult.patient,
-            consultations: cachedResult.consultations,
-            isSearching: false,
-          });
-          navigate(`/patients/${patientId}`, { replace: true });
-          return;
-        }
-
+        cache.clear(patientId); // Clear cache to ensure fresh data
         const [patientRes, historyRes] = await Promise.all([
           fetchWithRetry(
             "get",
-            `/api/patients/${patientId}`,
+            `/api/patients/${patientId}?t=${Date.now()}`,
             "patient-by-id",
             { timeout: 5000 },
             (data) => {
-              if (!data?.id && !data?._id) throw new Error("Invalid patient data");
+              if (!data?.id && !data?._id)
+                throw new Error("Invalid patient data");
               return data;
             }
           ),
           fetchWithRetry(
             "get",
-            `/api/patient-history/${patientId}?page=1&limit=${consultationsPerPage}`,
+            `/api/patient-history/${patientId}?page=1&limit=${consultationsPerPage}&t=${Date.now()}`,
             "patient-history",
             { timeout: 5000 },
             (data) => (Array.isArray(data) ? data : [])
           ),
         ]);
 
-        cache.set(cacheKey, { patient: patientRes, consultations: historyRes }, 1000 * 60 * 15);
+        cache.set(
+          cacheKey,
+          { patient: patientRes, consultations: historyRes },
+          1000 * 60 * 15
+        );
         updateState({
           patient: patientRes,
-          consultations: historyRes,
+          consultations: [...historyRes], // Ensure new array reference
           isSearching: false,
+          page: 1,
         });
         navigate(`/patients/${patientId}`, { replace: true });
       } catch (error) {
@@ -712,13 +881,15 @@ const PatientSearch = () => {
       const patientId = state.patient.id || state.patient._id;
       const historyRes = await fetchWithRetry(
         "get",
-        `/api/patient-history/${patientId}?page=${state.page + 1}&limit=${consultationsPerPage}`,
+        `/api/patient-history/${patientId}?page=${
+          state.page + 1
+        }&limit=${consultationsPerPage}&t=${Date.now()}`,
         "patient-history",
         { timeout: 5000 },
         (data) => (Array.isArray(data) ? data : [])
       );
       updateState({
-        consultations: [...state.consultations, ...historyRes],
+        consultations: [...state.consultations, ...historyRes], // Ensure new array reference
         page: state.page + 1,
         isSearching: false,
       });
@@ -729,50 +900,123 @@ const PatientSearch = () => {
     }
   }, [state.patient, state.consultations, state.page]);
 
+  const handleNewPatientAdded = useCallback(
+    (patientId) => {
+      console.log("PatientSearch - New patient added with ID:", patientId);
+      cache.clear(patientId, state.searchedMobile || state.searchedName);
+      updateState({ showAddPatient: false, isSearching: true });
+      fetchWithRetry(
+        "get",
+        `/api/patients/${patientId}?t=${Date.now()}`,
+        "patient-by-id",
+        { timeout: 5000 },
+        (data) => {
+          if (!data?.id && !data?._id) throw new Error("Invalid patient data");
+          return data;
+        }
+      )
+        .then((patientRes) => {
+          cache.set(
+            `patient:${patientId}`,
+            { patient: patientRes, consultations: [] },
+            1000 * 60 * 15
+          );
+          updateState({
+            patient: patientRes,
+            consultations: [],
+            isSearching: false,
+            page: 1,
+          });
+          navigate(`/patients/${patientId}/consultations/new`, {
+            state: { fromPatientSearch: true },
+          });
+        })
+        .catch((error) => {
+          console.error("Error loading new patient:", error);
+          toast.error("Failed to load new patient details.");
+          updateState({ isSearching: false });
+        });
+    },
+    [navigate, state.searchedMobile, state.searchedName]
+  );
+
+  const handleAddConsultation = useCallback(() => {
+    updateState({ isAddingConsultation: true });
+    const patientId = state.patient.id || state.patient._id;
+    setTimeout(() => {
+      navigate(`/patients/${patientId}/consultations/new`, {
+        state: { fromPatientSearch: true },
+      });
+      updateState({ isAddingConsultation: false });
+    }, 500);
+  }, [navigate, state.patient]);
+
+  const handleEditClick = useCallback(
+    (consultationId) =>
+      navigate(
+        `/patients/${
+          state.patient.id || state.patient._id
+        }/consultations/${consultationId}/edit`,
+        { state: { fromPatientSearch: true } }
+      ),
+    [navigate, state.patient]
+  );
+
   useEffect(() => {
     const loadPatientFromURL = async () => {
       const pathParts = location.pathname.split("/");
       const patientId = pathParts[2];
 
-      if (pathParts[1] === "patients" && patientId && patientId !== "new") {
-        const cacheKey = `patient:${patientId}`;
-        const cachedResult = cache.get(cacheKey);
-        if (cachedResult) {
-          updateState({
-            patient: cachedResult.patient,
-            consultations: cachedResult.consultations,
-            isSearching: false,
-          });
-          return;
-        }
+      if (pathParts[1] === "" || (pathParts[1] === "patients" && !patientId)) {
+        updateState({
+          patient: null,
+          patientsList: [],
+          consultations: [],
+          showAddPatient: false,
+          expandedSections: {},
+          isSearching: false,
+          searchedMobile: "",
+          searchedName: "",
+          page: 1,
+        });
+        return;
+      }
 
+      if (pathParts[1] === "patients" && patientId && patientId !== "new") {
+        cache.clear(patientId); // Clear cache to ensure fresh data
         try {
           updateState({ isSearching: true });
           const [patientRes, historyRes] = await Promise.all([
             fetchWithRetry(
               "get",
-              `/api/patients/${patientId}`,
+              `/api/patients/${patientId}?t=${Date.now()}`,
               "patient-by-id",
               { timeout: 5000 },
               (data) => {
-                if (!data?.id && !data?._id) throw new Error("Invalid patient data");
+                if (!data?.id && !data?._id)
+                  throw new Error("Invalid patient data");
                 return data;
               }
             ),
             fetchWithRetry(
               "get",
-              `/api/patient-history/${patientId}?page=1&limit=${consultationsPerPage}`,
+              `/api/patient-history/${patientId}?page=1&limit=${consultationsPerPage}&t=${Date.now()}`,
               "patient-history",
               { timeout: 5000 },
               (data) => (Array.isArray(data) ? data : [])
             ),
           ]);
 
-          cache.set(cacheKey, { patient: patientRes, consultations: historyRes }, 1000 * 60 * 15);
+          cache.set(
+            `patient:${patientId}`,
+            { patient: patientRes, consultations: historyRes },
+            1000 * 60 * 15
+          );
           updateState({
             patient: patientRes,
-            consultations: historyRes,
+            consultations: [...historyRes], // Ensure new array reference
             isSearching: false,
+            page: 1,
           });
         } catch (error) {
           console.error("Error loading patient from URL:", {
@@ -792,65 +1036,58 @@ const PatientSearch = () => {
         const urlParams = new URLSearchParams(location.search);
         const mobile = urlParams.get("mobile");
         const name = urlParams.get("name");
-        if (mobile || name) {
-          updateState({
-            searchedMobile: mobile || "",
-            searchedName: name || "",
-            showAddPatient: true,
-            isSearching: false,
-          });
-        }
-      } else if (pathParts[1] === "") {
         updateState({
           patient: null,
           patientsList: [],
           consultations: [],
-          showAddPatient: false,
-          expandedSections: {},
+          searchedMobile: mobile || "",
+          searchedName: name || "",
+          showAddPatient: true,
           isSearching: false,
         });
       }
     };
     loadPatientFromURL();
-  }, [location, navigate]);
+  }, [location.pathname, location.search, navigate]);
 
-  const handleNewPatientAdded = useCallback(
-    (patientId) => {
-      console.log("PatientSearch - New patient added with ID:", patientId);
-      updateState({ showAddPatient: false });
-      navigate(`/patients/${patientId}/consultations/new`);
-    },
-    [navigate]
-  );
-
-  const handleAddConsultation = useCallback(() => {
-    updateState({ isAddingConsultation: true });
-    const patientId = state.patient.id || state.patient._id;
-    setTimeout(() => {
-      navigate(`/patients/${patientId}/consultations/new`);
-    }, 500);
-  }, [navigate, state.patient]);
-
-  const handleEditClick = useCallback(
-    (consultationId) => navigate(`/patients/${state.patient.id || state.patient._id}/consultations/${consultationId}/edit`),
-    [navigate, state.patient]
-  );
+  useEffect(() => {
+    const handleConsultationSaved = () => {
+      if (location.state?.consultationSaved && state.patient) {
+        handleConsultationUpdated(state.patient.id || state.patient._id);
+        navigate(location.pathname, { state: {}, replace: true });
+      }
+    };
+    handleConsultationSaved();
+  }, [location.state, state.patient, handleConsultationUpdated, navigate]);
 
   const toggleSection = useCallback(
-    (index) => updateState({ expandedSections: { ...state.expandedSections, [index]: !state.expandedSections[index] } }),
+    (index) =>
+      updateState({
+        expandedSections: {
+          ...state.expandedSections,
+          [index]: !state.expandedSections[index],
+        },
+      }),
     [state.expandedSections]
   );
 
   const filteredConsultations = useMemo(
-    () => state.consultations.filter((c) => c.visit_date && new Date(c.visit_date).getFullYear() > 1970),
+    () =>
+      state.consultations.filter(
+        (c) => c.visit_date && new Date(c.visit_date).getFullYear() > 1970
+      ),
     [state.consultations]
   );
 
   return (
     <CustomErrorBoundary navigate={navigate}>
       <div className="min-h-screen p-8 relative overflow-hidden isolate w-[90vw] mx-auto before:absolute before:inset-0 before:bg-gradient-to-br before:from-white before:-z-10">
-        {state.isSearching && <FullPageLoader message="Searching patient records..." />}
-        {state.isAddingConsultation && <FullPageLoader message="Loading new consultation..." />}
+        {state.isSearching && (
+          <FullPageLoader message="Searching patient records..." />
+        )}
+        {state.isAddingConsultation && (
+          <FullPageLoader message="Loading new consultation..." />
+        )}
 
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -863,14 +1100,23 @@ const PatientSearch = () => {
             </span>
           </h2>
 
-          {!state.patient && state.patientsList.length === 0 && !state.showAddPatient && (
-            <PatientSearchForm onSearch={debouncedSearch} isSearching={state.isSearching} />
-          )}
+          {!state.patient &&
+            state.patientsList.length === 0 &&
+            !state.showAddPatient && (
+              <PatientSearchForm
+                onSearch={debouncedSearch}
+                isSearching={state.isSearching}
+              />
+            )}
 
           {state.patientsList.length > 0 && (
             <div className="bg-white p-6 rounded-xl border border-gray-100 shadow-sm">
-              <h3 className="text-xl font-semibold text-gray-800 mb-4">Multiple Patients Found</h3>
-              <p className="text-sm text-gray-600 mb-6">Please select a patient from the list below:</p>
+              <h3 className="text-xl font-semibold text-gray-800 mb-4">
+                Multiple Patients Found
+              </h3>
+              <p className="text-sm text-gray-600 mb-6">
+                Please select a patient from the list below:
+              </p>
               <div className="space-y-4">
                 {state.patientsList.map((p) => (
                   <motion.div
@@ -880,15 +1126,21 @@ const PatientSearch = () => {
                     onClick={() => handlePatientSelect(p)}
                   >
                     <div>
-                      <p className="font-semibold text-gray-800">{p.name || "Unknown"}</p>
-                      <p className="text-sm text-gray-600">{p.mobile || "No mobile"}</p>
+                      <p className="font-semibold text-gray-800">
+                        {p.name || "Unknown"}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {p.mobile || "No mobile"}
+                      </p>
                     </div>
                     <FaEye className="text-blue-600 text-xl" />
                   </motion.div>
                 ))}
               </div>
               <button
-                onClick={() => updateState({ patientsList: [], showAddPatient: true })}
+                onClick={() =>
+                  updateState({ patientsList: [], showAddPatient: true })
+                }
                 className="mt-4 text-blue-600 hover:text-blue-800 font-semibold"
               >
                 Add New Patient
@@ -920,16 +1172,32 @@ const PatientSearch = () => {
                     <FaStethoscope className="text-2xl" />
                   </motion.div>
                   <div>
-                    <p className="text-sm font-medium text-purple-600 mb-1">Medical Record</p>
-                    <h3 className="text-2xl font-bold text-gray-800 tracking-tight">Patient Profile</h3>
+                    <p className="text-sm font-medium text-purple-600 mb-1">
+                      Medical Record
+                    </p>
+                    <h3 className="text-2xl font-bold text-gray-800 tracking-tight">
+                      Patient Profile
+                    </h3>
                   </div>
                 </motion.div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
                   {[
-                    { label: "Patient ID", value: state.patient.id || state.patient._id, icon: FaIdCard },
-                    { label: "Full Name", value: state.patient.name || "Unknown", icon: FaUser },
-                    { label: "Mobile", value: state.patient.mobile || "N/A", icon: FaPhone },
+                    {
+                      label: "Patient ID",
+                      value: state.patient.id || state.patient._id,
+                      icon: FaIdCard,
+                    },
+                    {
+                      label: "Full Name",
+                      value: state.patient.name || "Unknown",
+                      icon: FaUser,
+                    },
+                    {
+                      label: "Mobile",
+                      value: state.patient.mobile || "N/A",
+                      icon: FaPhone,
+                    },
                   ].map((item, index) => (
                     <motion.div
                       key={item.label}
@@ -946,14 +1214,20 @@ const PatientSearch = () => {
                           <p className="text-xs font-semibold text-gray-500 tracking-wide mb-1">
                             {item.label}
                           </p>
-                          <p className="text-lg font-semibold text-gray-800">{item.value}</p>
+                          <p className="text-lg font-semibold text-gray-800">
+                            {item.value}
+                          </p>
                         </div>
                       </div>
                     </motion.div>
                   ))}
                 </div>
 
-                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-center">
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className="flex justify-center"
+                >
                   <motion.button
                     whileHover={{
                       scale: 1.02,
@@ -964,7 +1238,9 @@ const PatientSearch = () => {
                     onClick={handleAddConsultation}
                     disabled={state.isAddingConsultation}
                     className={`relative bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl shadow-lg transition-all flex items-center gap-3 w-full md:w-auto justify-center overflow-hidden cursor-pointer ${
-                      state.isAddingConsultation ? "opacity-80 cursor-not-allowed" : ""
+                      state.isAddingConsultation
+                        ? "opacity-80 cursor-not-allowed"
+                        : ""
                     }`}
                   >
                     <div className="absolute inset-0 opacity-0 group-hover:opacity-30 transition-opacity">
@@ -973,14 +1249,20 @@ const PatientSearch = () => {
                     {state.isAddingConsultation ? (
                       <motion.div
                         animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
                       >
                         <FaSpinner className="w-5 h-5 text-white" />
                       </motion.div>
                     ) : (
                       <FaPlus className="w-5 h-5 text-white" />
                     )}
-                    <span className="font-semibold tracking-wide">New Consultation</span>
+                    <span className="font-semibold tracking-wide">
+                      New Consultation
+                    </span>
                   </motion.button>
                 </motion.div>
               </div>
@@ -990,12 +1272,16 @@ const PatientSearch = () => {
                   <div className="p-3 bg-purple-600 text-white rounded-lg">
                     <FaCalendarAlt className="text-2xl" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-800">Consultation History</h3>
+                  <h3 className="text-2xl font-bold text-gray-800">
+                    Consultation History
+                  </h3>
                 </div>
 
                 {filteredConsultations.length === 0 ? (
                   <div className="text-center py-12 bg-gray-50 rounded-xl">
-                    <p className="text-gray-500 text-lg">No previous consultations found</p>
+                    <p className="text-gray-500 text-lg">
+                      No previous consultations found
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-6">
@@ -1010,7 +1296,8 @@ const PatientSearch = () => {
                         patient={state.patient}
                       />
                     ))}
-                    {state.consultations.length >= state.page * consultationsPerPage && (
+                    {state.consultations.length >=
+                      state.page * consultationsPerPage && (
                       <motion.button
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
@@ -1026,19 +1313,21 @@ const PatientSearch = () => {
             </div>
           )}
 
-          {state.showAddPatient && !state.patient && state.patientsList.length === 0 && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="bg-white p-8 rounded-xl border border-gray-100 shadow-xs"
-            >
-              <AddPatientForm
-                searchedMobile={state.searchedMobile}
-                searchedName={state.searchedName}
-                onSuccess={handleNewPatientAdded}
-              />
-            </motion.div>
-          )}
+          {state.showAddPatient &&
+            !state.patient &&
+            state.patientsList.length === 0 && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="bg-white p-8 rounded-xl border border-gray-100 shadow-xs"
+              >
+                <AddPatientForm
+                  searchedMobile={state.searchedMobile}
+                  searchedName={state.searchedName}
+                  onSuccess={handleNewPatientAdded}
+                />
+              </motion.div>
+            )}
         </motion.div>
         <ToastContainer position="bottom-right" />
       </div>
