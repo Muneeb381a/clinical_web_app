@@ -1382,7 +1382,7 @@ const EditConsultation = () => {
       setError(null);
       setPrescriptionsError(null);
 
-      if (!editFormData.patient_name) {
+      if (!editFormData?.patient_name) {
         setError("Patient name is required.");
         setEditLoading(false);
         return;
@@ -1457,10 +1457,6 @@ const EditConsultation = () => {
       };
 
       console.log("Submitting payload:", payload);
-      console.log("Before print, editFormData:", editFormData);
-
-      // Print the current form state before saving
-      handlePrint();
 
       const response = await axios.put(
         `https://patient-management-backend-nine.vercel.app/api/patients/consultations/${consultationId}`,
@@ -1478,8 +1474,9 @@ const EditConsultation = () => {
       }
 
       if (response.status >= 200 && response.status < 300) {
-        // Re-fetch data to update editFormData
-        await fetchData();
+        handlePrint(); // Moved here to ensure data is saved first
+        const abortController = new AbortController();
+        await fetchData(abortController);
         sessionStorage.removeItem(`patient_${patientId}_consultations`);
         console.log("Navigating to:", `/patients/${patientId}`);
         navigate(`/patients/${patientId}`);
