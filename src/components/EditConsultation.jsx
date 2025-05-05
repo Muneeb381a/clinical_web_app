@@ -990,287 +990,280 @@ const EditConsultation = () => {
   const [testsError, setTestsError] = useState(null);
   const [prescriptionsError, setPrescriptionsError] = useState(null);
 
+  const fetchData = async (abortController) => {
+    try {
+      setEditLoading(true);
+      setError(null);
+      setSymptomsError(null);
+      setTestsError(null);
+      setPrescriptionsError(null);
+
+      const { data: consultationData, error: consultationError } =
+        await safeRequest(
+          `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}/consultations/${consultationId}?t=${Date.now()}`,
+          { signal: abortController.signal }
+        );
+      if (!consultationData || consultationError) {
+        throw new Error(consultationError?.message || "Consultation not found");
+      }
+      console.log(
+        "Raw Consultation Data:",
+        JSON.stringify(consultationData, null, 2)
+      );
+
+      const cachedSymptoms = getCachedData("symptoms");
+      const cachedTests = getCachedData("tests");
+      const cachedMedicines = getCachedData("medicines");
+
+      const [
+        { data: symptomsData, error: symptomsError },
+        { data: testsData, error: testsError },
+        { data: medicinesData, error: medicinesError },
+      ] = await Promise.all([
+        cachedSymptoms
+          ? Promise.resolve({ data: cachedSymptoms, error: null })
+          : safeRequest(
+              "https://patient-management-backend-nine.vercel.app/api/symptoms",
+              { signal: abortController.signal }
+            ),
+        cachedTests
+          ? Promise.resolve({ data: cachedTests, error: null })
+          : safeRequest(
+              "https://patient-management-backend-nine.vercel.app/api/tests",
+              { signal: abortController.signal }
+            ),
+        cachedMedicines
+          ? Promise.resolve({ data: cachedMedicines, error: null })
+          : safeRequest(
+              "https://patient-management-backend-nine.vercel.app/api/medicines",
+              { signal: abortController.signal }
+            ),
+      ]);
+
+      if (symptomsError) setSymptomsError("Couldn't load symptoms list");
+      if (testsError) setTestsError("Couldn't load tests list");
+      if (medicinesError)
+        setPrescriptionsError(
+          "Couldn't load medicines list. Existing prescriptions will be displayed."
+        );
+
+      const referenceData = {
+        symptoms: symptomsData ? symptomsData.filter(Boolean) : [],
+        tests: testsData ? testsData.filter(Boolean) : [],
+        medicines: medicinesData ? medicinesData.filter(Boolean) : [],
+      };
+
+      if (symptomsData && !cachedSymptoms)
+        setCachedData("symptoms", symptomsData);
+      if (testsData && !cachedTests) setCachedData("tests", testsData);
+      if (medicinesData && !cachedMedicines)
+        setCachedData("medicines", medicinesData);
+
+      const normalizedTests = (consultationData.tests || [])
+        .map((t) => {
+          console.log("Processing test:", t);
+          const testId = t.test_id || t.id;
+          if (!Number.isInteger(testId)) {
+            console.warn("Invalid test ID:", t);
+            return null;
+          }
+          return testId;
+        })
+        .filter(Boolean);
+      console.log("Normalized Tests:", normalizedTests);
+
+      const allTestIds = referenceData.tests.map((t) => t.id);
+      const missingTestIds = normalizedTests.filter(
+        (id) => !allTestIds.includes(id)
+      );
+      if (missingTestIds.length > 0) {
+        console.warn("Test IDs not in allTests:", missingTestIds);
+        setTestsError(
+          `Some tests (IDs: ${missingTestIds.join(
+            ", "
+          )}) are not available. Please reselect tests.`
+        );
+      }
+
+      const prescriptions = (consultationData.prescriptions || []).map(
+        (pres) => ({
+          medicine_id: pres.medicine_id || "",
+          brand_name: pres.brand_name || "",
+          dosage_en:
+            pres.dosage_en || getEnglishValue(pres.dosage_urdu, dosageOptions),
+          frequency_en:
+            pres.frequency_en ||
+            getEnglishValue(pres.frequency_urdu, frequencyOptions),
+          duration_en:
+            pres.duration_en ||
+            getEnglishValue(pres.duration_urdu, durationOptions),
+          instructions_en:
+            pres.instructions_en ||
+            getEnglishValue(pres.instructions_urdu, instructionsOptions),
+          dosage_urdu: normalizeValue(
+            pres.dosage_urdu || pres.dosage_en,
+            dosageOptions,
+            "dosage"
+          ),
+          frequency_urdu: normalizeValue(
+            pres.frequency_urdu || pres.frequency_en,
+            frequencyOptions,
+            "frequency"
+          ),
+          duration_urdu: normalizeValue(
+            pres.duration_urdu || pres.duration_en,
+            durationOptions,
+            "duration"
+          ),
+          instructions_urdu: normalizeValue(
+            pres.instructions_urdu || pres.instructions_en,
+            instructionsOptions,
+            "instructions"
+          ),
+          prescribed_at: pres.prescribed_at || new Date().toISOString(),
+        })
+      );
+
+      setAllSymptoms(referenceData.symptoms);
+      setAllTests(referenceData.tests);
+      setAllMedicines(referenceData.medicines);
+
+      const newFormData = {
+        ...consultationData,
+        patient_name: consultationData.patient_name || "",
+        gender: consultationData.gender || "Male",
+        mobile: consultationData.mobile || "",
+        symptoms: mapSymptomsToIds(
+          consultationData.symptoms || [],
+          referenceData.symptoms
+        ),
+        rawSymptoms: consultationData.symptoms || [],
+        tests: normalizedTests,
+        diagnosis: consultationData.neuro_diagnosis || "",
+        treatment_plan: consultationData.neuro_treatment_plan || "",
+        power: consultationData.power,
+        motor_function: consultationData.motor_function || "",
+        muscle_tone: consultationData.muscle_tone || "",
+        muscle_strength: consultationData.muscle_strength || "",
+        coordination: consultationData.coordination || "",
+        deep_tendon_reflexes: consultationData.deep_tendon_reflexes || "",
+        gait_assessment: consultationData.gait_assessment || "",
+        cranial_nerves: consultationData.cranial_nerves || "",
+        romberg_test: consultationData.romberg_test || "",
+        plantar_reflex: consultationData.plantar_reflex || "",
+        straight_leg_raise_left: consultationData.straight_leg_raise_left || "",
+        straight_leg_raise_right:
+          consultationData.straight_leg_raise_right || "",
+        pupillary_reaction: consultationData.pupillary_reaction || "",
+        speech_assessment: consultationData.speech_assessment || "",
+        sensory_examination: consultationData.sensory_examination || "",
+        fundoscopy: consultationData.fundoscopy || "",
+        brudzinski_sign: consultationData.brudzinski_sign || false,
+        kernig_sign: consultationData.kernig_sign || false,
+        temperature_sensation: consultationData.temperature_sensation || false,
+        pain_sensation: consultationData.pain_sensation || false,
+        vibration_sense: consultationData.vibration_sense || false,
+        proprioception: consultationData.proprioception || false,
+        facial_sensation: consultationData.facial_sensation || false,
+        swallowing_function: consultationData.swallowing_function || false,
+        mmse_score: consultationData.mmse_score || "",
+        gcs_score: consultationData.gcs_score || "",
+        notes: consultationData.notes || "",
+        prescriptions,
+        vital_signs: consultationData.vital_signs?.length
+          ? consultationData.vital_signs
+          : [createNewVitalSign()],
+        follow_ups: (consultationData.follow_ups || []).map((f) => ({
+          id: f.id || null,
+          follow_up_date: f.follow_up_date
+            ? new Date(f.follow_up_date).toISOString().split("T")[0]
+            : "",
+          notes: f.notes || "",
+          created_at: f.created_at || new Date().toISOString(),
+        })),
+      };
+
+      setEditFormData(newFormData);
+    } catch (error) {
+      if (!axios.isCancel(error)) {
+        setError(error.message || "Failed to load consultation data");
+        console.error("Fetch error:", error);
+      }
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   useEffect(() => {
     const abortController = new AbortController();
     let isMounted = true;
 
-    const normalizeValue = (value, options, fieldType = null) => {
-      if (!value) return "";
-      const valueToLabelMaps = {
-        dosage: dosageValueToLabel,
-        frequency: frequencyValueToLabel,
-        duration: durationValueToLabel,
-        instructions: instructionsValueToLabel,
-      };
-      if (
-        fieldType &&
-        valueToLabelMaps[fieldType] &&
-        value in valueToLabelMaps[fieldType]
-      ) {
-        return valueToLabelMaps[fieldType][value];
-      }
-      const option = options.find(
-        (opt) => opt.value === value || opt.label === value
-      );
-      return option ? option.label : value;
-    };
-
-    const mapSymptomsToIds = (symptoms, allSymptoms) => {
-      if (!symptoms || !Array.isArray(symptoms) || symptoms.length === 0) {
-        return [];
-      }
-      return symptoms
-        .map((symptom) => {
-          if (symptom == null) {
-            console.warn("Found null or undefined symptom:", symptom);
-            return null;
-          }
-          if (typeof symptom === "number") return symptom;
-          if (typeof symptom === "string") {
-            const match = allSymptoms.find(
-              (s) => s.name.toLowerCase() === symptom.toLowerCase()
-            );
-            return match ? match.id : null;
-          }
-          if (typeof symptom === "object" && symptom.id) {
-            return symptom.id;
-          }
-          console.warn("Invalid symptom object:", symptom);
-          return null;
-        })
-        .filter((id) => id !== null);
-    };
-
-    const createNewVitalSign = () => ({
-      blood_pressure: "",
-      pulse_rate: "",
-      temperature: "",
-      spo2_level: "",
-      nihss_score: "",
-      fall_assessment: "Done",
-      recorded_at: new Date().toISOString(),
-    });
-
-    const fetchData = async () => {
-      try {
-        setEditLoading(true);
-        setError(null);
-        setSymptomsError(null);
-        setTestsError(null);
-        setPrescriptionsError(null);
-
-        const { data: consultationData, error: consultationError } =
-          await safeRequest(
-            `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}/consultations/${consultationId}?t=${Date.now()}`,
-            { signal: abortController.signal }
-          );
-        if (!consultationData || consultationError) {
-          throw new Error(
-            consultationError?.message || "Consultation not found"
-          );
-        }
-        console.log(
-          "Raw Consultation Data:",
-          JSON.stringify(consultationData, null, 2)
-        );
-
-        const cachedSymptoms = getCachedData("symptoms");
-        const cachedTests = getCachedData("tests");
-        const cachedMedicines = getCachedData("medicines");
-
-        const [
-          { data: symptomsData, error: symptomsError },
-          { data: testsData, error: testsError },
-          { data: medicinesData, error: medicinesError },
-        ] = await Promise.all([
-          cachedSymptoms
-            ? Promise.resolve({ data: cachedSymptoms, error: null })
-            : safeRequest(
-                "https://patient-management-backend-nine.vercel.app/api/symptoms",
-                { signal: abortController.signal }
-              ),
-          cachedTests
-            ? Promise.resolve({ data: cachedTests, error: null })
-            : safeRequest(
-                "https://patient-management-backend-nine.vercel.app/api/tests",
-                { signal: abortController.signal }
-              ),
-          cachedMedicines
-            ? Promise.resolve({ data: cachedMedicines, error: null })
-            : safeRequest(
-                "https://patient-management-backend-nine.vercel.app/api/medicines",
-                { signal: abortController.signal }
-              ),
-        ]);
-
-        if (isMounted) {
-          if (symptomsError) setSymptomsError("Couldn't load symptoms list");
-          if (testsError) setTestsError("Couldn't load tests list");
-          if (medicinesError)
-            setPrescriptionsError(
-              "Couldn't load medicines list. Existing prescriptions will be displayed."
-            );
-
-          const referenceData = {
-            symptoms: symptomsData ? symptomsData.filter(Boolean) : [],
-            tests: testsData ? testsData.filter(Boolean) : [],
-            medicines: medicinesData ? medicinesData.filter(Boolean) : [],
-          };
-
-          if (symptomsData && !cachedSymptoms)
-            setCachedData("symptoms", symptomsData);
-          if (testsData && !cachedTests) setCachedData("tests", testsData);
-          if (medicinesData && !cachedMedicines)
-            setCachedData("medicines", medicinesData);
-
-          // Normalize tests
-          const normalizedTests = (consultationData.tests || [])
-            .map((t) => {
-              console.log("Processing test:", t);
-              const testId = t.test_id || t.id;
-              if (!Number.isInteger(testId)) {
-                console.warn("Invalid test ID:", t);
-                return null;
-              }
-              return testId;
-            })
-            .filter(Boolean);
-          console.log("Normalized Tests:", normalizedTests);
-
-          // Check for missing test IDs in allTests
-          const allTestIds = referenceData.tests.map((t) => t.id);
-          const missingTestIds = normalizedTests.filter(
-            (id) => !allTestIds.includes(id)
-          );
-          if (missingTestIds.length > 0) {
-            console.warn("Test IDs not in allTests:", missingTestIds);
-            setTestsError(
-              `Some tests (IDs: ${missingTestIds.join(
-                ", "
-              )}) are not available. Please reselect tests.`
-            );
-          }
-
-          const prescriptions = (consultationData.prescriptions || []).map(
-            (pres) => ({
-              medicine_id: pres.medicine_id || "",
-              brand_name: pres.brand_name || "",
-              dosage_en:
-                pres.dosage_en ||
-                getEnglishValue(pres.dosage_urdu, dosageOptions),
-              frequency_en:
-                pres.frequency_en ||
-                getEnglishValue(pres.frequency_urdu, frequencyOptions),
-              duration_en:
-                pres.duration_en ||
-                getEnglishValue(pres.duration_urdu, durationOptions),
-              instructions_en:
-                pres.instructions_en ||
-                getEnglishValue(pres.instructions_urdu, instructionsOptions),
-              dosage_urdu: normalizeValue(
-                pres.dosage_urdu || pres.dosage_en,
-                dosageOptions,
-                "dosage"
-              ),
-              frequency_urdu: normalizeValue(
-                pres.frequency_urdu || pres.frequency_en,
-                frequencyOptions,
-                "frequency"
-              ),
-              duration_urdu: normalizeValue(
-                pres.duration_urdu || pres.duration_en,
-                durationOptions,
-                "duration"
-              ),
-              instructions_urdu: normalizeValue(
-                pres.instructions_urdu || pres.instructions_en,
-                instructionsOptions,
-                "instructions"
-              ),
-              prescribed_at: pres.prescribed_at || new Date().toISOString(),
-            })
-          );
-
-          setAllSymptoms(referenceData.symptoms);
-          setAllTests(referenceData.tests);
-          setAllMedicines(referenceData.medicines);
-
-          const newFormData = {
-            ...consultationData,
-            patient_name: consultationData.patient_name || "",
-            gender: consultationData.gender || "Male",
-            mobile: consultationData.mobile || "",
-            symptoms: mapSymptomsToIds(
-              consultationData.symptoms || [],
-              referenceData.symptoms
-            ),
-            rawSymptoms: consultationData.symptoms || [],
-            tests: normalizedTests,
-            diagnosis: consultationData.neuro_diagnosis || "",
-            treatment_plan: consultationData.neuro_treatment_plan || "",
-            power: consultationData.power,
-            motor_function: consultationData.motor_function || "",
-            muscle_tone: consultationData.muscle_tone || "",
-            muscle_strength: consultationData.muscle_strength || "",
-            coordination: consultationData.coordination || "",
-            deep_tendon_reflexes: consultationData.deep_tendon_reflexes || "",
-            gait_assessment: consultationData.gait_assessment || "",
-            cranial_nerves: consultationData.cranial_nerves || "",
-            romberg_test: consultationData.romberg_test || "",
-            plantar_reflex: consultationData.plantar_reflex || "",
-            straight_leg_raise_left:
-              consultationData.straight_leg_raise_left || "",
-            straight_leg_raise_right:
-              consultationData.straight_leg_raise_right || "",
-            pupillary_reaction: consultationData.pupillary_reaction || "",
-            speech_assessment: consultationData.speech_assessment || "",
-            sensory_examination: consultationData.sensory_examination || "",
-            fundoscopy: consultationData.fundoscopy || "",
-            brudzinski_sign: consultationData.brudzinski_sign || false,
-            kernig_sign: consultationData.kernig_sign || false,
-            temperature_sensation:
-              consultationData.temperature_sensation || false,
-            pain_sensation: consultationData.pain_sensation || false,
-            vibration_sense: consultationData.vibration_sense || false,
-            proprioception: consultationData.proprioception || false,
-            facial_sensation: consultationData.facial_sensation || false,
-            swallowing_function: consultationData.swallowing_function || false,
-            mmse_score: consultationData.mmse_score || "",
-            gcs_score: consultationData.gcs_score || "",
-            notes: consultationData.notes || "",
-            prescriptions,
-            vital_signs: consultationData.vital_signs?.length
-              ? consultationData.vital_signs
-              : [createNewVitalSign()],
-            follow_ups: (consultationData.follow_ups || []).map((f) => ({
-              id: f.id || null,
-              follow_up_date: f.follow_up_date
-                ? new Date(f.follow_up_date).toISOString().split("T")[0]
-                : "",
-              notes: f.notes || "",
-              created_at: f.created_at || new Date().toISOString(),
-            })),
-          };
-
-          setEditFormData(newFormData);
-        }
-      } catch (error) {
-        if (isMounted && !axios.isCancel(error)) {
-          setError(error.message || "Failed to load consultation data");
-          console.error("Fetch error:", error);
-        }
-      } finally {
-        if (isMounted) setEditLoading(false);
-      }
-    };
-
-    fetchData();
+    if (isMounted) {
+      fetchData(abortController);
+    }
 
     return () => {
       isMounted = false;
       abortController.abort();
     };
   }, [patientId, consultationId]);
+
+  const normalizeValue = (value, options, fieldType = null) => {
+    if (!value) return "";
+    const valueToLabelMaps = {
+      dosage: dosageValueToLabel,
+      frequency: frequencyValueToLabel,
+      duration: durationValueToLabel,
+      instructions: instructionsValueToLabel,
+    };
+    if (
+      fieldType &&
+      valueToLabelMaps[fieldType] &&
+      value in valueToLabelMaps[fieldType]
+    ) {
+      return valueToLabelMaps[fieldType][value];
+    }
+    const option = options.find(
+      (opt) => opt.value === value || opt.label === value
+    );
+    return option ? option.label : value;
+  };
+
+  const mapSymptomsToIds = (symptoms, allSymptoms) => {
+    if (!symptoms || !Array.isArray(symptoms) || symptoms.length === 0) {
+      return [];
+    }
+    return symptoms
+      .map((symptom) => {
+        if (symptom == null) {
+          console.warn("Found null or undefined symptom:", symptom);
+          return null;
+        }
+        if (typeof symptom === "number") return symptom;
+        if (typeof symptom === "string") {
+          const match = allSymptoms.find(
+            (s) => s.name.toLowerCase() === symptom.toLowerCase()
+          );
+          return match ? match.id : null;
+        }
+        if (typeof symptom === "object" && symptom.id) {
+          return symptom.id;
+        }
+        console.warn("Invalid symptom object:", symptom);
+        return null;
+      })
+      .filter((id) => id !== null);
+  };
+
+  const createNewVitalSign = () => ({
+    blood_pressure: "",
+    pulse_rate: "",
+    temperature: "",
+    spo2_level: "",
+    nihss_score: "",
+    fall_assessment: "Done",
+    recorded_at: new Date().toISOString(),
+  });
 
   const handleFormChange = (field, value) => {
     setEditFormData((prev) => ({
@@ -1340,10 +1333,16 @@ const EditConsultation = () => {
     }));
   };
 
+  const removeFollowUp = (index) => {
+    setEditFormData((prev) => ({
+      ...prev,
+      follow_ups: prev.follow_ups.filter((_, i) => i !== index),
+    }));
+  };
+
   const updateField = (section, index, field, value) => {
     setEditFormData((prev) => {
       if (section && index !== undefined) {
-        // Handle array fields (e.g., follow_ups)
         const newData = [...(prev[section] || [])];
         newData[index] = { ...newData[index], [field]: value };
         const updated = { ...prev, [section]: newData };
@@ -1355,7 +1354,6 @@ const EditConsultation = () => {
         );
         return updated;
       } else {
-        // Handle scalar fields (e.g., motor_function, diagnosis)
         const updated = { ...prev, [field]: value };
         console.log(`Updated ${field}:`, value, "New editFormData:", updated);
         return updated;
@@ -1459,6 +1457,7 @@ const EditConsultation = () => {
       };
 
       console.log("Submitting payload:", payload);
+      console.log("Before print, editFormData:", editFormData);
 
       // Print the current form state before saving
       handlePrint();
@@ -1482,6 +1481,7 @@ const EditConsultation = () => {
         // Re-fetch data to update editFormData
         await fetchData();
         sessionStorage.removeItem(`patient_${patientId}_consultations`);
+        console.log("Navigating to:", `/patients/${patientId}`);
         navigate(`/patients/${patientId}`);
       }
     } catch (error) {
