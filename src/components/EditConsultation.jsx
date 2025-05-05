@@ -2650,7 +2650,7 @@ const EditConsultation = () => {
             </motion.div>
 
             {/* Follow-ups */}
-            <motion.div
+            {/* <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.8 }}
@@ -2696,7 +2696,7 @@ const EditConsultation = () => {
                   }}
                 >
                   <FormField
-                    label="Follow-up Date"
+                    label={`Follow-up ${index + 1} Date`}
                     type="date"
                     value={followUp.follow_up_date}
                     onChange={(val) =>
@@ -2713,6 +2713,102 @@ const EditConsultation = () => {
                   />
                 </div>
               ))}
+            </motion.div> */}
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
+              style={{
+                backgroundColor: "#f9fafb",
+                padding: "1.5rem",
+                borderRadius: "0.75rem",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
+              }}
+            >
+              <h3
+                style={{
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  color: "#1f2937",
+                  marginBottom: "1.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
+                }}
+              >
+                <FaNotesMedical
+                  style={{
+                    color: "#ec4899",
+                    width: "1.5rem",
+                    height: "1.5rem",
+                  }}
+                />
+                Follow-ups
+              </h3>
+              {editFormData.follow_ups?.length > 0 ? (
+                editFormData.follow_ups.map((followUp, index) => (
+                  <div
+                    key={index}
+                    style={{
+                      marginBottom: "1rem",
+                      padding: "1rem",
+                      backgroundColor: "#ffffff",
+                      borderRadius: "0.5rem",
+                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
+                      display: "grid",
+                      gridTemplateColumns:
+                        "repeat(auto-fit, minmax(200px, 1fr))",
+                      gap: "1rem",
+                    }}
+                  >
+                    <FormField
+                      label={`Follow-up ${index + 1} Date`}
+                      type="date"
+                      value={followUp.follow_up_date}
+                      onChange={(val) =>
+                        updateField("follow_ups", index, "follow_up_date", val)
+                      }
+                    />
+                    <FormField
+                      label="Notes"
+                      placeholder="Enter notes"
+                      value={followUp.notes}
+                      onChange={(val) =>
+                        updateField("follow_ups", index, "notes", val)
+                      }
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeFollowUp(index)}
+                      style={{
+                        backgroundColor: "#ef4444",
+                        color: "white",
+                        padding: "0.5rem",
+                        borderRadius: "0.25rem",
+                        alignSelf: "end",
+                      }}
+                    >
+                      Remove
+                    </button>
+                  </div>
+                ))
+              ) : (
+                <p>No follow-ups scheduled. Add new follow-ups below.</p>
+              )}
+              <button
+                type="button"
+                onClick={addFollowUp}
+                style={{
+                  backgroundColor: "#10b981",
+                  color: "white",
+                  padding: "0.5rem 1rem",
+                  borderRadius: "0.25rem",
+                  marginTop: "1rem",
+                }}
+              >
+                Add Follow-up
+              </button>
             </motion.div>
 
             {/* Form Actions */}
