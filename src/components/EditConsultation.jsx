@@ -1016,9 +1016,15 @@ const EditConsultation = () => {
     };
 
     const mapSymptomsToIds = (symptoms, allSymptoms) => {
-      if (!Array.isArray(symptoms)) return [];
+      if (!symptoms || !Array.isArray(symptoms) || symptoms.length === 0) {
+        return [];
+      }
       return symptoms
         .map((symptom) => {
+          if (symptom == null) {
+            console.warn("Found null or undefined symptom:", symptom);
+            return null;
+          }
           if (typeof symptom === "number") return symptom;
           if (typeof symptom === "string") {
             const match = allSymptoms.find(
@@ -1026,7 +1032,11 @@ const EditConsultation = () => {
             );
             return match ? match.id : null;
           }
-          return symptom.id || null;
+          if (typeof symptom === "object" && symptom.id) {
+            return symptom.id;
+          }
+          console.warn("Invalid symptom object:", symptom);
+          return null;
         })
         .filter((id) => id !== null);
     };
@@ -1215,11 +1225,6 @@ const EditConsultation = () => {
             pupillary_reaction: consultationData.pupillary_reaction || "",
             speech_assessment: consultationData.speech_assessment || "",
             sensory_examination: consultationData.sensory_examination || "",
-            // mental_status: consultationData.mental_status || "",
-            // cerebellar_function: consultationData.cerebellar_function || "",
-            // muscle_wasting: consultationData.muscle_wasting || "",
-            // abnormal_movements: consultationData.abnormal_movements || "",
-            // nystagmus: consultationData.nystagmus || "",
             fundoscopy: consultationData.fundoscopy || "",
             brudzinski_sign: consultationData.brudzinski_sign || false,
             kernig_sign: consultationData.kernig_sign || false,
@@ -1918,8 +1923,8 @@ const EditConsultation = () => {
               </h3>
               <SymptomsSelector
                 allSymptoms={allSymptoms}
-                selectedSymptoms={editFormData.symptoms}
-                rawSymptoms={editFormData.rawSymptoms || []}
+                selectedSymptoms={editFormData.symptoms || []} // Ensure empty array if undefined
+                rawSymptoms={editFormData.rawSymptoms || []} // Ensure empty array if undefined
                 onSelect={(val) => handleFormChange("symptoms", val)}
                 onRemove={removeSymptom}
               />

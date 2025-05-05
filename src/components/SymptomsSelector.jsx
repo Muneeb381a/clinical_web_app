@@ -10,7 +10,7 @@ const SymptomsSelector = ({
   onCreate,
   isLoading = false,
 }) => {
-  // Enhanced custom styles
+  // Enhanced custom styles (unchanged)
   const customStyles = {
     control: (base, state) => ({
       ...base,
@@ -24,11 +24,7 @@ const SymptomsSelector = ({
     }),
     option: (base, { isFocused, isSelected }) => ({
       ...base,
-      backgroundColor: isSelected
-        ? "#8b5cf6"
-        : isFocused
-        ? "#ede9fe"
-        : "white",
+      backgroundColor: isSelected ? "#8b5cf6" : isFocused ? "#ede9fe" : "white",
       color: isSelected ? "white" : "#4b5563",
       padding: "10px 16px",
       fontSize: "14px",
@@ -100,13 +96,11 @@ const SymptomsSelector = ({
 
   const handleCreate = async (inputValue) => {
     if (onCreate) {
-      // If onCreate callback is provided, use it to handle creation
       const newId = await onCreate(inputValue);
       if (newId) {
         onSelect([...selectedSymptoms, newId]);
       }
     } else {
-      // Fallback local creation (not persisted to backend)
       const newId = Math.max(...allSymptoms.map((s) => s.id), 0) + 1;
       onSelect([...selectedSymptoms, newId]);
     }
@@ -120,13 +114,16 @@ const SymptomsSelector = ({
     })
     .filter(Boolean);
 
-  // Add rawSymptoms (strings) if no ID matches
+  // Add rawSymptoms (strings) if no ID matches, filter out null/undefined
   const fallbackOptions = rawSymptoms
     .filter(
       (name) =>
-        !allSymptoms.some(
-          (s) => s.name.toLowerCase() === name.toLowerCase()
-        ) && !selectedOptions.some((opt) => opt.label.toLowerCase() === name.toLowerCase())
+        name != null && // Skip null or undefined
+        typeof name === "string" && // Ensure it's a string
+        !allSymptoms.some((s) => s.name.toLowerCase() === name.toLowerCase()) &&
+        !selectedOptions.some(
+          (opt) => opt.label.toLowerCase() === name.toLowerCase()
+        )
     )
     .map((name) => ({
       value: `temp_${name}`,
@@ -174,7 +171,8 @@ const SymptomsSelector = ({
               {fallbackOptions.map((opt) => opt.label).join(", ")}
             </p>
             <p className="mt-1 text-xs text-yellow-700">
-              These symptoms weren't found in our database and can't be selected.
+              These symptoms weren't found in our database and can't be
+              selected.
             </p>
           </div>
         </div>
