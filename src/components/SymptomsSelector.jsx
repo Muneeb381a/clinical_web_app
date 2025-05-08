@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import CreatableSelect from "react-select/creatable";
 import { FaInfoCircle, FaExclamationTriangle } from "react-icons/fa";
 
@@ -9,8 +9,11 @@ const SymptomsSelector = ({
   onSelect,
   onCreate,
   isLoading = false,
+  symptomsError = null,
 }) => {
-  // Enhanced custom styles (unchanged)
+  const [creatingSymptom, setCreatingSymptom] = useState(false);
+  const [createError, setCreateError] = useState(null);
+
   const customStyles = {
     control: (base, state) => ({
       ...base,
@@ -86,40 +89,65 @@ const SymptomsSelector = ({
   };
 
   const handleChange = (newValue) => {
-    const selectedIds = newValue
-      ? newValue
-          .filter((opt) => !opt.isDisabled)
-          .map((opt) => Number(opt.value))
-      : [];
-    onSelect(selectedIds);
-  };
-
-  const handleCreate = async (inputValue) => {
-    if (onCreate) {
-      const newId = await onCreate(inputValue);
-      if (newId) {
-        onSelect([...selectedSymptoms, newId]);
-      }
-    } else {
-      const newId = Math.max(...allSymptoms.map((s) => s.id), 0) + 1;
-      onSelect([...selectedSymptoms, newId]);
+    console.log("handleChange newValue:", newValue);
+    try {
+      const selectedIds = newValue
+        ? newValue
+            .filter((opt) => !opt.isDisabled && opt.value)
+            .map((opt) => Number(opt.value))
+            .filter((id) => !isNaN(id))
+        : [];
+      console.log("handleChange selectedIds:", selectedIds);
+      setCreateError(null);
+      onSelect(selectedIds);
+    } catch (error) {
+      console.error("handleChange error:", error);
+      setCreateError("Failed to update selection");
     }
   };
 
-  // Map selectedSymptoms (IDs) to options
+  const handleCreate = async (inputValue) => {
+    const trimmedValue = inputValue?.trim();
+    if (!trimmedValue) {
+      setCreateError("Symptom name cannot be empty");
+      return;
+    }
+
+    try {
+      setCreatingSymptom(true);
+      setCreateError(null);
+      const newId = await onCreate(trimmedValue);
+      if (newId && !isNaN(newId)) {
+        console.log("Created symptom ID:", newId);
+        onSelect([...selectedSymptoms, Number(newId)]);
+      } else {
+        setCreateError("Failed to create symptom: Invalid ID returned");
+      }
+    } catch (error) {
+      console.error("handleCreate error:", error);
+      setCreateError(error.message || "Failed to create symptom");
+    } finally {
+      setCreatingSymptom(false);
+    }
+  };
+
   const selectedOptions = selectedSymptoms
     .map((id) => {
-      const symptom = allSymptoms.find((s) => s.id === id);
-      return symptom ? { value: symptom.id, label: symptom.name } : null;
+      const symptom = allSymptoms.find((s) => s.id === Number(id));
+      if (!symptom) {
+        console.warn(`Symptom with ID ${id} not found in allSymptoms`);
+        return null;
+      }
+      return { value: symptom.id, label: symptom.name };
     })
     .filter(Boolean);
+  console.log("selectedOptions:", selectedOptions);
 
-  // Add rawSymptoms (strings) if no ID matches, filter out null/undefined
   const fallbackOptions = rawSymptoms
     .filter(
       (name) =>
-        name != null && // Skip null or undefined
-        typeof name === "string" && // Ensure it's a string
+        name &&
+        typeof name === "string" &&
         !allSymptoms.some((s) => s.name.toLowerCase() === name.toLowerCase()) &&
         !selectedOptions.some(
           (opt) => opt.label.toLowerCase() === name.toLowerCase()
@@ -130,6 +158,16 @@ const SymptomsSelector = ({
       label: name,
       isDisabled: true,
     }));
+  console.log("fallbackOptions:", fallbackOptions);
+
+  console.log("SymptomsSelector props:", {
+    allSymptoms,
+    selectedSymptoms,
+    rawSymptoms,
+    isLoading,
+    creatingSymptom,
+    symptomsError,
+  });
 
   return (
     <div className="space-y-2">
@@ -145,22 +183,29 @@ const SymptomsSelector = ({
       <CreatableSelect
         isMulti
         isClearable
-        isDisabled={isLoading}
-        isLoading={isLoading}
+        isDisabled={isLoading && !creatingSymptom}
+        isLoading={creatingSymptom}
         onChange={handleChange}
         onCreateOption={handleCreate}
         options={allSymptoms.map((symptom) => ({
           value: symptom.id,
           label: symptom.name,
         }))}
-        value={[...selectedOptions, ...fallbackOptions]}
+        value={selectedOptions} // Only selectedOptions, not fallbackOptions
         placeholder="Search or create symptoms..."
         styles={customStyles}
         classNamePrefix="react-select"
         noOptionsMessage={() => "Type to create a new symptom"}
         formatCreateLabel={(inputValue) => `Create "${inputValue}"`}
-        loadingMessage={() => "Loading..."}
+        loadingMessage={() => "Creating symptom..."}
       />
+
+      {createError || symptomsError ? (
+        <div className="flex items-start gap-2 mt-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+          <FaExclamationTriangle className="flex-shrink-0 mt-0.5" />
+          <p>{createError || symptomsError}</p>
+        </div>
+      ) : null}
 
       {fallbackOptions.length > 0 && (
         <div className="flex items-start gap-2 mt-2 text-sm text-yellow-600 bg-yellow-50 px-3 py-2 rounded-lg">
@@ -178,17 +223,21 @@ const SymptomsSelector = ({
         </div>
       )}
 
-      {selectedOptions.length === 0 && !fallbackOptions.length && (
-        <div className="flex items-start gap-2 mt-2 text-sm text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
-          <FaInfoCircle className="flex-shrink-0 mt-0.5" />
-          <div>
-            <p>Start typing to search or create symptoms</p>
-            <p className="mt-1 text-xs text-blue-700">
-              You can select multiple symptoms from the list or create new ones.
-            </p>
+      {selectedOptions.length === 0 &&
+        !fallbackOptions.length &&
+        !createError &&
+        !symptomsError && (
+          <div className="flex items-start gap-2 mt-2 text-sm text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
+            <FaInfoCircle className="flex-shrink-0 mt-0.5" />
+            <div>
+              <p>Start typing to search or create symptoms</p>
+              <p className="mt-1 text-xs text-blue-700">
+                You can select multiple symptoms from the list or create new
+                ones.
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
     </div>
   );
 };

@@ -20,7 +20,7 @@ import SymptomsSelector from "./SymptomsSelector";
 import TestsSelector from "./TestsSelector";
 import NeuroExamSelect from "./NeuroExamSelect";
 import FullPageLoader from "../pages/FullPageLoader";
-
+import CreatableSelect from "react-select/creatable";
 const safeRequest = async (url, options = {}, retries = 3, delay = 1000) => {
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
@@ -989,6 +989,65 @@ const EditConsultation = () => {
   const [symptomsError, setSymptomsError] = useState(null);
   const [testsError, setTestsError] = useState(null);
   const [prescriptionsError, setPrescriptionsError] = useState(null);
+  const [creatingMedicine, setCreatingMedicine] = useState(false);
+
+  const createSymptom = async (symptomName) => {
+    try {
+      setSymptomsError(null);
+      if (!symptomName || typeof symptomName !== "string" || symptomName.trim() === "") {
+        throw new Error("Symptom name is required and must be a valid string");
+      }
+  
+      const trimmedName = symptomName.trim();
+      // Check for existing symptom (case-insensitive)
+      const existingSymptom = allSymptoms.find(
+        (s) => s.name.toLowerCase() === trimmedName.toLowerCase()
+      );
+      if (existingSymptom) {
+        console.log("Symptom already exists:", existingSymptom);
+        return existingSymptom.id;
+      }
+  
+      const payload = { name: trimmedName };
+      console.log("Creating symptom with payload:", payload);
+  
+      const { data: newSymptom, error: creationError } = await safeRequest(
+        "https://patient-management-backend-nine.vercel.app/api/symptoms",
+        {
+          method: "POST",
+          data: payload,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+  
+      if (creationError || !newSymptom) {
+        const errorMessage =
+          creationError?.response?.data?.error || creationError?.message || "Failed to create symptom";
+        throw new Error(errorMessage);
+      }
+  
+      if (!newSymptom.id) {
+        console.error("Invalid symptom response:", newSymptom);
+        throw new Error("Invalid symptom response: Missing ID");
+      }
+  
+      console.log("New symptom created:", newSymptom);
+  
+      // Update allSymptoms state and cache
+      setAllSymptoms((prev) => {
+        const updatedSymptoms = [...prev, newSymptom].filter((s) => s && s.id && s.name);
+        console.log("Updated allSymptoms:", updatedSymptoms);
+        setCachedData("symptoms", updatedSymptoms);
+        return updatedSymptoms;
+      });
+  
+      return newSymptom.id;
+    } catch (error) {
+      console.error("Create symptom error:", error);
+      setSymptomsError(error.message || "Failed to create symptom");
+      return null;
+    }
+  };
 
   const fetchData = async (abortController) => {
     try {
@@ -1208,6 +1267,69 @@ const EditConsultation = () => {
     };
   }, [patientId, consultationId]);
 
+  const createMedicine = async (medicineName) => {
+    try {
+      setCreatingMedicine(true); // Set localized loading state
+      setPrescriptionsError(null);
+
+      if (
+        !medicineName ||
+        typeof medicineName !== "string" ||
+        medicineName.trim() === ""
+      ) {
+        throw new Error("Medicine name is required and must be a valid string");
+      }
+
+      // Format medicine_name to match backend's parseMedicineString expectation
+      const formattedMedicineName = `Tablet ${medicineName.trim()}`; // Default form to 'Tablet'
+      const payload = {
+        medicine_name: formattedMedicineName,
+        generic_name: null,
+        urdu_name: null,
+        urdu_form: null,
+        urdu_strength: null,
+      };
+      console.log("Creating medicine with payload:", payload);
+
+      const { data: newMedicine, error: creationError } = await safeRequest(
+        "https://patient-management-backend-nine.vercel.app/api/medicines",
+        {
+          method: "POST",
+          data: payload,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (creationError || !newMedicine) {
+        throw new Error(
+          creationError?.response?.data?.error || "Failed to create medicine"
+        );
+      }
+
+      console.log("New medicine created:", newMedicine);
+
+      // Update allMedicines state and cache
+      setAllMedicines((prev) => {
+        const updatedMedicines = [...prev, newMedicine].filter(Boolean);
+        console.log("Updated allMedicines:", updatedMedicines);
+        setCachedData("medicines", updatedMedicines);
+        return updatedMedicines;
+      });
+
+      return newMedicine;
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.error ||
+        error.message ||
+        "Failed to create medicine";
+      setPrescriptionsError(errorMessage);
+      console.error("Create medicine error:", error);
+      return null;
+    } finally {
+      setCreatingMedicine(false); // Clear localized loading state
+    }
+  };
+
   const normalizeValue = (value, options, fieldType = null) => {
     if (!value) return "";
     const valueToLabelMaps = {
@@ -1230,29 +1352,32 @@ const EditConsultation = () => {
   };
 
   const mapSymptomsToIds = (symptoms, allSymptoms) => {
+    console.log("mapSymptomsToIds input symptoms:", symptoms);
     if (!symptoms || !Array.isArray(symptoms) || symptoms.length === 0) {
       return [];
     }
-    return symptoms
+    const result = symptoms
       .map((symptom) => {
         if (symptom == null) {
           console.warn("Found null or undefined symptom:", symptom);
           return null;
         }
-        if (typeof symptom === "number") return symptom;
+        if (!isNaN(symptom) && allSymptoms.some((s) => s.id === Number(symptom))) {
+          return Number(symptom);
+        }
         if (typeof symptom === "string") {
           const match = allSymptoms.find(
             (s) => s.name.toLowerCase() === symptom.toLowerCase()
           );
+          console.log(`String symptom "${symptom}" matched:`, match);
           return match ? match.id : null;
         }
-        if (typeof symptom === "object" && symptom.id) {
-          return symptom.id;
-        }
-        console.warn("Invalid symptom object:", symptom);
+        console.warn("Invalid symptom:", symptom);
         return null;
       })
       .filter((id) => id !== null);
+    console.log("mapSymptomsToIds output:", result);
+    return result;
   };
 
   const createNewVitalSign = () => ({
@@ -1266,19 +1391,22 @@ const EditConsultation = () => {
   });
 
   const handleFormChange = (field, value) => {
-    setEditFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
+    console.log(`handleFormChange: field=${field}, value=`, value);
+    setEditFormData((prev) => {
+      const updated = { ...prev, [field]: value };
+      console.log("Updated editFormData:", updated);
+      console.log("Updated editFormData.symptoms:", updated.symptoms);
+      return updated;
+    });
   };
 
-  const addMedicine = () => {
+  const addMedicine = (medicineId = "") => {
     setEditFormData((prev) => ({
       ...prev,
       prescriptions: [
         ...(prev.prescriptions || []),
         {
-          medicine_id: "",
+          medicine_id: medicineId,
           brand_name: "",
           dosage_en: "",
           frequency_en: "",
@@ -1474,7 +1602,7 @@ const EditConsultation = () => {
       }
 
       if (response.status >= 200 && response.status < 300) {
-        handlePrint(); // Moved here to ensure data is saved first
+        handlePrint();
         const abortController = new AbortController();
         await fetchData(abortController);
         sessionStorage.removeItem(`patient_${patientId}_consultations`);
@@ -1500,6 +1628,37 @@ const EditConsultation = () => {
       alert("Pop-up blocked! Allow pop-ups for this site.");
     }
   };
+
+  const handleCreateMedicine = async (inputValue, index) => {
+    console.log("handleCreateMedicine called with:", { inputValue, index });
+    const newMedicine = await createMedicine(inputValue);
+    if (newMedicine) {
+      console.log("Updating prescription with new medicine:", newMedicine);
+      updateField("prescriptions", index, "medicine_id", newMedicine.id);
+      updateField(
+        "prescriptions",
+        index,
+        "brand_name",
+        newMedicine.brand_name || newMedicine.name
+      );
+    } else {
+      console.warn("No new medicine returned from createMedicine");
+    }
+  };
+
+  useEffect(() => {
+    const abortController = new AbortController();
+    let isMounted = true;
+
+    if (isMounted) {
+      fetchData(abortController);
+    }
+
+    return () => {
+      isMounted = false;
+      abortController.abort();
+    };
+  }, [patientId, consultationId]);
 
   const handleCancel = () => {
     if (
@@ -1960,12 +2119,20 @@ const EditConsultation = () => {
                 Symptoms
               </h3>
               <SymptomsSelector
-                allSymptoms={allSymptoms}
-                selectedSymptoms={editFormData.symptoms || []} // Ensure empty array if undefined
-                rawSymptoms={editFormData.rawSymptoms || []} // Ensure empty array if undefined
-                onSelect={(val) => handleFormChange("symptoms", val)}
-                onRemove={removeSymptom}
-              />
+  key={allSymptoms.map((s) => s.id).join("-")}
+  allSymptoms={allSymptoms}
+  selectedSymptoms={editFormData.symptoms?.filter((id) =>
+    allSymptoms.some((s) => s.id === id)
+  ) || []}
+  rawSymptoms={editFormData.rawSymptoms || []}
+  onSelect={(ids) => {
+    console.log("SymptomsSelector onSelect IDs:", ids);
+    handleFormChange("symptoms", ids);
+  }}
+  onCreate={createSymptom}
+  isLoading={editLoading}
+  symptomsError={symptomsError}
+/>
             </motion.div>
 
             {/* Tests */}
@@ -2373,7 +2540,7 @@ const EditConsultation = () => {
                     >
                       دوائی
                     </label>
-                    <Select
+                    <CreatableSelect
                       value={
                         med.medicine_id
                           ? allMedicines
@@ -2387,6 +2554,10 @@ const EditConsultation = () => {
                           : null
                       }
                       onChange={(selectedOption) => {
+                        console.log(
+                          "CreatableSelect onChange:",
+                          selectedOption
+                        );
                         const selectedMedicine = allMedicines.find(
                           (m) => m.id === selectedOption?.value
                         );
@@ -2403,6 +2574,9 @@ const EditConsultation = () => {
                           selectedMedicine?.brand_name || ""
                         );
                       }}
+                      onCreateOption={(inputValue) =>
+                        handleCreateMedicine(inputValue, index)
+                      }
                       options={allMedicines.map((medicine) => ({
                         value: medicine.id,
                         label: `${medicine.form || ""} ${
@@ -2412,11 +2586,11 @@ const EditConsultation = () => {
                       placeholder={
                         allMedicines.length === 0 && med.brand_name
                           ? med.brand_name
-                          : "دوائی منتخب کریں"
+                          : "دوائی منتخب کریں یا نئی بنائیں"
                       }
                       isSearchable={true}
                       isClearable={true}
-                      isDisabled={allMedicines.length === 0 && !med.brand_name}
+                      isLoading={creatingMedicine} // Show loader in CreatableSelect
                       styles={{
                         control: (provided, state) => ({
                           ...provided,
@@ -2424,7 +2598,7 @@ const EditConsultation = () => {
                           border: `1px solid ${
                             state.isFocused ? "#14b8a6" : "#d1d5db"
                           }`,
-                          borderRadius: "0.375ram",
+                          borderRadius: "0.375rem",
                           backgroundColor: "#ffffff",
                           fontSize: "0.875rem",
                           color: "#374151",
@@ -2459,6 +2633,9 @@ const EditConsultation = () => {
                         }),
                       }}
                       noOptionsMessage={() => "کوئی دوائی نہیں ملی"}
+                      formatCreateLabel={(inputValue) =>
+                        `نئی دوائی بنائیں: "${inputValue}"`
+                      }
                     />
                   </div>
                   <SelectField
@@ -2565,33 +2742,27 @@ const EditConsultation = () => {
                   display: "flex",
                   alignItems: "center",
                   gap: "0.5rem",
-                  cursor: allMedicines.length === 0 ? "not-allowed" : "pointer",
+                  cursor: "pointer",
                   transition: "background-color 0.2s",
-                  opacity: allMedicines.length === 0 ? 0.5 : 1,
                 }}
                 onMouseOver={(e) =>
-                  allMedicines.length > 0 &&
                   (e.target.style.backgroundColor = "#0d9488")
                 }
-                onMouseOut={(e) =>
-                  allMedicines.length > 0 &&
-                  (e.target.style.backgroundColor = "#14b8a6")
-                }
-                disabled={allMedicines.length === 0}
+                onMouseOut={(e) => (e.target.style.backgroundColor = "#14b8a6")}
+                disabled={editLoading}
               >
                 <FaPlus /> Add Medicine
               </button>
-              {allMedicines.length === 0 && (
+              {prescriptionsError && (
                 <p
                   style={{
                     marginTop: "0.5rem",
                     fontSize: "0.875rem",
-                    color: "#d97706",
+                    color: "#ef4444",
                     fontFamily: "'Noto Nastaliq Urdu', sans-serif",
                   }}
                 >
-                  نوٹ: دوائیوں کی فہرست لوڈ ہونے تک نئی دوائیاں شامل نہیں کی جا
-                  سکتیں۔
+                  {prescriptionsError}
                 </p>
               )}
             </motion.div>
