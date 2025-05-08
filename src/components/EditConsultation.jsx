@@ -991,6 +991,7 @@ const EditConsultation = () => {
   const [testsError, setTestsError] = useState(null);
   const [prescriptionsError, setPrescriptionsError] = useState(null);
   const [creatingMedicine, setCreatingMedicine] = useState(false);
+  const [predefinedSelections, setPredefinedSelections] = useState({});
 
   const createSymptom = async (symptomName) => {
     try {
@@ -3304,31 +3305,45 @@ const EditConsultation = () => {
     />
     Follow-ups
   </h3>
+  
+  {/* State for tracking predefined selections */}
   {editFormData.follow_ups?.length > 0 ? (
     editFormData.follow_ups.map((followUp, index) => {
-      // Predefined options for follow-up dates
       const predefinedOptions = [
-        { value: "", label: "Select a predefined date..." },
-        { value: "1", label: "One Month Later" },
-        { value: "2", label: "Two Months Later" },
-        { value: "3", label: "Three Months Later" },
-        { value: "4", label: "Four Months Later" },
-        { value: "5", label: "One Week Later" },
-        { value: "6", label: "Two Week Later" },
-        { value: "7", label: "Three Week Later" },
+        { value: "", label: "پہلے سے طے شدہ تاریخ منتخب کریں..." },
+        { value: "1", label: "ایک ماہ بعد" },
+        { value: "2", label: "دو ماہ بعد" },
+        { value: "3", label: "تین ماہ بعد" },
+        { value: "4", label: "چار ماہ بعد" },
+        { value: "5", label: "ایک ہفتہ بعد" },
+        { value: "6", label: "دو ہفتے بعد" },
+        { value: "7", label: "تین ہفتے بعد" },
       ];
-
-      // Calculate date based on months
       const calculateFollowUpDate = (months) => {
         if (!months) return "";
         const date = addMonths(new Date(), parseInt(months));
         return format(date, "yyyy-MM-dd");
       };
 
-      // Handle predefined option selection
       const handlePredefinedChange = (value) => {
         const calculatedDate = calculateFollowUpDate(value);
+        // Update both the date and predefined selection state
         updateField("follow_ups", index, "follow_up_date", calculatedDate);
+        setPredefinedSelections(prev => ({
+          ...prev,
+          [index]: value
+        }));
+      };
+
+      const handleDateChange = (value) => {
+        // Clear predefined selection if date is manually changed
+        if (predefinedSelections[index]) {
+          setPredefinedSelections(prev => ({
+            ...prev,
+            [index]: ""
+          }));
+        }
+        updateField("follow_ups", index, "follow_up_date", value);
       };
 
       return (
@@ -3361,7 +3376,7 @@ const EditConsultation = () => {
             <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
               <select
                 id={`follow-up-predefined-${index}`}
-                value=""
+                value={predefinedSelections[index] || ""}
                 onChange={(e) => handlePredefinedChange(e.target.value)}
                 style={{
                   flex: "1 1 200px",
@@ -3383,9 +3398,7 @@ const EditConsultation = () => {
                 id={`follow-up-date-${index}`}
                 type="date"
                 value={followUp.follow_up_date || ""}
-                onChange={(e) =>
-                  updateField("follow_ups", index, "follow_up_date", e.target.value)
-                }
+                onChange={(e) => handleDateChange(e.target.value)}
                 style={{
                   flex: "1 1 200px",
                   padding: "0.5rem",
@@ -3408,7 +3421,15 @@ const EditConsultation = () => {
           />
           <button
             type="button"
-            onClick={() => removeFollowUp(index)}
+            onClick={() => {
+              removeFollowUp(index);
+              // Remove from predefined selections when follow-up is removed
+              setPredefinedSelections(prev => {
+                const newSelections = { ...prev };
+                delete newSelections[index];
+                return newSelections;
+              });
+            }}
             style={{
               backgroundColor: "#ef4444",
               color: "white",
@@ -3430,7 +3451,14 @@ const EditConsultation = () => {
   )}
   <button
     type="button"
-    onClick={addFollowUp}
+    onClick={() => {
+      addFollowUp();
+      // Initialize predefined selection for new follow-up
+      setPredefinedSelections(prev => ({
+        ...prev,
+        [editFormData.follow_ups.length]: ""
+      }));
+    }}
     style={{
       backgroundColor: "#10b981",
       color: "white",
