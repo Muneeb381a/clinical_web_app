@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Select from "react-select";
 import axios from "axios";
 import { useParams, useNavigate } from "react-router-dom";
+import { addMonths, format } from "date-fns";
 import {
   FaTimes,
   FaUser,
@@ -994,10 +995,14 @@ const EditConsultation = () => {
   const createSymptom = async (symptomName) => {
     try {
       setSymptomsError(null);
-      if (!symptomName || typeof symptomName !== "string" || symptomName.trim() === "") {
+      if (
+        !symptomName ||
+        typeof symptomName !== "string" ||
+        symptomName.trim() === ""
+      ) {
         throw new Error("Symptom name is required and must be a valid string");
       }
-  
+
       const trimmedName = symptomName.trim();
       // Check for existing symptom (case-insensitive)
       const existingSymptom = allSymptoms.find(
@@ -1007,10 +1012,10 @@ const EditConsultation = () => {
         console.log("Symptom already exists:", existingSymptom);
         return existingSymptom.id;
       }
-  
+
       const payload = { name: trimmedName };
       console.log("Creating symptom with payload:", payload);
-  
+
       const { data: newSymptom, error: creationError } = await safeRequest(
         "https://patient-management-backend-nine.vercel.app/api/symptoms",
         {
@@ -1019,28 +1024,32 @@ const EditConsultation = () => {
           headers: { "Content-Type": "application/json" },
         }
       );
-  
+
       if (creationError || !newSymptom) {
         const errorMessage =
-          creationError?.response?.data?.error || creationError?.message || "Failed to create symptom";
+          creationError?.response?.data?.error ||
+          creationError?.message ||
+          "Failed to create symptom";
         throw new Error(errorMessage);
       }
-  
+
       if (!newSymptom.id) {
         console.error("Invalid symptom response:", newSymptom);
         throw new Error("Invalid symptom response: Missing ID");
       }
-  
+
       console.log("New symptom created:", newSymptom);
-  
+
       // Update allSymptoms state and cache
       setAllSymptoms((prev) => {
-        const updatedSymptoms = [...prev, newSymptom].filter((s) => s && s.id && s.name);
+        const updatedSymptoms = [...prev, newSymptom].filter(
+          (s) => s && s.id && s.name
+        );
         console.log("Updated allSymptoms:", updatedSymptoms);
         setCachedData("symptoms", updatedSymptoms);
         return updatedSymptoms;
       });
-  
+
       return newSymptom.id;
     } catch (error) {
       console.error("Create symptom error:", error);
@@ -1048,6 +1057,272 @@ const EditConsultation = () => {
       return null;
     }
   };
+
+  const createTest = async (testName) => {
+    try {
+      setTestsError(null);
+      if (!testName || typeof testName !== "string" || testName.trim() === "") {
+        throw new Error("Test name is required and must be a valid string");
+      }
+
+      const trimmedName = testName.trim();
+      // Check for existing test (case-insensitive)
+      const existingTest = allTests.find(
+        (t) => t.test_name.toLowerCase() === trimmedName.toLowerCase()
+      );
+      if (existingTest) {
+        console.log("Test already exists:", existingTest);
+        return existingTest.id;
+      }
+
+      const payload = { test_name: trimmedName };
+      console.log("Creating test with payload:", payload);
+
+      const { data: newTest, error: creationError } = await safeRequest(
+        "https://patient-management-backend-nine.vercel.app/api/tests",
+        {
+          method: "POST",
+          data: payload,
+          headers: { "Content-Type": "application/json" },
+        }
+      );
+
+      if (creationError || !newTest) {
+        const errorMessage =
+          creationError?.response?.data?.error ||
+          creationError?.message ||
+          "Failed to create test";
+        throw new Error(errorMessage);
+      }
+
+      if (!newTest.id) {
+        console.error("Invalid test response:", newTest);
+        throw new Error("Invalid test response: Missing ID");
+      }
+
+      console.log("New test created:", newTest);
+
+      // Update allTests state and cache
+      setAllTests((prev) => {
+        const updatedTests = [...prev, newTest].filter(
+          (t) => t && t.id && t.test_name
+        );
+        console.log("Updated allTests:", updatedTests);
+        setCachedData("tests", updatedTests);
+        return updatedTests;
+      });
+
+      return newTest.id;
+    } catch (error) {
+      console.error("Create test error:", error);
+      setTestsError(error.message || "Failed to create test");
+      return null;
+    }
+  };
+
+  // const fetchData = async (abortController) => {
+  //   try {
+  //     setEditLoading(true);
+  //     setError(null);
+  //     setSymptomsError(null);
+  //     setTestsError(null);
+  //     setPrescriptionsError(null);
+
+  //     const { data: consultationData, error: consultationError } =
+  //       await safeRequest(
+  //         `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}/consultations/${consultationId}?t=${Date.now()}`,
+  //         { signal: abortController.signal }
+  //       );
+  //     if (!consultationData || consultationError) {
+  //       throw new Error(consultationError?.message || "Consultation not found");
+  //     }
+  //     console.log(
+  //       "Raw Consultation Data:",
+  //       JSON.stringify(consultationData, null, 2)
+  //     );
+
+  //     const cachedSymptoms = getCachedData("symptoms");
+  //     const cachedTests = getCachedData("tests");
+  //     const cachedMedicines = getCachedData("medicines");
+
+  //     const [
+  //       { data: symptomsData, error: symptomsError },
+  //       { data: testsData, error: testsError },
+  //       { data: medicinesData, error: medicinesError },
+  //     ] = await Promise.all([
+  //       cachedSymptoms
+  //         ? Promise.resolve({ data: cachedSymptoms, error: null })
+  //         : safeRequest(
+  //             "https://patient-management-backend-nine.vercel.app/api/symptoms",
+  //             { signal: abortController.signal }
+  //           ),
+  //       cachedTests
+  //         ? Promise.resolve({ data: cachedTests, error: null })
+  //         : safeRequest(
+  //             "https://patient-management-backend-nine.vercel.app/api/tests",
+  //             { signal: abortController.signal }
+  //           ),
+  //       cachedMedicines
+  //         ? Promise.resolve({ data: cachedMedicines, error: null })
+  //         : safeRequest(
+  //             "https://patient-management-backend-nine.vercel.app/api/medicines",
+  //             { signal: abortController.signal }
+  //           ),
+  //     ]);
+
+  //     if (symptomsError) setSymptomsError("Couldn't load symptoms list");
+  //     if (testsError) setTestsError("Couldn't load tests list");
+  //     if (medicinesError)
+  //       setPrescriptionsError(
+  //         "Couldn't load medicines list. Existing prescriptions will be displayed."
+  //       );
+
+  //     const referenceData = {
+  //       symptoms: symptomsData ? symptomsData.filter(Boolean) : [],
+  //       tests: testsData ? testsData.filter(Boolean) : [],
+  //       medicines: medicinesData ? medicinesData.filter(Boolean) : [],
+  //     };
+
+  //     if (symptomsData && !cachedSymptoms)
+  //       setCachedData("symptoms", symptomsData);
+  //     if (testsData && !cachedTests) setCachedData("tests", testsData);
+  //     if (medicinesData && !cachedMedicines)
+  //       setCachedData("medicines", medicinesData);
+
+  //     const normalizedTests = (consultationData.tests || [])
+  //       .map((t) => {
+  //         console.log("Processing test:", t);
+  //         const testId = t.test_id || t.id;
+  //         if (!Number.isInteger(testId)) {
+  //           console.warn("Invalid test ID:", t);
+  //           return null;
+  //         }
+  //         return testId;
+  //       })
+  //       .filter(Boolean);
+  //     console.log("Normalized Tests:", normalizedTests);
+
+  //     const allTestIds = referenceData.tests.map((t) => t.id);
+  //     const missingTestIds = normalizedTests.filter(
+  //       (id) => !allTestIds.includes(id)
+  //     );
+  //     if (missingTestIds.length > 0) {
+  //       console.warn("Test IDs not in allTests:", missingTestIds);
+  //       setTestsError(
+  //         `Some tests (IDs: ${missingTestIds.join(
+  //           ", "
+  //         )}) are not available. Please reselect tests.`
+  //       );
+  //     }
+
+  //     const prescriptions = (consultationData.prescriptions || []).map(
+  //       (pres) => ({
+  //         medicine_id: pres.medicine_id || "",
+  //         brand_name: pres.brand_name || "",
+  //         dosage_en:
+  //           pres.dosage_en || getEnglishValue(pres.dosage_urdu, dosageOptions),
+  //         frequency_en:
+  //           pres.frequency_en ||
+  //           getEnglishValue(pres.frequency_urdu, frequencyOptions),
+  //         duration_en:
+  //           pres.duration_en ||
+  //           getEnglishValue(pres.duration_urdu, durationOptions),
+  //         instructions_en:
+  //           pres.instructions_en ||
+  //           getEnglishValue(pres.instructions_urdu, instructionsOptions),
+  //         dosage_urdu: normalizeValue(
+  //           pres.dosage_urdu || pres.dosage_en,
+  //           dosageOptions,
+  //           "dosage"
+  //         ),
+  //         frequency_urdu: normalizeValue(
+  //           pres.frequency_urdu || pres.frequency_en,
+  //           frequencyOptions,
+  //           "frequency"
+  //         ),
+  //         duration_urdu: normalizeValue(
+  //           pres.duration_urdu || pres.duration_en,
+  //           durationOptions,
+  //           "duration"
+  //         ),
+  //         instructions_urdu: normalizeValue(
+  //           pres.instructions_urdu || pres.instructions_en,
+  //           instructionsOptions,
+  //           "instructions"
+  //         ),
+  //         prescribed_at: pres.prescribed_at || new Date().toISOString(),
+  //       })
+  //     );
+
+  //     setAllSymptoms(referenceData.symptoms);
+  //     setAllTests(referenceData.tests);
+  //     setAllMedicines(referenceData.medicines);
+
+  //     const newFormData = {
+  //       ...consultationData,
+  //       patient_name: consultationData.patient_name || "",
+  //       gender: consultationData.gender || "Male",
+  //       mobile: consultationData.mobile || "",
+  //       symptoms: mapSymptomsToIds(
+  //         consultationData.symptoms || [],
+  //         referenceData.symptoms
+  //       ),
+  //       rawSymptoms: consultationData.symptoms || [],
+  //       tests: normalizedTests,
+  //       diagnosis: consultationData.neuro_diagnosis || "",
+  //       treatment_plan: consultationData.neuro_treatment_plan || "",
+  //       power: consultationData.power,
+  //       motor_function: consultationData.motor_function || "",
+  //       muscle_tone: consultationData.muscle_tone || "",
+  //       muscle_strength: consultationData.muscle_strength || "",
+  //       coordination: consultationData.coordination || "",
+  //       deep_tendon_reflexes: consultationData.deep_tendon_reflexes || "",
+  //       gait_assessment: consultationData.gait_assessment || "",
+  //       cranial_nerves: consultationData.cranial_nerves || "",
+  //       romberg_test: consultationData.romberg_test || "",
+  //       plantar_reflex: consultationData.plantar_reflex || "",
+  //       straight_leg_raise_left: consultationData.straight_leg_raise_left || "",
+  //       straight_leg_raise_right:
+  //         consultationData.straight_leg_raise_right || "",
+  //       pupillary_reaction: consultationData.pupillary_reaction || "",
+  //       speech_assessment: consultationData.speech_assessment || "",
+  //       sensory_examination: consultationData.sensory_examination || "",
+  //       fundoscopy: consultationData.fundoscopy || "",
+  //       brudzinski_sign: consultationData.brudzinski_sign || false,
+  //       kernig_sign: consultationData.kernig_sign || false,
+  //       temperature_sensation: consultationData.temperature_sensation || false,
+  //       pain_sensation: consultationData.pain_sensation || false,
+  //       vibration_sense: consultationData.vibration_sense || false,
+  //       proprioception: consultationData.proprioception || false,
+  //       facial_sensation: consultationData.facial_sensation || false,
+  //       swallowing_function: consultationData.swallowing_function || false,
+  //       mmse_score: consultationData.mmse_score || "",
+  //       gcs_score: consultationData.gcs_score || "",
+  //       notes: consultationData.notes || "",
+  //       prescriptions,
+  //       vital_signs: consultationData.vital_signs?.length
+  //         ? consultationData.vital_signs
+  //         : [createNewVitalSign()],
+  //       follow_ups: (consultationData.follow_ups || []).map((f) => ({
+  //         id: f.id || null,
+  //         follow_up_date: f.follow_up_date
+  //           ? new Date(f.follow_up_date).toISOString().split("T")[0]
+  //           : "",
+  //         notes: f.notes || "",
+  //         created_at: f.created_at || new Date().toISOString(),
+  //       })),
+  //     };
+
+  //     setEditFormData(newFormData);
+  //   } catch (error) {
+  //     if (!axios.isCancel(error)) {
+  //       setError(error.message || "Failed to load consultation data");
+  //       console.error("Fetch error:", error);
+  //     }
+  //   } finally {
+  //     setEditLoading(false);
+  //   }
+  // };
 
   const fetchData = async (abortController) => {
     try {
@@ -1057,6 +1332,12 @@ const EditConsultation = () => {
       setTestsError(null);
       setPrescriptionsError(null);
 
+      console.log(
+        "Fetching consultation data for patientId:",
+        patientId,
+        "consultationId:",
+        consultationId
+      );
       const { data: consultationData, error: consultationError } =
         await safeRequest(
           `https://patient-management-backend-nine.vercel.app/api/patients/${patientId}/consultations/${consultationId}?t=${Date.now()}`,
@@ -1069,11 +1350,15 @@ const EditConsultation = () => {
         "Raw Consultation Data:",
         JSON.stringify(consultationData, null, 2)
       );
+      console.log("consultationData.symptoms:", consultationData.symptoms);
+      console.log("consultationData.tests:", consultationData.tests);
 
+      // Fetch cached data
       const cachedSymptoms = getCachedData("symptoms");
       const cachedTests = getCachedData("tests");
       const cachedMedicines = getCachedData("medicines");
 
+      console.log("Fetching symptoms, tests, and medicines...");
       const [
         { data: symptomsData, error: symptomsError },
         { data: testsData, error: testsError },
@@ -1099,29 +1384,99 @@ const EditConsultation = () => {
             ),
       ]);
 
-      if (symptomsError) setSymptomsError("Couldn't load symptoms list");
-      if (testsError) setTestsError("Couldn't load tests list");
-      if (medicinesError)
+      // Handle fetch errors
+      if (symptomsError) {
+        console.error("Symptoms fetch error:", symptomsError);
+        setSymptomsError("Couldn't load symptoms list");
+        return; // Stop if symptoms fail, as they're critical
+      }
+      if (testsError) {
+        console.error("Tests fetch error:", testsError);
+        setTestsError("Couldn't load tests list");
+      }
+      if (medicinesError) {
+        console.error("Medicines fetch error:", medicinesError);
         setPrescriptionsError(
           "Couldn't load medicines list. Existing prescriptions will be displayed."
         );
+      }
 
+      // Validate and filter reference data
       const referenceData = {
-        symptoms: symptomsData ? symptomsData.filter(Boolean) : [],
-        tests: testsData ? testsData.filter(Boolean) : [],
-        medicines: medicinesData ? medicinesData.filter(Boolean) : [],
+        symptoms: symptomsData
+          ? symptomsData.filter((s) => s && s.id != null && s.name)
+          : [],
+        tests: testsData
+          ? testsData.filter((t) => t && t.id != null && t.test_name)
+          : [],
+        medicines: medicinesData
+          ? medicinesData.filter((m) => m && m.id != null && m.medicine_name)
+          : [],
       };
+      console.log("referenceData:", {
+        symptoms: referenceData.symptoms,
+        tests: referenceData.tests,
+        medicines: referenceData.medicines,
+      });
 
-      if (symptomsData && !cachedSymptoms)
+      // Update cache if new data is fetched
+      if (symptomsData && !cachedSymptoms) {
         setCachedData("symptoms", symptomsData);
-      if (testsData && !cachedTests) setCachedData("tests", testsData);
-      if (medicinesData && !cachedMedicines)
+      }
+      if (testsData && !cachedTests) {
+        setCachedData("tests", testsData);
+      }
+      if (medicinesData && !cachedMedicines) {
         setCachedData("medicines", medicinesData);
+      }
 
+      // Normalize symptoms
+      const normalizedSymptoms = (consultationData.symptoms || [])
+        .map((s) => {
+          if (typeof s === "string") return s;
+          if (typeof s === "object" && s?.name) return s.name;
+          if (typeof s === "object" && s?.id != null) return s.id.toString();
+          if (typeof s === "number") return s.toString();
+          console.warn("Invalid symptom format:", s);
+          return null;
+        })
+        .filter(Boolean);
+      console.log("Normalized Symptoms:", normalizedSymptoms);
+
+      // Map symptoms to IDs
+      const symptomIds = mapSymptomsToIds(
+        normalizedSymptoms,
+        referenceData.symptoms
+      );
+      console.log("Mapped Symptom IDs:", symptomIds);
+
+      // Validate symptom IDs
+      const validSymptomIds = symptomIds.filter((id) =>
+        referenceData.symptoms.some((s) => s.id === id)
+      );
+      if (symptomIds.length !== validSymptomIds.length) {
+        console.warn(
+          "Invalid symptom IDs found:",
+          symptomIds.filter((id) => !validSymptomIds.includes(id))
+        );
+      }
+      console.log("Valid Symptom IDs:", validSymptomIds);
+
+      // Identify raw symptoms (unmatched)
+      const rawSymptoms = normalizedSymptoms.filter(
+        (s) =>
+          !validSymptomIds.some((id) => {
+            const sym = referenceData.symptoms.find((rs) => rs.id === id);
+            return sym && sym.name.toLowerCase() === s.toLowerCase();
+          })
+      );
+      console.log("Raw Symptoms:", rawSymptoms);
+
+      // Normalize tests
       const normalizedTests = (consultationData.tests || [])
         .map((t) => {
-          console.log("Processing test:", t);
-          const testId = t.test_id || t.id;
+          const testId =
+            t.test_id || t.id || (typeof t === "number" ? t : null);
           if (!Number.isInteger(testId)) {
             console.warn("Invalid test ID:", t);
             return null;
@@ -1131,76 +1486,92 @@ const EditConsultation = () => {
         .filter(Boolean);
       console.log("Normalized Tests:", normalizedTests);
 
-      const allTestIds = referenceData.tests.map((t) => t.id);
-      const missingTestIds = normalizedTests.filter(
-        (id) => !allTestIds.includes(id)
+      // Validate test IDs
+      const validTestIds = normalizedTests.filter((id) =>
+        referenceData.tests.some((t) => t.id === id)
       );
-      if (missingTestIds.length > 0) {
-        console.warn("Test IDs not in allTests:", missingTestIds);
+      if (normalizedTests.length !== validTestIds.length) {
+        const missingTestIds = normalizedTests.filter(
+          (id) => !validTestIds.includes(id)
+        );
+        console.warn("Invalid test IDs found:", missingTestIds);
         setTestsError(
           `Some tests (IDs: ${missingTestIds.join(
             ", "
           )}) are not available. Please reselect tests.`
         );
       }
+      console.log("Valid Test IDs:", validTestIds);
 
+      // Normalize prescriptions
       const prescriptions = (consultationData.prescriptions || []).map(
         (pres) => ({
           medicine_id: pres.medicine_id || "",
           brand_name: pres.brand_name || "",
           dosage_en:
-            pres.dosage_en || getEnglishValue(pres.dosage_urdu, dosageOptions),
+            pres.dosage_en ||
+            getEnglishValue(pres.dosage_urdu, dosageOptions) ||
+            "",
           frequency_en:
             pres.frequency_en ||
-            getEnglishValue(pres.frequency_urdu, frequencyOptions),
+            getEnglishValue(pres.frequency_urdu, frequencyOptions) ||
+            "",
           duration_en:
             pres.duration_en ||
-            getEnglishValue(pres.duration_urdu, durationOptions),
+            getEnglishValue(pres.duration_urdu, durationOptions) ||
+            "",
           instructions_en:
             pres.instructions_en ||
-            getEnglishValue(pres.instructions_urdu, instructionsOptions),
-          dosage_urdu: normalizeValue(
-            pres.dosage_urdu || pres.dosage_en,
-            dosageOptions,
-            "dosage"
-          ),
-          frequency_urdu: normalizeValue(
-            pres.frequency_urdu || pres.frequency_en,
-            frequencyOptions,
-            "frequency"
-          ),
-          duration_urdu: normalizeValue(
-            pres.duration_urdu || pres.duration_en,
-            durationOptions,
-            "duration"
-          ),
-          instructions_urdu: normalizeValue(
-            pres.instructions_urdu || pres.instructions_en,
-            instructionsOptions,
-            "instructions"
-          ),
+            getEnglishValue(pres.instructions_urdu, instructionsOptions) ||
+            "",
+          dosage_urdu:
+            normalizeValue(
+              pres.dosage_urdu || pres.dosage_en,
+              dosageOptions,
+              "dosage"
+            ) || "",
+          frequency_urdu:
+            normalizeValue(
+              pres.frequency_urdu || pres.frequency_en,
+              frequencyOptions,
+              "frequency"
+            ) || "",
+          duration_urdu:
+            normalizeValue(
+              pres.duration_urdu || pres.duration_en,
+              durationOptions,
+              "duration"
+            ) || "",
+          instructions_urdu:
+            normalizeValue(
+              pres.instructions_urdu || pres.instructions_en,
+              instructionsOptions,
+              "instructions"
+            ) || "",
           prescribed_at: pres.prescribed_at || new Date().toISOString(),
         })
       );
+      console.log("Normalized Prescriptions:", prescriptions);
 
+      // Update state
       setAllSymptoms(referenceData.symptoms);
       setAllTests(referenceData.tests);
       setAllMedicines(referenceData.medicines);
 
+      // Build newFormData with all consultation fields
       const newFormData = {
         ...consultationData,
         patient_name: consultationData.patient_name || "",
         gender: consultationData.gender || "Male",
         mobile: consultationData.mobile || "",
-        symptoms: mapSymptomsToIds(
-          consultationData.symptoms || [],
-          referenceData.symptoms
-        ),
-        rawSymptoms: consultationData.symptoms || [],
-        tests: normalizedTests,
+        age: consultationData.age || "",
+        visit_date: consultationData.visit_date || "",
+        symptoms: validSymptomIds,
+        rawSymptoms,
+        tests: validTestIds,
         diagnosis: consultationData.neuro_diagnosis || "",
         treatment_plan: consultationData.neuro_treatment_plan || "",
-        power: consultationData.power,
+        power: consultationData.power || "",
         motor_function: consultationData.motor_function || "",
         muscle_tone: consultationData.muscle_tone || "",
         muscle_strength: consultationData.muscle_strength || "",
@@ -1243,13 +1614,26 @@ const EditConsultation = () => {
       };
 
       setEditFormData(newFormData);
+      console.log("newFormData:", newFormData);
+      console.log("newFormData.symptoms:", newFormData.symptoms);
+      console.log("newFormData.rawSymptoms:", newFormData.rawSymptoms);
+      console.log("newFormData.tests:", newFormData.tests);
+      console.log("newFormData.prescriptions:", newFormData.prescriptions);
+      console.log("allSymptoms:", referenceData.symptoms);
+      console.log("allTests:", referenceData.tests);
+      console.log("allMedicines:", referenceData.medicines);
     } catch (error) {
-      if (!axios.isCancel(error)) {
-        setError(error.message || "Failed to load consultation data");
+      const isCancelError =
+        error.name === "AbortError" || error.message === "canceled";
+      if (!isCancelError) {
+        const errorMessage =
+          error.message || "Failed to load consultation data";
+        setError(errorMessage);
         console.error("Fetch error:", error);
       }
     } finally {
       setEditLoading(false);
+      console.log("setEditLoading false");
     }
   };
 
@@ -1362,7 +1746,10 @@ const EditConsultation = () => {
           console.warn("Found null or undefined symptom:", symptom);
           return null;
         }
-        if (!isNaN(symptom) && allSymptoms.some((s) => s.id === Number(symptom))) {
+        if (
+          !isNaN(symptom) &&
+          allSymptoms.some((s) => s.id === Number(symptom))
+        ) {
           return Number(symptom);
         }
         if (typeof symptom === "string") {
@@ -2119,20 +2506,22 @@ const EditConsultation = () => {
                 Symptoms
               </h3>
               <SymptomsSelector
-  key={allSymptoms.map((s) => s.id).join("-")}
-  allSymptoms={allSymptoms}
-  selectedSymptoms={editFormData.symptoms?.filter((id) =>
-    allSymptoms.some((s) => s.id === id)
-  ) || []}
-  rawSymptoms={editFormData.rawSymptoms || []}
-  onSelect={(ids) => {
-    console.log("SymptomsSelector onSelect IDs:", ids);
-    handleFormChange("symptoms", ids);
-  }}
-  onCreate={createSymptom}
-  isLoading={editLoading}
-  symptomsError={symptomsError}
-/>
+                key={allSymptoms.map((s) => s.id).join("-")}
+                allSymptoms={allSymptoms}
+                selectedSymptoms={
+                  editFormData.symptoms?.filter((id) =>
+                    allSymptoms.some((s) => s.id === id)
+                  ) || []
+                }
+                rawSymptoms={editFormData.rawSymptoms || []}
+                onSelect={(ids) => {
+                  console.log("SymptomsSelector onSelect IDs:", ids);
+                  handleFormChange("symptoms", ids);
+                }}
+                onCreate={createSymptom}
+                isLoading={editLoading}
+                symptomsError={symptomsError}
+              />
             </motion.div>
 
             {/* Tests */}
@@ -2168,15 +2557,20 @@ const EditConsultation = () => {
                 Tests
               </h3>
               <TestsSelector
+                key={allTests.map((t) => t.id).join("-")}
                 allTests={allTests}
-                selectedTests={editFormData.tests}
-                onSelect={(newTestIds) =>
-                  setEditFormData({
-                    ...editFormData,
-                    tests: [...new Set(newTestIds)],
-                  })
+                selectedTests={
+                  editFormData.tests?.filter((id) =>
+                    allTests.some((t) => t.id === id)
+                  ) || []
                 }
-                onRemove={removeTest}
+                onSelect={(ids) => {
+                  console.log("TestsSelector onSelect IDs:", ids);
+                  handleFormChange("tests", [...new Set(ids)]);
+                }}
+                onCreate={createTest}
+                isLoading={editLoading}
+                testsError={testsError}
               />
             </motion.div>
 
@@ -2879,101 +3273,176 @@ const EditConsultation = () => {
               ))}
             </motion.div> */}
 
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.8 }}
+<motion.div
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ delay: 0.8 }}
+  style={{
+    backgroundColor: "#f9fafb",
+    padding: "1.5rem",
+    borderRadius: "0.75rem",
+    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
+  }}
+>
+  <h3
+    style={{
+      fontSize: "1.25rem",
+      fontWeight: "600",
+      color: "#1f2937",
+      marginBottom: "1.5rem",
+      display: "flex",
+      alignItems: "center",
+      gap: "0.5rem",
+    }}
+  >
+    <FaNotesMedical
+      style={{
+        color: "#ec4899",
+        width: "1.5rem",
+        height: "1.5rem",
+      }}
+    />
+    Follow-ups
+  </h3>
+  {editFormData.follow_ups?.length > 0 ? (
+    editFormData.follow_ups.map((followUp, index) => {
+      // Predefined options for follow-up dates
+      const predefinedOptions = [
+        { value: "", label: "Select a predefined date..." },
+        { value: "1", label: "One Month Later" },
+        { value: "2", label: "Two Months Later" },
+        { value: "3", label: "Three Months Later" },
+        { value: "4", label: "Four Months Later" },
+        { value: "5", label: "One Week Later" },
+        { value: "6", label: "Two Week Later" },
+        { value: "7", label: "Three Week Later" },
+      ];
+
+      // Calculate date based on months
+      const calculateFollowUpDate = (months) => {
+        if (!months) return "";
+        const date = addMonths(new Date(), parseInt(months));
+        return format(date, "yyyy-MM-dd");
+      };
+
+      // Handle predefined option selection
+      const handlePredefinedChange = (value) => {
+        const calculatedDate = calculateFollowUpDate(value);
+        updateField("follow_ups", index, "follow_up_date", calculatedDate);
+      };
+
+      return (
+        <div
+          key={index}
+          style={{
+            marginBottom: "1rem",
+            padding: "1rem",
+            backgroundColor: "#ffffff",
+            borderRadius: "0.5rem",
+            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+            gap: "1rem",
+          }}
+        >
+          <div>
+            <label
+              htmlFor={`follow-up-date-${index}`}
               style={{
-                backgroundColor: "#f9fafb",
-                padding: "1.5rem",
-                borderRadius: "0.75rem",
-                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
+                display: "block",
+                fontSize: "0.875rem",
+                fontWeight: "500",
+                color: "#374151",
+                marginBottom: "0.5rem",
               }}
             >
-              <h3
+              Follow-up {index + 1} Date
+            </label>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+              <select
+                id={`follow-up-predefined-${index}`}
+                value=""
+                onChange={(e) => handlePredefinedChange(e.target.value)}
                 style={{
-                  fontSize: "1.25rem",
-                  fontWeight: "600",
-                  color: "#1f2937",
-                  marginBottom: "1.5rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
+                  flex: "1 1 200px",
+                  padding: "0.5rem",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.875rem",
+                  color: "#374151",
+                  backgroundColor: "#ffffff",
                 }}
               >
-                <FaNotesMedical
-                  style={{
-                    color: "#ec4899",
-                    width: "1.5rem",
-                    height: "1.5rem",
-                  }}
-                />
-                Follow-ups
-              </h3>
-              {editFormData.follow_ups?.length > 0 ? (
-                editFormData.follow_ups.map((followUp, index) => (
-                  <div
-                    key={index}
-                    style={{
-                      marginBottom: "1rem",
-                      padding: "1rem",
-                      backgroundColor: "#ffffff",
-                      borderRadius: "0.5rem",
-                      boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
-                      display: "grid",
-                      gridTemplateColumns:
-                        "repeat(auto-fit, minmax(200px, 1fr))",
-                      gap: "1rem",
-                    }}
-                  >
-                    <FormField
-                      label={`Follow-up ${index + 1} Date`}
-                      type="date"
-                      value={followUp.follow_up_date}
-                      onChange={(val) =>
-                        updateField("follow_ups", index, "follow_up_date", val)
-                      }
-                    />
-                    <FormField
-                      label="Notes"
-                      placeholder="Enter notes"
-                      value={followUp.notes}
-                      onChange={(val) =>
-                        updateField("follow_ups", index, "notes", val)
-                      }
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeFollowUp(index)}
-                      style={{
-                        backgroundColor: "#ef4444",
-                        color: "white",
-                        padding: "0.5rem",
-                        borderRadius: "0.25rem",
-                        alignSelf: "end",
-                      }}
-                    >
-                      Remove
-                    </button>
-                  </div>
-                ))
-              ) : (
-                <p>No follow-ups scheduled. Add new follow-ups below.</p>
-              )}
-              <button
-                type="button"
-                onClick={addFollowUp}
+                {predefinedOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <input
+                id={`follow-up-date-${index}`}
+                type="date"
+                value={followUp.follow_up_date || ""}
+                onChange={(e) =>
+                  updateField("follow_ups", index, "follow_up_date", e.target.value)
+                }
                 style={{
-                  backgroundColor: "#10b981",
-                  color: "white",
-                  padding: "0.5rem 1rem",
-                  borderRadius: "0.25rem",
-                  marginTop: "1rem",
+                  flex: "1 1 200px",
+                  padding: "0.5rem",
+                  border: "1px solid #d1d5db",
+                  borderRadius: "0.375rem",
+                  fontSize: "0.875rem",
+                  color: "#374151",
+                  backgroundColor: "#ffffff",
                 }}
-              >
-                Add Follow-up
-              </button>
-            </motion.div>
+              />
+            </div>
+          </div>
+          <FormField
+            label="Notes"
+            placeholder="Enter notes"
+            value={followUp.notes}
+            onChange={(val) =>
+              updateField("follow_ups", index, "notes", val)
+            }
+          />
+          <button
+            type="button"
+            onClick={() => removeFollowUp(index)}
+            style={{
+              backgroundColor: "#ef4444",
+              color: "white",
+              padding: "0.5rem",
+              borderRadius: "0.25rem",
+              alignSelf: "end",
+              fontSize: "0.875rem",
+            }}
+          >
+            Remove
+          </button>
+        </div>
+      );
+    })
+  ) : (
+    <p style={{ color: "#6b7280", fontSize: "0.875rem" }}>
+      No follow-ups scheduled. Add new follow-ups below.
+    </p>
+  )}
+  <button
+    type="button"
+    onClick={addFollowUp}
+    style={{
+      backgroundColor: "#10b981",
+      color: "white",
+      padding: "0.5rem 1rem",
+      borderRadius: "0.25rem",
+      marginTop: "1rem",
+      fontSize: "0.875rem",
+    }}
+  >
+    Add Follow-up
+  </button>
+</motion.div>
 
             {/* Form Actions */}
             <motion.div

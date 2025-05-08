@@ -1,12 +1,29 @@
-import React, { useMemo } from "react";
-import Select from "react-select";
-import { FaFlask, FaSearch, FaTimes } from "react-icons/fa";
+import React, { useMemo, useState } from "react";
+import CreatableSelect from "react-select/creatable";
+import {
+  FaFlask,
+  FaSearch,
+  FaTimes,
+  FaExclamationTriangle,
+  FaInfoCircle,
+} from "react-icons/fa";
 
-const TestsSelector = ({ allTests, selectedTests, onSelect, onRemove }) => {
+const TestsSelector = ({
+  allTests = [],
+  selectedTests = [],
+  onSelect,
+  onCreate,
+  isLoading = false,
+  testsError = null,
+}) => {
+  const [creatingTest, setCreatingTest] = useState(false);
+  const [createError, setCreateError] = useState(null);
+
   // Log inputs for debugging
   console.log("TestsSelector - allTests:", allTests);
   console.log("TestsSelector - selectedTests:", selectedTests);
-  console.log("TestsSelector - onRemove:", onRemove);
+  console.log("TestsSelector - isLoading:", isLoading);
+  console.log("TestsSelector - testsError:", testsError);
 
   // Validate and map allTests to testOptions
   const testOptions = useMemo(() => {
@@ -15,10 +32,10 @@ const TestsSelector = ({ allTests, selectedTests, onSelect, onRemove }) => {
       return [];
     }
     const options = allTests
-      .filter((test) => test && test.id && test.test_name)
+      .filter((test) => test && test.id != null && test.test_name)
       .map((test) => ({
-        label: test.test_name || "Unknown Test",
         value: test.id,
+        label: test.test_name,
       }));
     console.log("TestsSelector - testOptions:", options);
     return options;
@@ -31,35 +48,77 @@ const TestsSelector = ({ allTests, selectedTests, onSelect, onRemove }) => {
       return [];
     }
     const options = selectedTests
-      .map((testId) => testOptions.find((option) => option.value === testId))
+      .map((testId) => {
+        const option = testOptions.find((opt) => opt.value === testId);
+        if (!option) {
+          console.warn(`Test ID ${testId} not found in testOptions`);
+          return null;
+        }
+        return option;
+      })
       .filter(Boolean);
     console.log("TestsSelector - selectedTestOptions:", options);
     return options;
   }, [selectedTests, testOptions]);
 
   const handleChange = (selectedOptions) => {
-    const newSelectedIds = selectedOptions
-      ? selectedOptions.map((option) => option.value)
-      : [];
-    console.log("TestsSelector - New selected IDs:", newSelectedIds);
-    onSelect(newSelectedIds);
+    console.log(
+      "TestsSelector - handleChange selectedOptions:",
+      selectedOptions
+    );
+    try {
+      const newSelectedIds = selectedOptions
+        ? selectedOptions.map((option) => option.value)
+        : [];
+      console.log("TestsSelector - New selected IDs:", newSelectedIds);
+      setCreateError(null);
+      if (onSelect) {
+        onSelect(newSelectedIds);
+      } else {
+        console.warn("onSelect is not provided");
+      }
+    } catch (error) {
+      console.error("handleChange error:", error);
+      setCreateError("Failed to update test selection");
+    }
   };
 
-  const handleRemove = (testId) => {
-    console.log("TestsSelector - Removing test ID:", testId);
-    onRemove(testId);
-    // Fallback: Update react-select state if removeProps is unavailable
-    const newSelectedIds = selectedTests.filter((id) => id !== testId);
-    onSelect(newSelectedIds);
+  const handleCreate = async (inputValue) => {
+    const trimmedValue = inputValue?.trim();
+    if (!trimmedValue) {
+      setCreateError("Test name cannot be empty");
+      return;
+    }
+
+    try {
+      setCreatingTest(true);
+      setCreateError(null);
+      if (!onCreate) {
+        setCreateError("Cannot create test: No creation function provided");
+        return;
+      }
+      const newId = await onCreate(trimmedValue);
+      if (newId && !isNaN(newId)) {
+        console.log("Created test ID:", newId);
+        onSelect([...selectedTests, Number(newId)]);
+      } else {
+        setCreateError("Failed to create test: Invalid ID returned");
+      }
+    } catch (error) {
+      console.error("handleCreate error:", error);
+      setCreateError(error.message || "Failed to create test");
+    } finally {
+      setCreatingTest(false);
+    }
   };
 
-  // Custom styles for react-select
+  // Custom styles (aligned with SymptomsSelector)
   const customStyles = {
     control: (base, state) => ({
       ...base,
       minHeight: "48px",
-      borderColor: state.isFocused ? "#8b5cf6" : "#e5e7eb",
       borderWidth: "2px",
+      borderColor: state.isFocused ? "#8b5cf6" : "#e5e7eb",
       borderRadius: "10px",
       boxShadow: state.isFocused ? "0 0 0 2px rgba(139, 92, 246, 0.2)" : "none",
       "&:hover": { borderColor: "#8b5cf6" },
@@ -67,11 +126,7 @@ const TestsSelector = ({ allTests, selectedTests, onSelect, onRemove }) => {
     }),
     option: (base, { isFocused, isSelected }) => ({
       ...base,
-      backgroundColor: isSelected
-        ? "#8b5cf6"
-        : isFocused
-        ? "#ede9fe"
-        : "white",
+      backgroundColor: isSelected ? "#8b5cf6" : isFocused ? "#ede9fe" : "white",
       color: isSelected ? "white" : "#4b5563",
       padding: "10px 16px",
       fontSize: "14px",
@@ -90,6 +145,7 @@ const TestsSelector = ({ allTests, selectedTests, onSelect, onRemove }) => {
       color: "#7c3aed",
       fontWeight: "500",
       fontSize: "14px",
+      padding: "0 4px 0 8px",
     }),
     multiValueRemove: (base) => ({
       ...base,
@@ -125,67 +181,93 @@ const TestsSelector = ({ allTests, selectedTests, onSelect, onRemove }) => {
       ...base,
       backgroundColor: "#e5e7eb",
     }),
+    loadingIndicator: (base) => ({
+      ...base,
+      color: "#8b5cf6",
+    }),
   };
 
   return (
     <div className="space-y-4">
-      <div>
-        <label
-          htmlFor="tests-selector"
-          className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2"
-        >
-          <FaFlask className="text-purple-500" />
-          <span>Diagnostic Tests</span>
-          {selectedTestOptions.length > 0 && (
-            <span className="ml-auto text-xs bg-purple-100 text-green-700 px-2 py-1 rounded-full">
-              {selectedTestOptions.length} selected
-            </span>
-          )}
-        </label>
-        {testOptions.length === 0 ? (
-          <div className="text-sm text-yellow-600 bg-yellow-50 px-4 py-3 rounded-lg border border-yellow-100">
-            No tests available. Please try again later.
-          </div>
-        ) : (
-          <Select
-            inputId="tests-selector"
-            options={testOptions}
-            value={selectedTestOptions}
-            onChange={handleChange}
-            isMulti
-            isDisabled={testOptions.length === 0}
-            placeholder="Search and select tests..."
-            styles={customStyles}
-            className="react-select-container"
-            classNamePrefix="react-select"
-            aria-label="Select diagnostic tests"
-            components={{
-              DropdownIndicator: () => <FaSearch className="mr-1 text-gray-400" />,
-              MultiValueRemove: ({ data, innerProps, removeProps }) => {
-                console.log("MultiValueRemove - Props:", { data, removeProps, innerProps });
-                return (
-                  <div
-                    {...innerProps}
-                    className="cursor-pointer p-1 hover:bg-purple-100 rounded-r-md"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleRemove(data.value); // Always call onRemove
-                      if (removeProps?.onClick) {
-                        removeProps.onClick(e); // Call react-select's handler if available
-                      } else {
-                        console.warn("MultiValueRemove - removeProps.onClick is undefined");
-                      }
-                    }}
-                  >
-                    <FaTimes className="text-purple-700 hover:text-purple-900" />
-                  </div>
-                );
-              },
-            }}
-            noOptionsMessage={() => "No tests found"}
-          />
+      <label
+        htmlFor="tests-selector"
+        className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2"
+      >
+        <FaFlask className="text-purple-500" />
+        <span>Diagnostic Tests</span>
+        {selectedTestOptions.length > 0 && (
+          <span className="ml-auto text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded-full">
+            {selectedTestOptions.length} selected
+          </span>
         )}
-      </div>
+      </label>
+
+      {testOptions.length === 0 && !isLoading ? (
+        <div className="text-sm text-yellow-600 bg-yellow-50 px-4 py-3 rounded-lg border border-yellow-100 flex items-start gap-2">
+          <FaExclamationTriangle className="flex-shrink-0 mt-0.5" />
+          <p>No tests available. Type to create a new test.</p>
+        </div>
+      ) : (
+        <CreatableSelect
+          inputId="tests-selector"
+          options={testOptions}
+          value={selectedTestOptions}
+          onChange={handleChange}
+          onCreateOption={handleCreate}
+          isMulti
+          isClearable
+          isDisabled={isLoading && !creatingTest}
+          isLoading={creatingTest}
+          placeholder="Search or create tests..."
+          styles={customStyles}
+          className="react-select-container"
+          classNamePrefix="react-select"
+          aria-label="Select or create diagnostic tests"
+          components={{
+            DropdownIndicator: () => (
+              <FaSearch className="mr-1 text-gray-400" />
+            ),
+            MultiValueRemove: ({ data, innerProps }) => (
+              <div
+                {...innerProps}
+                className="cursor-pointer p-1 hover:bg-purple-100 rounded-r-md"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleChange(
+                    selectedTestOptions.filter(
+                      (opt) => opt.value !== data.value
+                    )
+                  );
+                }}
+              >
+                <FaTimes className="text-purple-700 hover:text-purple-900" />
+              </div>
+            ),
+          }}
+          noOptionsMessage={() => "Type to create a new test"}
+          formatCreateLabel={(inputValue) => `Create "${inputValue}"`}
+          loadingMessage={() => "Creating test..."}
+        />
+      )}
+
+      {createError || testsError ? (
+        <div className="flex items-start gap-2 mt-2 text-sm text-red-600 bg-red-50 px-3 py-2 rounded-lg">
+          <FaExclamationTriangle className="flex-shrink-0 mt-0.5" />
+          <p>{createError || testsError}</p>
+        </div>
+      ) : null}
+
+      {selectedTestOptions.length === 0 && !createError && !testsError && (
+        <div className="flex items-start gap-2 mt-2 text-sm text-blue-600 bg-blue-50 px-3 py-2 rounded-lg">
+          <FaInfoCircle className="flex-shrink-0 mt-0.5" />
+          <div>
+            <p>Start typing to search or create tests</p>
+            <p className="mt-1 text-xs text-blue-700">
+              You can select multiple tests from the list or create new ones.
+            </p>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
