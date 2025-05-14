@@ -1369,19 +1369,25 @@ const EditConsultation = () => {
           ? Promise.resolve({ data: cachedSymptoms, error: null })
           : safeRequest(
               "https://patient-management-backend-nine.vercel.app/api/symptoms",
-              { signal: abortController.signal }
+              {
+                signal: abortController.signal,
+              }
             ),
         cachedTests
           ? Promise.resolve({ data: cachedTests, error: null })
           : safeRequest(
               "https://patient-management-backend-nine.vercel.app/api/tests",
-              { signal: abortController.signal }
+              {
+                signal: abortController.signal,
+              }
             ),
-        cachedMedicines
+        cachedTests
           ? Promise.resolve({ data: cachedMedicines, error: null })
           : safeRequest(
               "https://patient-management-backend-nine.vercel.app/api/medicines",
-              { signal: abortController.signal }
+              {
+                signal: abortController.signal,
+              }
             ),
       ]);
 
@@ -1389,7 +1395,7 @@ const EditConsultation = () => {
       if (symptomsError) {
         console.error("Symptoms fetch error:", symptomsError);
         setSymptomsError("Couldn't load symptoms list");
-        return; // Stop if symptoms fail, as they're critical
+        return;
       }
       if (testsError) {
         console.error("Tests fetch error:", testsError);
@@ -1398,7 +1404,7 @@ const EditConsultation = () => {
       if (medicinesError) {
         console.error("Medicines fetch error:", medicinesError);
         setPrescriptionsError(
-          "Couldn't load medicines list. Existing prescriptions will be displayed."
+          "Failed to load medicines list. Existing prescriptions will be displayed."
         );
       }
 
@@ -1411,7 +1417,9 @@ const EditConsultation = () => {
           ? testsData.filter((t) => t && t.id != null && t.test_name)
           : [],
         medicines: medicinesData
-          ? medicinesData.filter((m) => m && m.id != null && m.medicine_name)
+          ? medicinesData.filter(
+              (m) => m && m.id != null && (m.medicine_name || m.brand_name)
+            )
           : [],
       };
       console.log("referenceData:", {
@@ -1419,6 +1427,7 @@ const EditConsultation = () => {
         tests: referenceData.tests,
         medicines: referenceData.medicines,
       });
+      console.log("Raw medicinesData:", medicinesData);
 
       // Update cache if new data is fetched
       if (symptomsData && !cachedSymptoms) {
@@ -1463,7 +1472,7 @@ const EditConsultation = () => {
       }
       console.log("Valid Symptom IDs:", validSymptomIds);
 
-      // Identify raw symptoms (unmatched)
+      // Identify raw symptoms
       const rawSymptoms = normalizedSymptoms.filter(
         (s) =>
           !validSymptomIds.some((id) => {
@@ -1508,7 +1517,7 @@ const EditConsultation = () => {
       const prescriptions = (consultationData.prescriptions || []).map(
         (pres) => ({
           medicine_id: pres.medicine_id || "",
-          brand_name: pres.brand_name || "",
+          brand_name: pres.brand_name || pres.medicine_name || "",
           dosage_en:
             pres.dosage_en ||
             getEnglishValue(pres.dosage_urdu, dosageOptions) ||
@@ -1518,7 +1527,7 @@ const EditConsultation = () => {
             getEnglishValue(pres.frequency_urdu, frequencyOptions) ||
             "",
           duration_en:
-            pres.duration_en ||
+            pres.dosage_en ||
             getEnglishValue(pres.duration_urdu, durationOptions) ||
             "",
           instructions_en:
@@ -1559,7 +1568,7 @@ const EditConsultation = () => {
       setAllTests(referenceData.tests);
       setAllMedicines(referenceData.medicines);
 
-      // Build newFormData with all consultation fields
+      // Build newFormData
       const newFormData = {
         ...consultationData,
         patient_name: consultationData.patient_name || "",
@@ -2938,14 +2947,30 @@ const EditConsultation = () => {
                     <CreatableSelect
                       value={
                         med.medicine_id
-                          ? allMedicines
-                              .filter((m) => m.id === parseInt(med.medicine_id))
-                              .map((m) => ({
-                                value: m.id,
-                                label: `${m.form || ""} ${m.brand_name || ""} ${
-                                  m.strength || ""
-                                }`.trim(),
-                              }))[0]
+                          ? (() => {
+                              const medicine = allMedicines.find(
+                                (m) => m.id === parseInt(med.medicine_id)
+                              );
+                              const label = medicine
+                                ? `${medicine.form || "Tablet"} ${
+                                    medicine.brand_name ||
+                                    medicine.medicine_name ||
+                                    "Unknown"
+                                  } ${
+                                    medicine.strength
+                                      ? ` (${medicine.strength})`
+                                      : ""
+                                  }`.trim()
+                                : med.brand_name || "Unknown Medicine";
+                              console.log("Selected medicine value:", {
+                                medicine_id: med.medicine_id,
+                                label,
+                              });
+                              return {
+                                value: med.medicine_id.toString(),
+                                label,
+                              };
+                            })()
                           : null
                       }
                       onChange={(selectedOption) => {
@@ -2954,38 +2979,47 @@ const EditConsultation = () => {
                           selectedOption
                         );
                         const selectedMedicine = allMedicines.find(
-                          (m) => m.id === selectedOption?.value
+                          (m) => m.id === parseInt(selectedOption?.value)
                         );
                         updateField(
                           "prescriptions",
                           index,
                           "medicine_id",
-                          selectedOption?.value || ""
+                          selectedOption?.value?.toString() || ""
                         );
                         updateField(
                           "prescriptions",
                           index,
                           "brand_name",
-                          selectedMedicine?.brand_name || ""
+                          selectedMedicine?.brand_name ||
+                            selectedMedicine?.medicine_name ||
+                            ""
                         );
                       }}
                       onCreateOption={(inputValue) =>
                         handleCreateMedicine(inputValue, index)
                       }
-                      options={allMedicines.map((medicine) => ({
-                        value: medicine.id,
-                        label: `${medicine.form || ""} ${
-                          medicine.brand_name || ""
-                        } ${medicine.strength || ""}`.trim(),
-                      }))}
-                      placeholder={
-                        allMedicines.length === 0 && med.brand_name
-                          ? med.brand_name
-                          : "دوائی منتخب کریں یا نئی بنائیں"
-                      }
+                      options={allMedicines.map((medicine) => {
+                        const label = `${medicine.form || "Tablet"} ${
+                          medicine.brand_name ||
+                          medicine.medicine_name ||
+                          "Unknown"
+                        } ${
+                          medicine.strength ? ` (${medicine.strength})` : ""
+                        }`.trim();
+                        console.log("Medicine option:", {
+                          id: medicine.id,
+                          label,
+                        });
+                        return {
+                          value: medicine.id.toString(),
+                          label,
+                        };
+                      })}
+                      placeholder="دوائی منتخب کریں یا نئی بنائیں"
                       isSearchable={true}
                       isClearable={true}
-                      isLoading={creatingMedicine} // Show loader in CreatableSelect
+                      isLoading={creatingMedicine}
                       styles={{
                         control: (provided, state) => ({
                           ...provided,
@@ -3000,9 +3034,7 @@ const EditConsultation = () => {
                           boxShadow: state.isFocused
                             ? "0 0 0 1px #14b8a6"
                             : "0 1px 2px rgba(0, 0, 0, 0.05)",
-                          "&:hover": {
-                            borderColor: "#14b8a6",
-                          },
+                          "&:hover": { borderColor: "#14b8a6" },
                         }),
                         option: (provided, state) => ({
                           ...provided,
@@ -3274,203 +3306,217 @@ const EditConsultation = () => {
               ))}
             </motion.div> */}
 
-<motion.div
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ delay: 0.8 }}
-  style={{
-    backgroundColor: "#f9fafb",
-    padding: "1.5rem",
-    borderRadius: "0.75rem",
-    boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
-  }}
->
-  <h3
-    style={{
-      fontSize: "1.25rem",
-      fontWeight: "600",
-      color: "#1f2937",
-      marginBottom: "1.5rem",
-      display: "flex",
-      alignItems: "center",
-      gap: "0.5rem",
-    }}
-  >
-    <FaNotesMedical
-      style={{
-        color: "#ec4899",
-        width: "1.5rem",
-        height: "1.5rem",
-      }}
-    />
-    Follow-ups
-  </h3>
-  
-  {/* State for tracking predefined selections */}
-  {editFormData.follow_ups?.length > 0 ? (
-    editFormData.follow_ups.map((followUp, index) => {
-      const predefinedOptions = [
-        { value: "", label: "پہلے سے طے شدہ تاریخ منتخب کریں..." },
-        { value: "1", label: "ایک ماہ بعد" },
-        { value: "2", label: "دو ماہ بعد" },
-        { value: "3", label: "تین ماہ بعد" },
-        { value: "4", label: "چار ماہ بعد" },
-        { value: "5", label: "ایک ہفتہ بعد" },
-        { value: "6", label: "دو ہفتے بعد" },
-        { value: "7", label: "تین ہفتے بعد" },
-      ];
-      const calculateFollowUpDate = (months) => {
-        if (!months) return "";
-        const date = addMonths(new Date(), parseInt(months));
-        return format(date, "yyyy-MM-dd");
-      };
-
-      const handlePredefinedChange = (value) => {
-        const calculatedDate = calculateFollowUpDate(value);
-        // Update both the date and predefined selection state
-        updateField("follow_ups", index, "follow_up_date", calculatedDate);
-        setPredefinedSelections(prev => ({
-          ...prev,
-          [index]: value
-        }));
-      };
-
-      const handleDateChange = (value) => {
-        // Clear predefined selection if date is manually changed
-        if (predefinedSelections[index]) {
-          setPredefinedSelections(prev => ({
-            ...prev,
-            [index]: ""
-          }));
-        }
-        updateField("follow_ups", index, "follow_up_date", value);
-      };
-
-      return (
-        <div
-          key={index}
-          style={{
-            marginBottom: "1rem",
-            padding: "1rem",
-            backgroundColor: "#ffffff",
-            borderRadius: "0.5rem",
-            boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-            gap: "1rem",
-          }}
-        >
-          <div>
-            <label
-              htmlFor={`follow-up-date-${index}`}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.8 }}
               style={{
-                display: "block",
-                fontSize: "0.875rem",
-                fontWeight: "500",
-                color: "#374151",
-                marginBottom: "0.5rem",
+                backgroundColor: "#f9fafb",
+                padding: "1.5rem",
+                borderRadius: "0.75rem",
+                boxShadow: "0 4px 6px rgba(0, 0, 0, 0.05)",
               }}
             >
-              Follow-up {index + 1} Date
-            </label>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              <select
-                id={`follow-up-predefined-${index}`}
-                value={predefinedSelections[index] || ""}
-                onChange={(e) => handlePredefinedChange(e.target.value)}
+              <h3
                 style={{
-                  flex: "1 1 200px",
-                  padding: "0.5rem",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "0.375rem",
-                  fontSize: "0.875rem",
-                  color: "#374151",
-                  backgroundColor: "#ffffff",
+                  fontSize: "1.25rem",
+                  fontWeight: "600",
+                  color: "#1f2937",
+                  marginBottom: "1.5rem",
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.5rem",
                 }}
               >
-                {predefinedOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <input
-                id={`follow-up-date-${index}`}
-                type="date"
-                value={followUp.follow_up_date || ""}
-                onChange={(e) => handleDateChange(e.target.value)}
-                style={{
-                  flex: "1 1 200px",
-                  padding: "0.5rem",
-                  border: "1px solid #d1d5db",
-                  borderRadius: "0.375rem",
-                  fontSize: "0.875rem",
-                  color: "#374151",
-                  backgroundColor: "#ffffff",
+                <FaNotesMedical
+                  style={{
+                    color: "#ec4899",
+                    width: "1.5rem",
+                    height: "1.5rem",
+                  }}
+                />
+                Follow-ups
+              </h3>
+
+              {/* State for tracking predefined selections */}
+              {editFormData.follow_ups?.length > 0 ? (
+                editFormData.follow_ups.map((followUp, index) => {
+                  const predefinedOptions = [
+                    { value: "", label: "پہلے سے طے شدہ تاریخ منتخب کریں..." },
+                    { value: "1", label: "ایک ماہ بعد" },
+                    { value: "2", label: "دو ماہ بعد" },
+                    { value: "3", label: "تین ماہ بعد" },
+                    { value: "4", label: "چار ماہ بعد" },
+                    { value: "5", label: "ایک ہفتہ بعد" },
+                    { value: "6", label: "دو ہفتے بعد" },
+                    { value: "7", label: "تین ہفتے بعد" },
+                  ];
+                  const calculateFollowUpDate = (months) => {
+                    if (!months) return "";
+                    const date = addMonths(new Date(), parseInt(months));
+                    return format(date, "yyyy-MM-dd");
+                  };
+
+                  const handlePredefinedChange = (value) => {
+                    const calculatedDate = calculateFollowUpDate(value);
+                    // Update both the date and predefined selection state
+                    updateField(
+                      "follow_ups",
+                      index,
+                      "follow_up_date",
+                      calculatedDate
+                    );
+                    setPredefinedSelections((prev) => ({
+                      ...prev,
+                      [index]: value,
+                    }));
+                  };
+
+                  const handleDateChange = (value) => {
+                    // Clear predefined selection if date is manually changed
+                    if (predefinedSelections[index]) {
+                      setPredefinedSelections((prev) => ({
+                        ...prev,
+                        [index]: "",
+                      }));
+                    }
+                    updateField("follow_ups", index, "follow_up_date", value);
+                  };
+
+                  return (
+                    <div
+                      key={index}
+                      style={{
+                        marginBottom: "1rem",
+                        padding: "1rem",
+                        backgroundColor: "#ffffff",
+                        borderRadius: "0.5rem",
+                        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.05)",
+                        display: "grid",
+                        gridTemplateColumns:
+                          "repeat(auto-fit, minmax(200px, 1fr))",
+                        gap: "1rem",
+                      }}
+                    >
+                      <div>
+                        <label
+                          htmlFor={`follow-up-date-${index}`}
+                          style={{
+                            display: "block",
+                            fontSize: "0.875rem",
+                            fontWeight: "500",
+                            color: "#374151",
+                            marginBottom: "0.5rem",
+                          }}
+                        >
+                          Follow-up {index + 1} Date
+                        </label>
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "0.5rem",
+                            flexWrap: "wrap",
+                          }}
+                        >
+                          <select
+                            id={`follow-up-predefined-${index}`}
+                            value={predefinedSelections[index] || ""}
+                            onChange={(e) =>
+                              handlePredefinedChange(e.target.value)
+                            }
+                            style={{
+                              flex: "1 1 200px",
+                              padding: "0.5rem",
+                              border: "1px solid #d1d5db",
+                              borderRadius: "0.375rem",
+                              fontSize: "0.875rem",
+                              color: "#374151",
+                              backgroundColor: "#ffffff",
+                            }}
+                          >
+                            {predefinedOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          <input
+                            id={`follow-up-date-${index}`}
+                            type="date"
+                            value={followUp.follow_up_date || ""}
+                            onChange={(e) => handleDateChange(e.target.value)}
+                            style={{
+                              flex: "1 1 200px",
+                              padding: "0.5rem",
+                              border: "1px solid #d1d5db",
+                              borderRadius: "0.375rem",
+                              fontSize: "0.875rem",
+                              color: "#374151",
+                              backgroundColor: "#ffffff",
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <FormField
+                        label="Notes"
+                        placeholder="Enter notes"
+                        value={followUp.notes}
+                        onChange={(val) =>
+                          updateField("follow_ups", index, "notes", val)
+                        }
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          removeFollowUp(index);
+                          // Remove from predefined selections when follow-up is removed
+                          setPredefinedSelections((prev) => {
+                            const newSelections = { ...prev };
+                            delete newSelections[index];
+                            return newSelections;
+                          });
+                        }}
+                        style={{
+                          backgroundColor: "#ef4444",
+                          color: "white",
+                          padding: "0.5rem",
+                          borderRadius: "0.25rem",
+                          alignSelf: "end",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  );
+                })
+              ) : (
+                <p style={{ color: "#6b7280", fontSize: "0.875rem" }}>
+                  No follow-ups scheduled. Add new follow-ups below.
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => {
+                  addFollowUp();
+                  // Initialize predefined selection for new follow-up
+                  setPredefinedSelections((prev) => ({
+                    ...prev,
+                    [editFormData.follow_ups.length]: "",
+                  }));
                 }}
-              />
-            </div>
-          </div>
-          <FormField
-            label="Notes"
-            placeholder="Enter notes"
-            value={followUp.notes}
-            onChange={(val) =>
-              updateField("follow_ups", index, "notes", val)
-            }
-          />
-          <button
-            type="button"
-            onClick={() => {
-              removeFollowUp(index);
-              // Remove from predefined selections when follow-up is removed
-              setPredefinedSelections(prev => {
-                const newSelections = { ...prev };
-                delete newSelections[index];
-                return newSelections;
-              });
-            }}
-            style={{
-              backgroundColor: "#ef4444",
-              color: "white",
-              padding: "0.5rem",
-              borderRadius: "0.25rem",
-              alignSelf: "end",
-              fontSize: "0.875rem",
-            }}
-          >
-            Remove
-          </button>
-        </div>
-      );
-    })
-  ) : (
-    <p style={{ color: "#6b7280", fontSize: "0.875rem" }}>
-      No follow-ups scheduled. Add new follow-ups below.
-    </p>
-  )}
-  <button
-    type="button"
-    onClick={() => {
-      addFollowUp();
-      // Initialize predefined selection for new follow-up
-      setPredefinedSelections(prev => ({
-        ...prev,
-        [editFormData.follow_ups.length]: ""
-      }));
-    }}
-    style={{
-      backgroundColor: "#10b981",
-      color: "white",
-      padding: "0.5rem 1rem",
-      borderRadius: "0.25rem",
-      marginTop: "1rem",
-      fontSize: "0.875rem",
-    }}
-  >
-    Add Follow-up
-  </button>
-</motion.div>
+                style={{
+                  backgroundColor: "#10b981",
+                  color: "white",
+                  padding: "0.5rem 1rem",
+                  borderRadius: "0.25rem",
+                  marginTop: "1rem",
+                  fontSize: "0.875rem",
+                }}
+              >
+                Add Follow-up
+              </button>
+            </motion.div>
 
             {/* Form Actions */}
             <motion.div
