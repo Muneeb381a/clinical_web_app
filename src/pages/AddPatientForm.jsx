@@ -4,7 +4,6 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useNavigate } from "react-router-dom";
 import { fetchWithRetry } from "../utils/api"; // Adjust path to match your project
 
 const patientSchema = z.object({
@@ -14,7 +13,7 @@ const patientSchema = z.object({
   mobile: z.string().min(10, "Enter a valid mobile number").max(15),
 });
 
-const AddPatientForm = ({ searchedMobile, onSuccess, onClose }) => {
+const AddPatientForm = ({ searchedMobile, onSuccess }) => {
   const {
     register,
     handleSubmit,
@@ -25,7 +24,6 @@ const AddPatientForm = ({ searchedMobile, onSuccess, onClose }) => {
   });
 
   const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (searchedMobile) {
@@ -63,25 +61,23 @@ const AddPatientForm = ({ searchedMobile, onSuccess, onClose }) => {
         autoClose: 2000,
       });
 
+      console.log(
+        "AddPatientForm - Calling onSuccess with patientId:",
+        patientId
+      );
       if (onSuccess) onSuccess(patientId); // Pass patientId to PatientSearch
-      if (onClose) onClose(); // Close the popup
 
-      setTimeout(() => {
-        console.log(
-          "AddPatientForm - Navigating to:",
-          `/patients/${patientId}/consultations/new`
-        );
-        navigate(`/patients/${patientId}/consultations/new`, { replace: true });
-      }, 1000); // Increased delay to 1 second
-
-      console.log("Patient Registered:", res);
+      console.log(
+        "AddPatientForm - Patient registered successfully, waiting for PatientSearch to handle navigation"
+      );
     } catch (error) {
-      const errorMessage = error.response?.data?.message || "Failed to register patient";
+      const errorMessage =
+        error.response?.data?.message || "Failed to register patient";
       toast.error(`Error: ${errorMessage}`, {
         position: "top-right",
         autoClose: 4000,
       });
-      console.error("Error adding patient:", {
+      console.error("AddPatientForm - Error adding patient:", {
         message: error.message,
         status: error.response?.status,
         data: error.response?.data,
@@ -94,12 +90,27 @@ const AddPatientForm = ({ searchedMobile, onSuccess, onClose }) => {
   return (
     <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
       <ToastContainer />
-      <h3 className="text-lg font-semibold text-gray-800">New Patient Registration</h3>
-      <form onSubmit={handleSubmit(addPatient)} className="grid grid-cols-2 gap-4 mt-4">
-        {[{ name: "name", label: "Full Name" }, { name: "age", label: "Age", type: "number" },
-          { name: "mobile", label: "Mobile Number", type: "text", readOnly: true }].map((field) => (
+      <h3 className="text-lg font-semibold text-gray-800">
+        New Patient Registration
+      </h3>
+      <form
+        onSubmit={handleSubmit(addPatient)}
+        className="grid grid-cols-2 gap-4 mt-4"
+      >
+        {[
+          { name: "name", label: "Full Name" },
+          { name: "age", label: "Age", type: "number" },
+          {
+            name: "mobile",
+            label: "Mobile Number",
+            type: "text",
+            readOnly: true,
+          },
+        ].map((field) => (
           <div key={field.name} className="space-y-1">
-            <label className="text-sm font-medium text-gray-600">{field.label}</label>
+            <label className="text-sm font-medium text-gray-600">
+              {field.label}
+            </label>
             <input
               {...register(field.name)}
               type={field.type || "text"}
@@ -131,7 +142,10 @@ const AddPatientForm = ({ searchedMobile, onSuccess, onClose }) => {
       </form>
       <div className="mt-4 space-y-2">
         {Object.values(errors).map((error, index) => (
-          <p key={index} className="text-sm text-red-600 flex items-center gap-2">
+          <p
+            key={index}
+            className="text-sm text-red-600 flex items-center gap-2"
+          >
             ⚠️ {error.message}
           </p>
         ))}

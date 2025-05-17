@@ -77,7 +77,64 @@ const FullPageLoader = ({ message = "Processing your request" }) => (
   </div>
 );
 
-// Memoized ConsultationItem component
+// Success Modal Component
+const SuccessModal = ({ isOpen, onClose, onAddConsultation, onAddTest }) => {
+  console.log("SuccessModal rendered with isOpen:", isOpen);
+  if (!isOpen) return null;
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[150] bg-black/50 flex items-center justify-center p-4"
+    >
+      <motion.div
+        initial={{ scale: 0.95, y: 20 }}
+        animate={{ scale: 1, y: 0 }}
+        className="bg-white rounded-2xl p-8 max-w-md w-full shadow-xl"
+      >
+        <h3 className="text-2xl font-bold text-gray-800 mb-4">
+          Patient Registered Successfully
+        </h3>
+        <p className="text-gray-600 mb-6">
+          The patient has been added to the system. What would you like to do
+          next?
+        </p>
+        <div className="flex gap-4">
+          <button
+            onClick={(e) => {
+              console.log("Add Consultation button clicked");
+              onAddConsultation(e);
+            }}
+            className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-semibold"
+          >
+            Add Consultation
+          </button>
+          <button
+            onClick={(e) => {
+              console.log("Add Tests button clicked");
+              onAddTest(e);
+            }}
+            className="flex-1 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 font-semibold"
+          >
+            Add Tests
+          </button>
+        </div>
+        <button
+          onClick={(e) => {
+            console.log("Close button clicked");
+            onClose(e);
+          }}
+          className="mt-4 text-gray-600 hover:text-gray-800 font-semibold w-full text-center"
+        >
+          Close
+        </button>
+      </motion.div>
+    </motion.div>
+  );
+};
+
+// Memoized ConsultationItem component (unchanged)
 const ConsultationItem = React.memo(
   ({
     consultation,
@@ -653,6 +710,9 @@ const PatientSearch = () => {
     searchedName: "",
     expandedSections: {},
     page: 1,
+    showSuccessModal: false,
+    blockNavigation: false,
+    modalLock: false,
   });
   const consultationsPerPage = 5;
   const navigate = useNavigate();
@@ -661,17 +721,25 @@ const PatientSearch = () => {
   const updateState = (updates) => {
     console.log("Updating state:", updates);
     setState((prev) => {
+      if (prev.modalLock && updates.showSuccessModal === false) {
+        console.log("Prevented resetting showSuccessModal due to modalLock");
+        return prev;
+      }
       const newState = { ...prev, ...updates };
       console.log("New state:", newState);
       return newState;
     });
   };
 
-  const handleBackToHome = useCallback(() => navigate("/"), [navigate]);
+  const handleBackToHome = useCallback(() => {
+    console.log("Navigating to home");
+    navigate("/");
+  }, [navigate]);
 
   const debouncedSearch = useCallback(
     debounce(async (data) => {
       const searchInput = data.search.trim();
+      console.log("Debounced search triggered with input:", searchInput);
       if (!navigator.onLine) {
         toast.error("You are offline. Please check your network connection.");
         return;
@@ -691,6 +759,9 @@ const PatientSearch = () => {
         expandedSections: {},
         searchedMobile: /^[0-9]{11}$/.test(searchInput) ? searchInput : "",
         searchedName: /^[a-zA-Z\s]{1,50}$/.test(searchInput) ? searchInput : "",
+        showSuccessModal: false,
+        blockNavigation: false,
+        modalLock: false,
       });
 
       const cacheKey = `search:${searchInput}`;
@@ -698,9 +769,13 @@ const PatientSearch = () => {
       if (cachedResult) {
         updateState({
           patient: cachedResult.patient,
-          consultations: [...cachedResult.consultations], // Ensure new array reference
+          consultations: [...cachedResult.consultations],
           isSearching: false,
         });
+        console.log(
+          "Navigating from cache to patient:",
+          cachedResult.patient.id || cachedResult.patient._id
+        );
         navigate(
           `/patients/${cachedResult.patient.id || cachedResult.patient._id}`,
           { replace: true }
@@ -752,10 +827,11 @@ const PatientSearch = () => {
             );
             updateState({
               patient: patientData,
-              consultations: [...historyRes], // Ensure new array reference
+              consultations: [...historyRes],
               isSearching: false,
               page: 1,
             });
+            console.log("Navigating to patient profile:", patientId);
             navigate(`/patients/${patientId}`, { replace: true });
           }
         } else {
@@ -785,12 +861,13 @@ const PatientSearch = () => {
         toast.error(errorMessage);
         updateState({ isSearching: false });
       }
-    }, 150), // Reduced debounce delay for faster response
+    }, 150),
     [navigate]
   );
 
   const handleConsultationUpdated = useCallback(
     (patientId) => {
+      console.log("handleConsultationUpdated called for patientId:", patientId);
       cache.clear(patientId);
       updateState({ isSearching: true });
       fetchWithRetry(
@@ -807,7 +884,7 @@ const PatientSearch = () => {
             1000 * 60 * 15
           );
           updateState({
-            consultations: [...historyRes], // Ensure new array reference
+            consultations: [...historyRes],
             isSearching: false,
             page: 1,
           });
@@ -824,11 +901,18 @@ const PatientSearch = () => {
 
   const handlePatientSelect = useCallback(
     async (selectedPatient) => {
-      updateState({ isSearching: true, patientsList: [] });
+      console.log("handlePatientSelect called for patient:", selectedPatient);
+      updateState({
+        isSearching: true,
+        patientsList: [],
+        showSuccessModal: false,
+        blockNavigation: false,
+        modalLock: false,
+      });
       try {
         const patientId = selectedPatient.id || selectedPatient._id;
         const cacheKey = `patient:${patientId}`;
-        cache.clear(patientId); // Clear cache to ensure fresh data
+        cache.clear(patientId);
         const [patientRes, historyRes] = await Promise.all([
           fetchWithRetry(
             "get",
@@ -857,10 +941,11 @@ const PatientSearch = () => {
         );
         updateState({
           patient: patientRes,
-          consultations: [...historyRes], // Ensure new array reference
+          consultations: [...historyRes],
           isSearching: false,
           page: 1,
         });
+        console.log("Navigating to patient profile from select:", patientId);
         navigate(`/patients/${patientId}`, { replace: true });
       } catch (error) {
         console.error("Error loading selected patient:", {
@@ -876,6 +961,7 @@ const PatientSearch = () => {
   );
 
   const loadMoreConsultations = useCallback(async () => {
+    console.log("loadMoreConsultations called");
     updateState({ isSearching: true });
     try {
       const patientId = state.patient.id || state.patient._id;
@@ -889,7 +975,7 @@ const PatientSearch = () => {
         (data) => (Array.isArray(data) ? data : [])
       );
       updateState({
-        consultations: [...state.consultations, ...historyRes], // Ensure new array reference
+        consultations: [...state.consultations, ...historyRes],
         page: state.page + 1,
         isSearching: false,
       });
@@ -902,9 +988,14 @@ const PatientSearch = () => {
 
   const handleNewPatientAdded = useCallback(
     (patientId) => {
-      console.log("PatientSearch - New patient added with ID:", patientId);
+      console.log("handleNewPatientAdded called with patientId:", patientId);
       cache.clear(patientId, state.searchedMobile || state.searchedName);
-      updateState({ showAddPatient: false, isSearching: true });
+      updateState({
+        showAddPatient: false,
+        isSearching: true,
+        blockNavigation: true,
+        modalLock: true,
+      });
       fetchWithRetry(
         "get",
         `/api/patients/${patientId}?t=${Date.now()}`,
@@ -926,48 +1017,161 @@ const PatientSearch = () => {
             consultations: [],
             isSearching: false,
             page: 1,
+            showSuccessModal: true,
+            blockNavigation: true,
+            modalLock: true,
           });
-          navigate(`/patients/${patientId}/consultations/new`, {
-            state: { fromPatientSearch: true },
-          });
+          console.log("Navigating to patient profile after adding:", patientId);
+          navigate(`/patients/${patientId}`, { replace: true });
         })
         .catch((error) => {
           console.error("Error loading new patient:", error);
           toast.error("Failed to load new patient details.");
-          updateState({ isSearching: false });
+          updateState({
+            isSearching: false,
+            blockNavigation: false,
+            modalLock: false,
+          });
         });
     },
     [navigate, state.searchedMobile, state.searchedName]
   );
 
   const handleAddConsultation = useCallback(() => {
-    updateState({ isAddingConsultation: true });
-    const patientId = state.patient.id || state.patient._id;
-    setTimeout(() => {
-      navigate(`/patients/${patientId}/consultations/new`, {
+    console.log("handleAddConsultation called with state:", {
+      patient: state.patient,
+      blockNavigation: state.blockNavigation,
+    });
+    try {
+      // Temporarily removed blockNavigation check to test
+      // if (state.blockNavigation) {
+      //   console.log("Navigation to consultation blocked due to modal");
+      //   return;
+      // }
+      const patientId = state.patient?.id || state.patient?._id;
+      if (!patientId) {
+        console.error("No patientId found in state.patient");
+        toast.error("Cannot add consultation: Patient ID missing.");
+        return;
+      }
+      updateState({
+        isAddingConsultation: true,
+        showSuccessModal: false,
+        blockNavigation: false,
+        modalLock: false,
+      });
+      console.log("Navigating to new consultation for patientId:", patientId);
+      setTimeout(() => {
+        navigate(`/patients/${patientId}/consultations/new`, {
+          state: { fromPatientSearch: true },
+        });
+        updateState({ isAddingConsultation: false });
+      }, 500);
+    } catch (error) {
+      console.error("Error in handleAddConsultation:", {
+        message: error.message,
+        stack: error.stack,
+      });
+      toast.error("Failed to navigate to new consultation.");
+      updateState({ isAddingConsultation: false });
+    }
+  }, [navigate, state.patient]);
+
+  const handleAddTest = useCallback(() => {
+    console.log("handleAddTest called with state:", {
+      patient: state.patient,
+      blockNavigation: state.blockNavigation,
+    });
+    try {
+      // Temporarily removed blockNavigation check to test
+      // if (state.blockNavigation) {
+      //   console.log("Navigation to tests blocked due to modal");
+      //   return;
+      // }
+      const patientId = state.patient?.id || state.patient?._id;
+      if (!patientId) {
+        console.error("No patientId found in state.patient");
+        toast.error("Cannot add tests: Patient ID missing.");
+        return;
+      }
+      updateState({
+        showSuccessModal: false,
+        blockNavigation: false,
+        modalLock: false,
+      });
+      console.log("Navigating to new test for patientId:", patientId);
+      navigate(`/patients/${patientId}/tests/new`, {
         state: { fromPatientSearch: true },
       });
-      updateState({ isAddingConsultation: false });
-    }, 500);
+    } catch (error) {
+      console.error("Error in handleAddTest:", {
+        message: error.message,
+        stack: error.stack,
+      });
+      toast.error("Failed to navigate to new tests.");
+    }
+  }, [navigate, state.patient]);
+
+  const handleCloseModal = useCallback(() => {
+    console.log("handleCloseModal called with state:", {
+      patient: state.patient,
+      blockNavigation: state.blockNavigation,
+    });
+    try {
+      const patientId = state.patient?.id || state.patient?._id;
+      if (!patientId) {
+        console.error("No patientId found in state.patient");
+        toast.error("Cannot close modal: Patient ID missing.");
+        return;
+      }
+      updateState({
+        showSuccessModal: false,
+        blockNavigation: false,
+        modalLock: false,
+      });
+      console.log("Navigating to patient profile from modal close:", patientId);
+      navigate(`/patients/${patientId}`, { replace: true });
+    } catch (error) {
+      console.error("Error in handleCloseModal:", {
+        message: error.message,
+        stack: error.stack,
+      });
+      toast.error("Failed to close modal.");
+    }
   }, [navigate, state.patient]);
 
   const handleEditClick = useCallback(
-    (consultationId) =>
+    (consultationId) => {
+      console.log(
+        "handleEditClick triggered for consultation:",
+        consultationId
+      );
       navigate(
         `/patients/${
           state.patient.id || state.patient._id
         }/consultations/${consultationId}/edit`,
         { state: { fromPatientSearch: true } }
-      ),
+      );
+    },
     [navigate, state.patient]
   );
 
   useEffect(() => {
     const loadPatientFromURL = async () => {
+      console.log("loadPatientFromURL useEffect triggered", {
+        pathname: location.pathname,
+        search: location.search,
+        showSuccessModal: state.showSuccessModal,
+        modalLock: state.modalLock,
+      });
       const pathParts = location.pathname.split("/");
       const patientId = pathParts[2];
 
       if (pathParts[1] === "" || (pathParts[1] === "patients" && !patientId)) {
+        if (state.modalLock) {
+          console.log("Skipping state reset due to modalLock");
+          return;
+        }
         updateState({
           patient: null,
           patientsList: [],
@@ -978,12 +1182,19 @@ const PatientSearch = () => {
           searchedMobile: "",
           searchedName: "",
           page: 1,
+          showSuccessModal: false,
+          blockNavigation: false,
+          modalLock: false,
         });
         return;
       }
 
       if (pathParts[1] === "patients" && patientId && patientId !== "new") {
-        cache.clear(patientId); // Clear cache to ensure fresh data
+        if (state.modalLock) {
+          console.log("Skipping patient load due to modalLock");
+          return;
+        }
+        cache.clear(patientId);
         try {
           updateState({ isSearching: true });
           const [patientRes, historyRes] = await Promise.all([
@@ -1014,9 +1225,12 @@ const PatientSearch = () => {
           );
           updateState({
             patient: patientRes,
-            consultations: [...historyRes], // Ensure new array reference
+            consultations: [...historyRes],
             isSearching: false,
             page: 1,
+            showSuccessModal: false,
+            blockNavigation: false,
+            modalLock: false,
           });
         } catch (error) {
           console.error("Error loading patient from URL:", {
@@ -1033,6 +1247,10 @@ const PatientSearch = () => {
           updateState({ isSearching: false });
         }
       } else if (pathParts[1] === "patients" && pathParts[2] === "new") {
+        if (state.modalLock) {
+          console.log("Skipping new patient form load due to modalLock");
+          return;
+        }
         const urlParams = new URLSearchParams(location.search);
         const mobile = urlParams.get("mobile");
         const name = urlParams.get("name");
@@ -1044,30 +1262,50 @@ const PatientSearch = () => {
           searchedName: name || "",
           showAddPatient: true,
           isSearching: false,
+          showSuccessModal: false,
+          blockNavigation: false,
+          modalLock: false,
         });
       }
     };
     loadPatientFromURL();
-  }, [location.pathname, location.search, navigate]);
+  }, [location.pathname, location.search, navigate, state.modalLock]);
 
   useEffect(() => {
     const handleConsultationSaved = () => {
-      if (location.state?.consultationSaved && state.patient) {
+      console.log("handleConsultationSaved useEffect triggered", {
+        locationState: location.state,
+        modalLock: state.modalLock,
+      });
+      if (
+        location.state?.consultationSaved &&
+        state.patient &&
+        !state.modalLock
+      ) {
+        console.log("Consultation saved, updating history");
         handleConsultationUpdated(state.patient.id || state.patient._id);
         navigate(location.pathname, { state: {}, replace: true });
       }
     };
     handleConsultationSaved();
-  }, [location.state, state.patient, handleConsultationUpdated, navigate]);
+  }, [
+    location.state,
+    state.patient,
+    handleConsultationUpdated,
+    navigate,
+    state.modalLock,
+  ]);
 
   const toggleSection = useCallback(
-    (index) =>
+    (index) => {
+      console.log("toggleSection called for index:", index);
       updateState({
         expandedSections: {
           ...state.expandedSections,
           [index]: !state.expandedSections[index],
         },
-      }),
+      });
+    },
     [state.expandedSections]
   );
 
@@ -1088,6 +1326,13 @@ const PatientSearch = () => {
         {state.isAddingConsultation && (
           <FullPageLoader message="Loading new consultation..." />
         )}
+
+        <SuccessModal
+          isOpen={state.showSuccessModal}
+          onClose={handleCloseModal}
+          onAddConsultation={handleAddConsultation}
+          onAddTest={handleAddTest}
+        />
 
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -1236,9 +1481,11 @@ const PatientSearch = () => {
                     }}
                     whileTap={{ scale: 0.98 }}
                     onClick={handleAddConsultation}
-                    disabled={state.isAddingConsultation}
+                    disabled={
+                      state.isAddingConsultation || state.blockNavigation
+                    }
                     className={`relative bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-4 rounded-xl shadow-lg transition-all flex items-center gap-3 w-full md:w-auto justify-center overflow-hidden cursor-pointer ${
-                      state.isAddingConsultation
+                      state.isAddingConsultation || state.blockNavigation
                         ? "opacity-80 cursor-not-allowed"
                         : ""
                     }`}

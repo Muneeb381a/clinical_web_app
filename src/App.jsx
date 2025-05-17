@@ -6,6 +6,7 @@ import PatientConsultation from "./components/PatientConsultation";
 import PatientHistory from "./components/PatientHistoryModal";
 import EditConsultation from "./components/EditConsultation";
 import { Loader } from "./pages/Loader";
+import AddTestForm from "./components/AddTestForm";
 
 
 
@@ -67,6 +68,10 @@ const App = () => {
             path="/patients/:patientId/consultations/new"
             element={<PatientConsultation />}
           />
+          <Route
+          path="/patients/:patientId/tests/new"
+          element={<AddTestForm />}
+        />
         </Routes>
       </Suspense>
     </>
