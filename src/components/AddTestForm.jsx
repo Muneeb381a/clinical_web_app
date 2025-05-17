@@ -122,7 +122,8 @@ const AddTestForm = () => {
     console.log('Printing tests:', selectedTests);
     console.log('Test details for print:', testDetails);
     const testLabels = testDetails.map((test) => test.test_name || test.id);
-    const printWindow = window.open('', '_blank'); // Initialize printWindow
+    const printWindow = window.open('', '_blank');
+    const printDate = new Date().toLocaleString(); // Initialize printWindow
     printWindow.document.write(`
         <html>
           <head>
