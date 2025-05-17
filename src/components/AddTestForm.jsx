@@ -124,34 +124,178 @@ const AddTestForm = () => {
     const testLabels = testDetails.map((test) => test.test_name || test.id);
     const printWindow = window.open('', '_blank'); // Initialize printWindow
     printWindow.document.write(`
-      <html>
-        <head>
-          <title>Diagnostic Tests</title>
-          <style>
-            body { font-family: Arial, sans-serif; padding: 20px; }
-            h1 { text-align: center; color: #333; }
-            .patient-info { margin-bottom: 20px; }
-            ul { list-style: none; padding: 0; }
-            li { padding: 10px 0; font-size: 16px; border-bottom: 1px solid #eee; }
-            .footer { margin-top: 20px; font-size: 12px; color: #666; }
-          </style>
-        </head>
-        <body>
-          <h1>Diagnostic Tests</h1>
-          <div class="patient-info">
-            <p><strong>Patient ID:</strong> ${patientId}</p>
-            <p><strong>Patient Name:</strong> ${patient?.name || 'N/A'}</p>
-            <p><strong>Doctor Name:</strong> ${DOCTOR_NAME}</p>
-          </div>
-          <ul>
-            ${testLabels.map((label) => `<li>${label}</li>`).join('')}
-          </ul>
-          <div class="footer">
-            <p>Printed on ${new Date().toLocaleString()}</p>
-          </div>
-        </body>
-      </html>
-    `);
+        <html>
+          <head>
+            <title>Diagnostic Test Order - ${patient?.name || 'Patient'}</title>
+            <style>
+              :root {
+                --primary-color: #2a4365;
+                --secondary-color: #718096;
+                --accent-color: #4299e1;
+              }
+  
+              body { 
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                margin: 2cm auto;
+                max-width: 21cm;
+                padding: 30px;
+                color: #333;
+              }
+  
+              .letterhead {
+                text-align: center;
+                border-bottom: 3px solid var(--primary-color);
+                padding-bottom: 20px;
+                margin-bottom: 30px;
+              }
+  
+              .clinic-name {
+                font-size: 24px;
+                font-weight: 600;
+                color: var(--primary-color);
+                letter-spacing: 1px;
+                margin-bottom: 8px;
+              }
+  
+              .clinic-address {
+                color: var(--secondary-color);
+                font-size: 14px;
+              }
+  
+              .patient-info {
+                display: grid;
+                grid-template-columns: repeat(2, 1fr);
+                gap: 20px;
+                background: #f8fafc;
+                padding: 25px;
+                border-radius: 8px;
+                margin-bottom: 30px;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+              }
+  
+              .info-group h3 {
+                font-size: 16px;
+                color: var(--accent-color);
+                margin-bottom: 12px;
+                border-bottom: 1px solid #e2e8f0;
+                padding-bottom: 6px;
+              }
+  
+              .info-item {
+                display: flex;
+                justify-content: space-between;
+                margin-bottom: 8px;
+                font-size: 14px;
+              }
+  
+              .info-item span:first-child {
+                font-weight: 500;
+                color: var(--secondary-color);
+              }
+  
+              .test-list {
+                margin: 25px 0;
+                counter-reset: test-counter;
+              }
+  
+              .test-item {
+                padding: 15px;
+                margin-bottom: 12px;
+                background: white;
+                border-left: 4px solid var(--accent-color);
+                box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                counter-increment: test-counter;
+                display: flex;
+                align-items: center;
+              }
+  
+              .test-item::before {
+                content: counter(test-counter);
+                background: var(--accent-color);
+                color: white;
+                width: 25px;
+                height: 25px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                border-radius: 50%;
+                margin-right: 15px;
+                font-size: 14px;
+              }
+  
+              .footer {
+                margin-top: 40px;
+                padding-top: 20px;
+                border-top: 1px solid #e2e8f0;
+                font-size: 12px;
+                color: var(--secondary-color);
+                text-align: center;
+              }
+  
+              @media print {
+                body { 
+                  margin: 1cm auto;
+                }
+                .patient-info {
+                  page-break-inside: avoid;
+                }
+              }
+            </style>
+          </head>
+          <body>
+            <div class="letterhead">
+              <div class="clinic-name">HealthCare Diagnostic Center</div>
+              <div class="clinic-address">
+                123 Medical Drive, Suite 456 | Health City, HC 78910
+                <br>📞 (555) 123-4567 | 🌐 www.healthcare-diagnostics.com
+              </div>
+            </div>
+  
+            <div class="patient-info">
+              <div class="info-group">
+                <h3>Patient Details</h3>
+                <div class="info-item">
+                  <span>Patient ID:</span>
+                  <span>${patientId}</span>
+                </div>
+                <div class="info-item">
+                  <span>Patient Name:</span>
+                  <span>${patient?.name || 'N/A'}</span>
+                </div>
+                <div class="info-item">
+                  <span>Patinet Mobile:</span>
+                  <span>${patient?.mobile || 'N/A'}</span>
+                </div>
+              </div>
+  
+              <div class="info-group">
+                <h3>Ordering Physician</h3>
+                <div class="info-item">
+                  <span>Doctor Name:</span>
+                  <span>${DOCTOR_NAME}</span>
+                </div>
+                <div class="info-item">
+                  <span>Date:</span>
+                  <span>${printDate}</span>
+                </div>
+              </div>
+            </div>
+  
+            <div class="test-list">
+              ${testDetails.map((test, index) => `
+                <div class="test-item">
+                  ${test.test_name || test.id}
+                </div>
+              `).join('')}
+            </div>
+  
+            <div class="footer">
+              <div>Generated electronically</div>
+              <div>Printed on ${printDate}</div>
+            </div>
+          </body>
+        </html>
+      `);
     printWindow.document.close();
     printWindow.print();
   };
