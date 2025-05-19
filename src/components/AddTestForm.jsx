@@ -244,13 +244,6 @@ const AddTestForm = () => {
             </style>
           </head>
           <body>
-            <div class="letterhead">
-              <div class="clinic-name">HealthCare Diagnostic Center</div>
-              <div class="clinic-address">
-                123 Medical Drive, Suite 456 | Health City, HC 78910
-                <br>📞 (555) 123-4567 | 🌐 www.healthcare-diagnostics.com
-              </div>
-            </div>
   
             <div class="patient-info">
               <div class="info-group">
