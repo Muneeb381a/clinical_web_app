@@ -7,7 +7,7 @@ import ConsultationForm from "./ConsultationForm";
 import PrescriptionsPopup from "./PrescriptionsPopup";
 import printConsultation from "../utils/printConsultation";
 import { v4 as uuidv4 } from "uuid";
-import FullPageLoader from "../pages/FullPageLoader";
+import {Loader} from "../pages/Loader";
 
 const neuroExamFields = [
   "motor_function",
@@ -922,7 +922,7 @@ const PatientConsultation = () => {
           </h2>
           {loading ? (
             <div className="min-h-screen flex items-center justify-center">
-              <FullPageLoader isLoading={true} />
+              <Loader isLoading={true} />
             </div>
           ) : fetchError ? (
             <div className="flex items-center justify-center flex-col">
