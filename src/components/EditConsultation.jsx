@@ -1797,28 +1797,61 @@ const EditConsultation = () => {
     });
   };
 
-  const addMedicine = (medicineId = "") => {
-    setEditFormData((prev) => ({
-      ...prev,
-      prescriptions: [
-        ...(prev.prescriptions || []),
-        {
-          medicine_id: medicineId,
-          brand_name: "",
-          dosage_en: "",
-          frequency_en: "",
-          duration_en: "",
-          instructions_en: "",
-          dosage_urdu: "",
-          frequency_urdu: "",
-          duration_urdu: "",
-          instructions_urdu: "",
-          prescribed_at: new Date().toISOString(),
-        },
-      ],
-    }));
-  };
+  // const addMedicine = (medicineId = "") => {
+  //   setEditFormData((prev) => ({
+  //     ...prev,
+  //     prescriptions: [
+  //       ...(prev.prescriptions || []),
+  //       {
+  //         medicine_id: medicineId,
+  //         brand_name: "",
+  //         dosage_en: "",
+  //         frequency_en: "",
+  //         duration_en: "",
+  //         instructions_en: "",
+  //         dosage_urdu: "",
+  //         frequency_urdu: "",
+  //         duration_urdu: "",
+  //         instructions_urdu: "",
+  //         prescribed_at: new Date().toISOString(),
+  //       },
+  //     ],
+  //   }));
+  // };
 
+  const addMedicine = (medicineId = "") => {
+  // Get the first medicine from allMedicines if available
+  const firstMedicineId = allMedicines.length > 0 ? allMedicines[0].id.toString() : "";
+  const firstMedicine = allMedicines.length > 0 ? allMedicines[0] : null;
+  
+  // Get first options for all fields
+  const firstDosageOption = dosageOptions.length > 0 ? dosageOptions[0] : null;
+  const firstFrequencyOption = frequencyOptions.length > 0 ? frequencyOptions[0] : null;
+  const firstDurationOption = durationOptions.length > 0 ? durationOptions[0] : null;
+  const firstInstructionsOption = instructionsOptions.length > 0 ? instructionsOptions[0] : null;
+  
+  setEditFormData((prev) => ({
+    ...prev,
+    prescriptions: [
+      ...(prev.prescriptions || []),
+      {
+        medicine_id: firstMedicineId,
+        brand_name: firstMedicine ? (firstMedicine.brand_name || firstMedicine.medicine_name || "") : "",
+        // English values
+        dosage_en: firstDosageOption ? firstDosageOption.value : "",
+        frequency_en: firstFrequencyOption ? firstFrequencyOption.value : "",
+        duration_en: firstDurationOption ? firstDurationOption.value : "",
+        instructions_en: firstInstructionsOption ? firstInstructionsOption.value : "",
+        // Urdu values
+        dosage_urdu: firstDosageOption ? firstDosageOption.label : "",
+        frequency_urdu: firstFrequencyOption ? firstFrequencyOption.label : "",
+        duration_urdu: firstDurationOption ? firstDurationOption.label : "",
+        instructions_urdu: firstInstructionsOption ? firstInstructionsOption.label : "",
+        prescribed_at: new Date().toISOString(),
+      },
+    ],
+  }));
+};
   const removeMedicine = (index) => {
     setEditFormData((prev) => ({
       ...prev,
