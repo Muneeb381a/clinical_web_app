@@ -20,7 +20,7 @@ import { motion } from "framer-motion";
 import SymptomsSelector from "./SymptomsSelector";
 import TestsSelector from "./TestsSelector";
 import NeuroExamSelect from "./NeuroExamSelect";
-import FullPageLoader from "../pages/FullPageLoader";
+import {Loader} from "../pages/Loader";
 import CreatableSelect from "react-select/creatable";
 const safeRequest = async (url, options = {}, retries = 3, delay = 1000) => {
   for (let attempt = 1; attempt <= retries; attempt++) {
@@ -2101,7 +2101,7 @@ const EditConsultation = () => {
   };
 
   if (editLoading && !editFormData) {
-    return <FullPageLoader isLoading={true} />;
+    return <Loader isLoading={true} />;
   }
 
   return (
