@@ -3196,7 +3196,7 @@ const EditConsultation = () => {
                 style={{
                   marginTop: "1rem",
                   padding: "0.5rem 1rem",
-                  backgroundColor: "#14b8a6",
+                  backgroundColor: "#3182ce",
                   color: "#ffffff",
                   borderRadius: "0.375rem",
                   display: "flex",
@@ -3206,9 +3206,9 @@ const EditConsultation = () => {
                   transition: "background-color 0.2s",
                 }}
                 onMouseOver={(e) =>
-                  (e.target.style.backgroundColor = "#0d9488")
+                  (e.target.style.backgroundColor = "#3134ce")
                 }
-                onMouseOut={(e) => (e.target.style.backgroundColor = "#14b8a6")}
+                onMouseOut={(e) => (e.target.style.backgroundColor = "#3182ce")}
                 disabled={editLoading}
               >
                 <FaPlus /> Add Medicine
@@ -3539,12 +3539,13 @@ const EditConsultation = () => {
                   }));
                 }}
                 style={{
-                  backgroundColor: "#10b981",
+                  backgroundColor: "#3182ce",
                   color: "white",
                   padding: "0.5rem 1rem",
                   borderRadius: "0.25rem",
                   marginTop: "1rem",
                   fontSize: "0.875rem",
+                  cursor: "pointer"
                 }}
               >
                 Add Follow-up
@@ -3586,7 +3587,7 @@ const EditConsultation = () => {
                 disabled={editLoading}
                 style={{
                   padding: "0.75rem 1.5rem",
-                  backgroundColor: "#14b8a6",
+                  backgroundColor: "#3182ce",
                   color: "#ffffff",
                   borderRadius: "0.375rem",
                   cursor: editLoading ? "not-allowed" : "pointer",
