@@ -126,51 +126,49 @@ const printConsultation = ({
             font-family: 'Inter', sans-serif;
             margin: 20mm 15mm;
             color: #374151;
-            font-size: 10px; /* Reduced from 11px */
+            font-size: 11px;
             line-height: 1.1;
           }
           .prescription-container {
             display: grid;
             grid-template-columns: 2fr 1fr;
-            gap: 2mm; /* Reduced from 3mm */
-            margin-top: 4mm; /* Reduced from 5mm */
+            gap: 3mm;
+            margin-top: 5mm;
           }
           .patient-table {
             width: 100%;
             border-collapse: collapse;
-            margin-bottom: 2mm; /* Reduced from 3mm */
+            margin-bottom: 3mm;
             background: #f8fafc;
             border: 1px solid #e2e8f0;
           }
           .patient-table th,
           .patient-table td {
-            padding: 0.75mm 1.5mm; /* Reduced padding */
+            padding: 1mm 2mm;
             border: 1px solid #e2e8f0;
             text-align: left;
           }
           .patient-table td {
             background: #e2e8f0;
-            font-size: 9px; /* Reduced from 10px */
+            font-size: 10px;
             width: 25%;
           }
           .section-title {
             font-weight: 600;
             color: #1e40af;
-            padding-bottom: 0.75mm; /* Reduced from 1mm */
-            margin-bottom: 0.75mm; /* Reduced from 1mm */
+            padding-bottom: 1mm;
+            margin-bottom: 1mm;
             border-bottom: 2px solid #1e40af;
-            font-size: 10px; /* Reduced */
           }
           .medicine-table {
             width: 100%;
             border-collapse: collapse;
-            margin: 0.5mm 0; /* Reduced from 1mm */
-            font-size: 9px; /* Reduced */
+            margin: 1mm 0;
           }
           .medicine-table th {
-            padding: 0.75mm 0.75mm; /* Reduced from 1mm */
+            padding: 1mm 1mm;
             font-weight: 600;
-            font-size: 10px; /* Reduced from 11px */
+            font-size: 11px;
             background: #eff6ff;
             border-bottom: 2px solid #1e40af;
             vertical-align: middle;
@@ -178,23 +176,22 @@ const printConsultation = ({
           .medicine-table th:first-child {
             text-align: left;
             font-family: 'Noto Nastaliq Urdu', serif;
-            font-size: 10px; /* Reduced from 11px */
+            font-size: 11px;
           }
           .medicine-table th:not(:first-child) {
             text-align: center;
             font-family: 'Noto Nastaliq Urdu', serif;
           }
           .medicine-table td {
-            padding: 1mm 1mm; /* Reduced from 1mm */
+            padding: 1mm 1mm;
             border-bottom: 1px solid #e5e7eb;
-            font-size: 9px; /* Reduced from 10px */
+            font-size: 10px;
             vertical-align: middle;
-            line-height: 1.1;
           }
           .medicine-table td:first-child {
             text-align: left;
             font-family: 'Roboto', sans-serif;
-            font-weight: 500;
+            font-weight: 600;
           }
           .medicine-table td:not(:first-child) {
             text-align: center;
@@ -202,14 +199,12 @@ const printConsultation = ({
           }
           .clinical-section {
             margin-bottom: 0.5mm;
-            padding: 0.75mm; /* Reduced from 1mm */
+            padding: 1mm;
             background: #f8fafc;
           }
           .clinical-paragraph {
             text-align: justify;
             color: #475569;
-            margin-bottom: 0.5mm; /* Added spacing */
-            font-size: 9px; /* Reduced */
           }
           .clinical-paragraph strong {
             color: #1e293b;
@@ -217,58 +212,45 @@ const printConsultation = ({
            .date-header {
             text-align: right;
             font-family: 'Inter', sans-serif;
-            font-size: 12px; /* Reduced from 14px */
+            font-size: 14px;
             font-weight: 600;
             color: #4b5563;
-            margin-bottom: 1.5mm; /* Reduced from 2mm */
+            margin-bottom: 2mm;
+          }
           }
           .follow-up-section {
             margin-top: 1mm;
-            padding: 2mm; /* Reduced from 3mm */
+            padding: 3mm;
             background: #f0fdfa;
           }
           .urdu-date {
             font-family: 'Noto Nastaliq Urdu', serif;
             direction: rtl;
             color: #4b5563;
-            font-size: 9px; /* Reduced */
           }
           .notes {
-            font-size: 11px; /* Reduced from 13px */
+            font-size: 13px;
           }
           .urdu-dates {
             text-align: center;
             vertical-align: middle;
             font-family: 'Noto Nastaliq Urdu', serif;
-            font-size: 9px; /* Reduced from 0.8rem */
-            padding: 4px; /* Reduced from 8px */
+            font-size: 0.8rem;
+            padding: 8px;
             direction: rtl;
-            line-height: 1.1;
           }
           .center-th {
             text-align: center;
             vertical-align: middle;
-            padding: 4px; /* Reduced from 8px */
+            padding: 8px;
           }
           .patient-name {
-            font-size: 12px; /* Reduced from 14px */
+            font-size: 14px;
             font-weight: bold;
           }
-          
-          /* Compact list styles */
-          .compact-list {
-            display: inline;
-          }
-          .compact-item {
-            display: inline;
-          }
-          .compact-item:not(:last-child):after {
-            content: ", ";
-          }
-          
           @media print {
             .medicine-table td {
-              font-size: 9px !important; /* Reduced from 11px */
+              font-size: 11px;
             }
             @page {
               margin: 0 !important;
@@ -367,27 +349,27 @@ const printConsultation = ({
                         <strong>Vital Signs:</strong>
                         ${
                           vitalSigns.bloodPressure
-                            ? `<span class="vital-label">BP:</span> <span class="vital-value">${vitalSigns.bloodPressure}</span> <span style="font-size: 7px; color: #6b7280;">mmHg</span>`
+                            ? `<span class="vital-label">BP:</span> <span class="vital-value">${vitalSigns.bloodPressure}</span> <span style="font-size: 8px; color: #6b7280;">mmHg</span>`
                             : ""
                         }
                         ${
                           vitalSigns.pulseRate
-                            ? `<span class="vital-label">Pulse:</span> <span class="vital-value">${vitalSigns.pulseRate}</span> <span style="font-size: 7px; color: #6b7280;">bpm</span>`
+                            ? `<span class="vital-label">Pulse:</span> <span class="vital-value">${vitalSigns.pulseRate}</span> <span style="font-size: 8px; color: #6b7280;">bpm</span>`
                             : ""
                         }
                         ${
                           vitalSigns.temperature
-                            ? `<span class="vital-label">Temp:</span> <span class="vital-value">${vitalSigns.temperature}</span> <span style="font-size: 7px; color: #6b7280;">°C</span>`
+                            ? `<span class="vital-label">Temp:</span> <span class="vital-value">${vitalSigns.temperature}</span> <span style="font-size: 8px; color: #6b7280;">°C</span>`
                             : ""
                         }
                         ${
                           vitalSigns.spo2
-                            ? `<span class="vital-label">SpO₂:</span> <span class="vital-value">${vitalSigns.spo2}</span> <span style="font-size: 7px; color: #6b7280;">%</span>`
+                            ? `<span class="vital-label">SpO₂:</span> <span class="vital-value">${vitalSigns.spo2}</span> <span style="font-size: 8px; color: #6b7280;">%</span>`
                             : ""
                         }
                         ${
                           vitalSigns.nihss
-                            ? `<span class="vital-label">NIHSS:</span> <span class="vital-value">${vitalSigns.nihss}</span> <span style="font-size: 7px; color: #6b7280;">/42</span>`
+                            ? `<span class="vital-label">NIHSS:</span> <span class="vital-value">${vitalSigns.nihss}</span> <span style="font-size: 8px; color: #6b7280;">/42</span>`
                             : ""
                         }
                         ${
@@ -397,39 +379,30 @@ const printConsultation = ({
                         }
                       </div>
                     `
-                    : `<div style="color: #6b7280; font-size: 8px; margin-top: 1mm;">No vital signs recorded</div>`
+                    : `<div style="color: #6b7280; font-size: 9px; margin-top: 2mm;">No vital signs recorded</div>`
                 }
               </div>
               <div class="clinical-paragraph">
                 <strong>Symptoms:</strong>
                 ${
                   selectedSymptoms.length > 0
-                    ? `
-                      <span class="compact-list">
-                        ${selectedSymptoms.map((s, index) => `
-                          <span class="compact-item">${s.label}</span>
-                        `).join('')}.
-                      </span>
-                    `
-                    : "<span style='color: #6b7280; font-size: 8px;'>No symptoms noted.</span>"
+                    ? selectedSymptoms.map((s) => s.label).join(", ") + "."
+                    : "No symptoms noted."
                 }
               </div>
               <div class="clinical-paragraph">
-                <strong>Recommended Tests:</strong>
-                ${
-                  selectedTests.length > 0
-                    ? `
-                      <span class="compact-list">
-                        ${selectedTests.map((id, index) => {
-                          const test = tests.find((t) => String(t.value) === String(id));
-                          const testName = test ? test.label : `Unknown Test ID ${id}`;
-                          return `<span class="compact-item">${testName}</span>`;
-                        }).join('')}.
-                      </span>
-                    `
-                    : "<span style='color: #6b7280; font-size: 8px;'>No tests recommended.</span>"
-                }
-              </div>
+  <strong>Recommended Tests:</strong>
+  ${
+    selectedTests.length > 0
+      ? selectedTests
+          .map((id) => {
+            const test = tests.find((t) => String(t.value) === String(id));
+            return test ? test.label : `Unknown Test ID ${id}`;
+          })
+          .join(", ") + "."
+      : "No tests recommended."
+  }
+</div>
               <div class="clinical-paragraph">
                 <strong>Examination:</strong>
                 ${
@@ -463,15 +436,15 @@ const printConsultation = ({
             ? `
               <div class="follow-up-section">
                 <div class="section-title">FOLLOW UP</div>
-                <div style="display: flex; justify-content: space-between; gap: 3mm">
-                  <div style="font-size: 9px;"><strong>Date:</strong> ${new Date(
+                <div style="display: flex; justify-content: space-between; gap: 5mm">
+                  <div><strong>Date:</strong> ${new Date(
                     followUpDate
                   ).toLocaleDateString("en-GB", {
                     day: "numeric",
-                    month: "short", /* Changed from 'long' to 'short' */
+                    month: "long",
                     year: "numeric",
                   })}</div>
-                  <div class="urdu-date" style="font-size: 9px;">
+                  <div class="urdu-date">
                     <span>
                       برائے مہربانی 
                       <span style="color: #1e40af; font-weight: 500">
@@ -480,7 +453,7 @@ const printConsultation = ({
                       کو دوبارہ تشریف لائیں
                     </span>
                   </div>
-                  <div class="notes" style="font-size: 9px;"><strong>Notes:</strong> ${
+                  <div class="notes"><strong>Notes:</strong> ${
                     followUpNotes || "-"
                   }</div>
                 </div>

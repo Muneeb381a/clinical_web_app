@@ -2777,7 +2777,15 @@ const EditConsultation = () => {
                     />
                   </div>
                 </div>
-
+                      <FormField
+                      label="Power"
+                      type="text"
+                      value={editFormData.power}
+                      onChange={(val) => handleFormChange("power", val)}
+                      placeholder="Enter Power"
+                      min={3}
+                      max={15}
+                    />
                 <div>
                   <h4
                     style={{
@@ -2789,6 +2797,7 @@ const EditConsultation = () => {
                   >
                     Sensory and Neurological Signs
                   </h4>
+
                   <div
                     style={{
                       display: "grid",
@@ -2891,15 +2900,7 @@ const EditConsultation = () => {
                       min={3}
                       max={15}
                     />
-                    <FormField
-                      label="Power"
-                      type="text"
-                      value={editFormData.power}
-                      onChange={(val) => handleFormChange("power", val)}
-                      placeholder="Enter Power"
-                      min={3}
-                      max={15}
-                    />
+                    
                   </div>
                 </div>
               </div>
