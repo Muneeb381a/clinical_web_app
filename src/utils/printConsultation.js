@@ -185,7 +185,7 @@ const printConsultation = ({
             font-family: 'Noto Nastaliq Urdu', serif;
           }
           .medicine-table td {
-            padding: 0.75mm 0.75mm; /* Reduced from 1mm */
+            padding: 1mm 1mm; /* Reduced from 1mm */
             border-bottom: 1px solid #e5e7eb;
             font-size: 9px; /* Reduced from 10px */
             vertical-align: middle;
@@ -194,7 +194,7 @@ const printConsultation = ({
           .medicine-table td:first-child {
             text-align: left;
             font-family: 'Roboto', sans-serif;
-            font-weight: 600;
+            font-weight: 500;
           }
           .medicine-table td:not(:first-child) {
             text-align: center;
